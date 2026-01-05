@@ -1,0 +1,547 @@
+// 1. GLOBAL CONSTANTS & VARIABLES
+const CANVAS_WIDTH = 256;
+const CANVAS_HEIGHT = 224;
+
+let canvas, ctx, player, fg, bg;
+let projectiles = [];
+let enemies = [];
+let particles = [];
+let cameraX = 0;
+let isInitialized = false;
+let globalCheckpoints = {}; // Stores { level: { x, y } }
+let collectedStars = {};    // Stores { level: true }
+let currentLevelNum; // Declared here; initialized in loadLevel(1)
+let isGodMode = true; // Set to true for testing, false for normal gameplay
+let collectedLevelItems = {}; // Stores { level: true } if the quest item (Arrow) is found
+let fadeOpacity = 0;
+let fadeTarget = 0;
+let fadeSpeed = 0.03;
+let pendingLevelChange = false;
+
+
+// 2. INITIALIZATION
+function init() {
+    if (isInitialized) return; 
+    
+    canvas = document.getElementById('gameCanvas');
+    ctx = canvas.getContext('2d');
+    canvas.width = CANVAS_WIDTH;
+    canvas.height = CANVAS_HEIGHT;
+	player = new Player(CANVAS_HEIGHT);
+    
+    // Use loadLevel to ensure all global states are synced from start
+    loadLevel(1);
+
+// Listen for oil events
+window.addEventListener('oilSplash', (e) => {
+    createOilSplash(e.detail.x, e.detail.y);
+});
+
+
+// Listen for ice events
+window.addEventListener('icePuff', (e) => {
+    createIcePuff(e.detail.x, e.detail.y);
+});
+
+// Listen for player shooting events
+window.addEventListener('playerShoot', (e) => {
+    const isArrow = e.detail.type === 'arrow';
+    
+    projectiles.push({
+        x: e.detail.x,
+        y: e.detail.y,
+        spawnX: e.detail.x,
+        dir: e.detail.dir,
+         vx: e.detail.vx, // Ensure this is being passed
+         vy: e.detail.vy, // Ensure this is being passed
+        isArrow: isArrow,
+        isEnemyBullet: false,
+        color: isArrow ? '#fde047' : '#ffffff'
+    });
+});
+
+    // Handle brick-breaking logic
+    window.addEventListener('brickHit', (e) => {
+        const plat = e.detail.platform;
+        if (plat.isCheckpointCandidate) {
+            fg.activeFlag = { x: plat.x, y: plat.y - 40, collected: false };
+        }
+        if (!plat.isSecret) {
+            const index = fg.platforms.indexOf(plat);
+            if (index > -1) {
+                if (plat.hasClock) {
+                    fg.clock = { x: plat.x, y: plat.y, collected: false };
+                    fg.platforms.forEach(other => { other.hasClock = false; });
+                }
+                createShatterEffect(plat.x + 8, plat.y + 8);
+                fg.platforms.splice(index, 1);
+            }
+        }
+    });
+
+    isInitialized = true;
+
+    // SAFETY START: Only start the loop once player and level (fg) are confirmed to exist
+    if (player && fg) {
+        requestAnimationFrame(gameLoop);
+    } else {
+        // If generation takes a millisecond longer, wait and try again
+        setTimeout(() => {
+            if (player && fg) requestAnimationFrame(gameLoop);
+        }, 10);
+    }
+}
+
+// 3. MAIN GAME LOOP
+function gameLoop() {
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+
+function update() {
+
+ if (!player || !fg) return;
+
+// Initialize Bird if player is near portal
+if (!fg.bird && player.x > fg.portalX - 400) {
+    fg.bird = {
+        x: fg.portalX,
+        y: fg.portal.y - 70,
+        dir: -1,
+        speed: 2,
+        width: 16,
+        height: 12,
+        hit: false
+    };
+}
+
+// Update Bird movement
+if (fg.bird && !fg.bird.hit) {
+    fg.bird.x += fg.bird.dir * fg.bird.speed;
+
+  fg.bird.y += Math.sin(Date.now() / 200) * 4;
+
+
+    if (fg.bird.x < fg.portalX - 100) fg.bird.dir = 1;
+    if (fg.bird.x > fg.portalX + 15) fg.bird.dir = -1;
+}
+
+
+  
+
+// DEFERRED DEATH FLAG: Prevents freezing by waiting for loops to finish
+    let playerHit = false;
+
+// --- 1. TIMER TIMEOUT CHECK ---
+if (fg.timeLeft <= 0 && !player.isEndingLevel) {
+    handlePlayerDeath('timeout'); 
+    return; 
+}
+
+    
+
+    player.update(fg.groundY, fg.platforms, fg.elevators, fg.groundHazards, fg.coins, fg);
+
+    // Portal Boundary
+    if (player.x + player.width > fg.portal.x && !player.isEndingLevel) {
+        player.x = fg.portal.x - player.width;
+        player.velocityX = 0;
+    }
+
+    // Portal Proximity & Level End
+    const dx = (player.x + player.width / 2) - fg.portal.x;
+    const dy = (player.y + player.height / 2) - fg.portal.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    if (distance < 20 && !player.isEndingLevel) {
+        if (fg.hasStar) {
+            player.startPortalSuck(fg.portal.x, fg.portal.y);
+        } else {
+            const timerElement = document.getElementById('timer-display');
+            if (timerElement) {
+                timerElement.innerText = "NEED STAR!";
+                timerElement.style.color = "#ffff00";
+            }
+        }
+    }
+
+enemies.forEach((en, eIdx) => {
+    if (en.isBoss) {
+        en.update(projectiles, player);
+    } else {
+        en.update(fg.platforms, player, projectiles);
+    }
+
+    projectiles.forEach((p, pIdx) => {
+        // Check if a player bullet hits an enemy or boss
+        if (!p.isEnemyBullet && p.x > en.x && p.x < en.x + en.width && 
+            p.y > en.y && p.y < en.y + en.height) {
+            
+            if (en.isBoss) {
+                if (en.reflectTimer > 0) {
+                    // NEW: Reverse the bullet back at the player
+                    p.isEnemyBullet = true;
+                    p.dir *= -1;         // Flip horizontal direction
+                    p.color = '#ff0000'; // Turn red for danger
+                    p.spawnX = p.x;      // Reset spawn point for travel distance checks
+                } else {
+                    // NORMAL: Boss takes damage
+                    const isDead = en.takeDamage();
+                    projectiles.splice(pIdx, 1);
+                    if (isDead) {
+                        createShatterEffect(en.x + en.width/2, en.y + en.height/2);
+                        enemies.splice(eIdx, 1);
+                    }
+                }
+            } else {
+                // NORMAL: Standard enemy dies
+                createShatterEffect(en.x + en.width/2, en.y + en.height/2);
+                enemies.splice(eIdx, 1);
+                projectiles.splice(pIdx, 1);
+            }
+        }
+    });
+
+
+   // PLAYER COLLISION WITH ENEMY/BOSS
+if (!isGodMode && player.x < en.x + en.width && player.x + player.width > en.x &&
+    player.y < en.y + en.height && player.y + player.height > en.y) {
+    handlePlayerDeath(en.isBoss ? 'boss' : 'enemy');
+}
+    });
+
+    // PROJECTILE UPDATES 
+    for (let i = projectiles.length - 1; i >= 0; i--) {
+        let p = projectiles[i];
+
+// Change this line to include p.isArrow
+if (p.isGrenade || p.isArrow) {
+    // Parabolic movement (Gravity)
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += 0.15; // Gravity pulling the arrow/bone down
+
+    // Ground collision
+    if (p.y > fg.groundY) {
+        createShatterEffect(p.x, p.y);
+        projectiles.splice(i, 1);
+        continue;
+    }
+} else {
+    // Normal straight bullets
+    p.x += p.vx;
+}
+
+// 2. REACTION BIRD COLLISION & HEALTH
+if (fg.bird && !fg.bird.hit && !p.isEnemyBullet) {
+    if (p.x > fg.bird.x && p.x < fg.bird.x + fg.bird.width && 
+        p.y > fg.bird.y && p.y < fg.bird.y + fg.bird.height) {
+        
+        // Initialize health if it doesn't exist
+        if (fg.bird.health === undefined) fg.bird.health = 3;
+        
+        // Check if we hit the "Key" area (bottom half of bird) or just hit the bird 3 times
+        const hitKey = p.y > fg.bird.y + 6;
+        fg.bird.health--;
+
+        if (fg.bird.health <= 0 || hitKey) {
+            fg.bird.hit = true;
+            // Trigger the key drop in the foreground
+       fg.dropKey(fg.bird.x + 8, fg.bird.y + 8, fg.bird.dir); 
+    createShatterEffect(fg.bird.x + 8, fg.bird.y + 8);
+
+} else {
+    // NEW: Trigger a red flash for 10 frames when hit but not dead
+    fg.bird.flashTimer = 10;
+        }
+
+        projectiles.splice(i, 1);
+        continue; 
+    }
+}
+
+
+        // Check if enemy bullet hits player
+if (p.isEnemyBullet && !isGodMode) {
+    if (p.x > player.x && p.x < player.x + player.width &&
+        p.y > player.y && p.y < player.y + player.height) {
+        handlePlayerDeath(p.fromBoss ? 'boss' : 'enemy');
+        projectiles.splice(i, 1);
+        continue;
+    }
+}
+
+        let bulletHitBrick = false;
+        if (fg.platforms) {
+            for (let j = fg.platforms.length - 1; j >= 0; j--) {
+                const plat = fg.platforms[j];
+                const platW = plat.w * 16;
+                const platH = plat.h * 16;
+
+           if (p.x > plat.x && p.x < plat.x + platW &&
+    p.y > plat.y && p.y < plat.y + platH) {
+    bulletHitBrick = true;
+
+    // NEW: If a bullet (from player OR enemy) hits a checkpoint brick
+    if (plat.isCheckpointCandidate) {
+        fg.activeFlag = { x: plat.x, y: plat.y - 40, collected: false };
+    }
+
+    if (!plat.isSecret) {
+        if (plat.hasClock) {
+            fg.clock = { x: plat.x, y: plat.y, collected: false };
+            fg.platforms.forEach(other => { other.hasClock = false; });
+        }
+        createShatterEffect(plat.x + 8, plat.y + 8);
+        fg.platforms.splice(j, 1);
+    }
+    break; 
+}
+            }
+        }
+
+    // Ensure 'p' and 'p.spawnX' exist before doing math
+const travelDist = (p && typeof p.spawnX !== 'undefined') ? Math.abs(p.x - p.spawnX) : 0;
+
+// Use a safety check for the off-screen logic
+const isOffScreen = p ? (p.x < cameraX - 10 || p.x > cameraX + CANVAS_WIDTH + 10) : false;
+
+if (isOffScreen || bulletHitBrick || (p && p.isEnemyBullet && travelDist > 300)) {
+    projectiles.splice(i, 1);
+}
+}
+
+    // Camera follow
+    // Safety check: only calculate camera if player is defined
+	let targetX = (player && typeof player.x !== 'undefined') ? player.x - 35 : cameraX; 
+    const maxX = fg.portalX - (CANVAS_WIDTH / 2);
+    cameraX = Math.max(0, Math.min(targetX, maxX));
+
+    updateParticles();
+    fg.update(player);
+
+  
+}
+
+function nextLevel() {
+    if (!pendingLevelChange) {
+        fadeTarget = 1; // Start the blackout
+        pendingLevelChange = true;
+    }
+}
+
+function draw() {
+    ctx.fillStyle = '#5c94fc'; 
+    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+    bg.draw(ctx, cameraX);
+    fg.draw(ctx, cameraX);
+    enemies.forEach(en => en.draw(ctx, cameraX));
+
+    particles.forEach(p => {
+        ctx.fillStyle = p.color;
+        ctx.fillRect(p.x - cameraX, p.y, 2, 2);
+    });
+
+    projectiles.forEach(p => {
+        ctx.fillStyle = p.color || '#ffffff';
+        if (p.isArrow) {
+            ctx.save();
+            ctx.translate(p.x - cameraX, p.y);
+            ctx.rotate(Math.atan2(p.vy, p.vx));
+            ctx.fillRect(-8, -1, 10, 2);
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.moveTo(2, -3); ctx.lineTo(6, 0); ctx.lineTo(2, 3);
+            ctx.fill();
+            ctx.restore();
+        } else {
+            ctx.fillRect(p.x - cameraX, p.y, 4, 2);
+        }
+    });
+
+    // Draw player BEFORE the fade
+    player.draw(ctx, cameraX);
+
+    // 1. Calculate fade
+    if (fadeOpacity < fadeTarget) fadeOpacity += fadeSpeed;
+    if (fadeOpacity > fadeTarget) fadeOpacity -= fadeSpeed;
+    fadeOpacity = Math.max(0, Math.min(1, fadeOpacity));
+
+    // 2. Draw the overlay
+    if (fadeOpacity > 0) {
+        ctx.fillStyle = `rgba(0, 0, 0, ${fadeOpacity})`;
+        ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    }
+
+   // 3. Perform the reset ONLY when the screen is fully black
+   if (pendingLevelChange && fadeOpacity > 0.9) {
+    fadeOpacity = 1; // Force it to 1 so it's fully black
+    cameraX = 0;     // Reset camera view
+    currentLevelNum++;
+    loadLevel(currentLevelNum);
+    
+    // Reset player state
+    player.isEndingLevel = false;
+    player.shrinkScale = 1.0;
+    player.rotation = 0;
+
+    pendingLevelChange = false;
+    fadeTarget = 0; // Fade back in
+ }
+} // <--- THIS BRACE CLOSES THE DRAW FUNCTION. DO NOT REMOVE.
+
+function createShatterEffect(x, y) {
+    for (let i = 0; i < 6; i++) {
+        particles.push({
+            x: x,
+            y: y,
+            vx: (Math.random() - 0.5) * 4,
+            vy: (Math.random() - 0.5) * 4 - 2,
+            life: 30,
+            color: '#bc4a24'
+        });
+    }
+}
+
+
+function createOilSplash(x, y) {
+    for (let i = 0; i < 3; i++) {
+        particles.push({
+            x: x + (Math.random() - 0.5) * 10, // Spread across player width
+            y: y,
+            vx: (Math.random() - 0.5) * 2,     // Slight horizontal spread
+            vy: -Math.random() * 3 - 2,        // Strong upward force
+            life: 20 + Math.random() * 10,
+            color: '#202020'                   // Matches groundColors.oil
+        });
+    }
+}
+
+
+function createIcePuff(x, y) {
+    // 2-3 small particles per puff to keep it subtle
+    for (let i = 0; i < 3; i++) {
+        particles.push({
+            x: x + (Math.random() - 0.5) * 10,
+            y: y,
+            vx: (Math.random() - 0.5) * 1.5,
+            vy: -Math.random() * 2 - 0.5, // Lower height than oil to simulate "sliding"
+            life: 10 + Math.random() * 10,
+            color: Math.random() > 0.5 ? '#ffffff' : '#a0d8f8' // White and Ice-Blue
+        });
+    }
+}
+
+
+
+function updateParticles() {
+    for (let i = particles.length - 1; i >= 0; i--) {
+        let p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.2;
+        p.life--;
+        if (p.life <= 0) particles.splice(i, 1);
+    }
+}
+
+function handlePlayerDeath(deathType) {
+    // 1. Reset player state common to all deaths
+    player.hasBow = false;     
+    player.bullets = 5;        
+    player.updateUI();         
+    projectiles = []; 
+    player.isStunned = false;
+    player.stunTimer = 0;
+    player.rotation = 0;
+    player.stunCooldown = 0;
+
+    // 2. PERMANENCE: Check if items were already collected
+    if (fg && (collectedStars[currentLevelNum] || collectedLevelItems[currentLevelNum])) {
+        fg.hasStar = true;
+        fg.star = null;
+    }
+
+    // 3. CHECKPOINT LOGIC: Killed by standard Enemy
+    if (deathType === 'enemy') {
+        const cp = globalCheckpoints[currentLevelNum];
+        
+        if (cp) {
+            // Respawn at checkpoint; timer continues
+            player.x = cp.x;
+            player.y = cp.y - player.height;
+            player.velocityX = 0;
+            player.velocityY = 0;
+        } 
+        else if (currentLevelNum > 1 && globalCheckpoints[currentLevelNum - 1]) {
+            // Fall back to previous level checkpoint; timer continues
+            currentLevelNum--;
+            loadLevel(currentLevelNum, true); // true keeps the current timer
+            const prevCp = globalCheckpoints[currentLevelNum];
+            player.x = prevCp.x;
+            player.y = prevCp.y - player.height;
+        } 
+        else {
+            // No checkpoints: Start level 1 over
+            loadLevel(1);
+        }
+    } 
+    
+    // 4. RESTART LOGIC: Killed by Boss or Timer Ran Out
+    else if (deathType === 'boss' || deathType === 'timeout') {
+        // Back to level start; timer resets to 60
+        loadLevel(currentLevelNum); 
+    }
+}
+
+function loadLevel(num, keepTimer = false) {
+    currentLevelNum = num;
+    bg = new Background(num, CANVAS_WIDTH, CANVAS_HEIGHT);
+    fg = new Foreground(num);
+
+// Only reset timer if NOT told to keep it
+    if (!keepTimer) {
+        fg.resetTimer();
+    }
+
+    
+    player.x = 35; 
+    player.y = 100; 
+    player.velocityX = 0;
+    player.velocityY = 0;
+    
+    projectiles = [];
+    spawnEnemies();
+    
+    if (collectedLevelItems[num]) {
+        fg.hasStar = true;
+        fg.star = null;
+    }
+    
+    const levelDisp = document.getElementById('level-display');
+    if (levelDisp) {
+        levelDisp.innerText = `Level 1-${num}${collectedStars[num] ? " ⭐" : ""}`;
+    }
+
+    fg.resetTimer(); 
+}
+
+function spawnEnemies() {
+    if (!fg || typeof fg.groundY === 'undefined') return; 
+    enemies = [];
+    
+    if (currentLevelNum % 3 === 0) {
+        enemies.push(new Boss(fg.portal.x - 120, fg.groundY - 140));
+    }
+
+    const types = ['skeleton', 'zombie', 'spider'];
+    const count = (currentLevelNum % 3 === 0) ? 4 : 8; 
+    for (let i = 0; i < count; i++) {
+        const type = types[Math.floor(Math.random() * types.length)];
+        const rx = 400 + (Math.random() * (fg.portal.x - 600));
+        const spawnY = type === 'spider' ? fg.groundY - 16 : fg.groundY - 24;
+        enemies.push(new Enemy(type, rx, spawnY));
+    }
+}
