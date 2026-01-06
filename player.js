@@ -5,35 +5,36 @@
 class Player {
     constructor(canvasHeight) {
         this.width = 16;
-        this.normalHeight = 24; 
-        this.squatHeight = 12; 
+        this.normalHeight = 24;
+        this.squatHeight = 12;
         this.height = this.normalHeight;
-        this.x = 35; 
+        this.x = 35;
         this.y = canvasHeight - 100;
-        
+
         // Physics & Stats
         this.velocityX = 0;
         this.velocityY = 0;
-        this.speed = 0.4;          
-        this.maxSpeed = 2.0;      
-        this.friction = 0.80;     
-        this.gravity = 0.35;      
-        this.jumpForce = -9.5;    
-	this.aimAngle = 0;
-        
-        this.bullets = 0; 
+        this.speed = 0.4;
+        this.maxSpeed = 2.0;
+        this.friction = 0.80;
+        this.gravity = 0.35;
+        this.jumpForce = -9.5;
+        this.aimAngle = 0;
+
+        this.bullets = 0;
         this.onGround = false;
-        this.onElevator = null; 
+        this.onElevator = null;
         this.facingRight = true;
-        this.walkCounter = 0; 
+        this.walkCounter = 0;
+        this.inBubble = false;
 
         // State Management
         this.isStunned = false;
         this.stunTimer = 0;
         this.stunType = null;
         this.rotation = 0;
-        this.stunCooldown = 0; 
-	this.hasBow = false;
+        this.stunCooldown = 0;
+        this.hasBow = false;
 
         // Squatting State
         this.isSquatting = false;
@@ -49,73 +50,76 @@ class Player {
         this.keys = { left: false, right: false, up: false, down: false };
     }
 
-   //GAME CONTROLLER KEYBOARD KEYS
+    //GAME CONTROLLER KEYBOARD KEYS
 
-setupControls() {
-    window.addEventListener('keydown', (e) => {
-        if (this.isEndingLevel) return;
+    setupControls() {
+        window.addEventListener('keydown', (e) => {
+            if (this.isEndingLevel) return;
 
-        // --- 1. MOVEMENT KEYS ---
-        if (e.code === 'ArrowLeft' || e.code === 'KeyA') this.keys.left = true;
-        if (e.code === 'ArrowRight' || e.code === 'KeyD') this.keys.right = true;
+            // --- 1. MOVEMENT KEYS ---
+            if (e.code === 'ArrowLeft' || e.code === 'KeyA') this.keys.left = true;
+            if (e.code === 'ArrowRight' || e.code === 'KeyD') this.keys.right = true;
+            if (e.code === 'ArrowUp' || e.code === 'KeyW') this.keys.up = true;
+            if (e.code === 'ArrowDown' || e.code === 'KeyS') this.keys.down = true;
 
-        // --- 2. AIMING LOGIC (Up/Down) ---
-        // If the player has the bow, Up/Down arrows adjust the angle
-        if (this.hasBow) {
-            const angleStep = 0.1; // How fast the aim moves
-            if (e.code === 'ArrowUp') {
-                // Aim higher (negative angle is "up" in canvas)
-                // Limit to -1.5 radians (roughly straight up)
-                this.aimAngle = Math.max(this.aimAngle - angleStep, -1.5);
+
+            // --- 2. AIMING LOGIC (Up/Down) ---
+            // If the player has the bow, Up/Down arrows adjust the angle
+            if (this.hasBow) {
+                const angleStep = 0.1; // How fast the aim moves
+                if (e.code === 'ArrowUp') {
+                    // Aim higher (negative angle is "up" in canvas)
+                    // Limit to -1.5 radians (roughly straight up)
+                    this.aimAngle = Math.max(this.aimAngle - angleStep, -1.5);
+                }
+                if (e.code === 'ArrowDown') {
+                    // Aim lower
+                    // Limit to 1.5 radians (roughly straight down)
+                    this.aimAngle = Math.min(this.aimAngle + angleStep, 1.5);
+                }
             }
-            if (e.code === 'ArrowDown') {
-                // Aim lower
-                // Limit to 1.5 radians (roughly straight down)
-                this.aimAngle = Math.min(this.aimAngle + angleStep, 1.5);
+
+            // --- 3. JUMPING LOGIC ---
+            // Removed ArrowUp from here to prevent jumping while aiming
+            if (e.code === 'Space' || e.code === 'KeyW') {
+                this.keys.up = true;
             }
-        } 
-        
-        // --- 3. JUMPING LOGIC ---
-        // Removed ArrowUp from here to prevent jumping while aiming
-        if (e.code === 'Space' || e.code === 'KeyW') {
-            this.keys.up = true;
-        }
 
-        // --- 4. CROUCHING LOGIC ---
-        // We only crouch if the player DOES NOT have the bow 
-        // OR you can keep it as is if you want them to crouch and aim
-        if (!this.hasBow && (e.code === 'ArrowDown' || e.code === 'KeyS')) {
-            if (this.onGround && !this.isSquatting) {
-                this.isSquatting = true;
-                this.squatTimer = 60; 
-                this.y += (this.normalHeight - this.squatHeight);
-                this.height = this.squatHeight;
+            // --- 4. CROUCHING LOGIC ---
+            // We only crouch if the player DOES NOT have the bow 
+            // OR you can keep it as is if you want them to crouch and aim
+            if (!this.hasBow && (e.code === 'ArrowDown' || e.code === 'KeyS')) {
+                if (this.onGround && !this.isSquatting) {
+                    this.isSquatting = true;
+                    this.squatTimer = 60;
+                    this.y += (this.normalHeight - this.squatHeight);
+                    this.height = this.squatHeight;
+                }
             }
-        }
 
-        if (e.code === 'KeyB' && this.bullets > 0 && !this.isStunned) this.shoot();
-    });
+            if (e.code === 'KeyB' && this.bullets > 0 && !this.isStunned) this.shoot();
+        });
 
-    window.addEventListener('keyup', (e) => {
-        if (e.code === 'ArrowLeft' || e.code === 'KeyA') this.keys.left = false;
-        if (e.code === 'ArrowRight' || e.code === 'KeyD') this.keys.right = false;
-        // Space/W stop the jump "intent"
-        if (e.code === 'Space' || e.code === 'KeyW') this.keys.up = false;
-    });
-}
-    
+        window.addEventListener('keyup', (e) => {
+            if (e.code === 'ArrowLeft' || e.code === 'KeyA') this.keys.left = false;
+            if (e.code === 'ArrowRight' || e.code === 'KeyD') this.keys.right = false;
+            if (e.code === 'Space' || e.code === 'KeyW' || e.code === 'ArrowUp') this.keys.up = false;
+            if (e.code === 'ArrowDown' || e.code === 'KeyS') this.keys.down = false;
+        });
+    }
 
-isCeilingAbove(platforms) {
-    if (!platforms) return false;
-    // Check the space where your head WOULD be if you stood up
-    const futureTop = this.y - (this.normalHeight - this.height);
-    return platforms.some(p => {
-        return (this.x + this.width > p.x && 
-                this.x < p.x + (p.w * 16) && 
-                futureTop < p.y + (p.h * 16) && 
+
+    isCeilingAbove(platforms) {
+        if (!platforms) return false;
+        // Check the space where your head WOULD be if you stood up
+        const futureTop = this.y - (this.normalHeight - this.height);
+        return platforms.some(p => {
+            return (this.x + this.width > p.x &&
+                this.x < p.x + (p.w * 16) &&
+                futureTop < p.y + (p.h * 16) &&
                 this.y > p.y);
-    });
-}
+        });
+    }
 
     startPortalSuck(px, py) {
         this.isEndingLevel = true;
@@ -123,52 +127,52 @@ isCeilingAbove(platforms) {
         this.targetPortalY = py;
     }
 
-shoot() {
+    shoot() {
 
-// NEW: If we have the bow, we can ONLY shoot if we have also found the Arrow (fg.hasKey)
-    if (this.hasBow && !fg.hasKey) {
-        console.log("Found the bow, but need the Arrow to shoot!");
-        return; // Stop the shot
+        // NEW: If we have the bow, we can ONLY shoot if we have also found the Arrow (fg.hasKey)
+        if (this.hasBow && !fg.hasKey) {
+            console.log("Found the bow, but need the Arrow to shoot!");
+            return; // Stop the shot
+        }
+
+        this.bullets--;
+        this.updateUI();
+
+        const projectileType = this.hasBow ? 'arrow' : 'bullet';
+
+        let vx, vy;
+
+        if (this.hasBow) {
+            // Use the aiming angle for arrows
+            const power = 8;
+            vx = Math.cos(this.aimAngle) * power * (this.facingRight ? 1 : -1);
+            vy = Math.sin(this.aimAngle) * power;
+        } else {
+            // Normal bullets fire straight ahead
+            vx = this.facingRight ? 4 : -4;
+            vy = 0;
+        }
+
+        window.dispatchEvent(new CustomEvent('playerShoot', {
+            detail: {
+                x: this.x + (this.facingRight ? this.width : 0),
+                y: this.y + (this.isSquatting ? 6 : 12),
+                dir: this.facingRight ? 1 : -1,
+                type: projectileType,
+                vx: vx,
+                vy: vy
+            }
+        }));
     }
-
-    this.bullets--;
-    this.updateUI();
-    
-    const projectileType = this.hasBow ? 'arrow' : 'bullet';
-    
-    let vx, vy;
-
-    if (this.hasBow) {
-        // Use the aiming angle for arrows
-        const power = 8; 
-        vx = Math.cos(this.aimAngle) * power * (this.facingRight ? 1 : -1);
-        vy = Math.sin(this.aimAngle) * power;
-    } else {
-        // Normal bullets fire straight ahead
-        vx = this.facingRight ? 4 : -4;
-        vy = 0;
-    }
-
-    window.dispatchEvent(new CustomEvent('playerShoot', { 
-        detail: { 
-            x: this.x + (this.facingRight ? this.width : 0), 
-            y: this.y + (this.isSquatting ? 6 : 12), 
-            dir: this.facingRight ? 1 : -1,
-            type: projectileType,
-            vx: vx, 
-            vy: vy  
-        } 
-    }));
-}
 
     updateUI() {
-    const bulletDisplay = document.getElementById('bullet-display');
-    if (bulletDisplay) {
-        // Change the label based on whether we have the bow or not
-        const label = this.hasBow ? "ARROWS" : "BULLETS";
-        bulletDisplay.innerText = `${label}: ${this.bullets}`;
+        const bulletDisplay = document.getElementById('bullet-display');
+        if (bulletDisplay) {
+            // Change the label based on whether we have the bow or not
+            const label = this.hasBow ? "ARROWS" : "BULLETS";
+            bulletDisplay.innerText = `${label}: ${this.bullets}`;
+        }
     }
-}
 
     update(groundY, platforms, elevators, groundHazards, coins, fg) {
         if (this.stunCooldown > 0) this.stunCooldown--;
@@ -176,22 +180,22 @@ shoot() {
         if (this.isEndingLevel) {
             this.x += (this.targetPortalX - (this.x + this.width / 2)) * 0.1;
             this.y += (this.targetPortalY - (this.y + this.height / 2)) * 0.1;
-            this.rotation += 0.4;  
-            this.shrinkScale *= 0.95; 
+            this.rotation += 0.4;
+            this.shrinkScale *= 0.95;
             if (this.shrinkScale < 0.05) nextLevel();
-            return; 
+            return;
         }
 
-if (this.isSquatting) {
-    if (this.squatTimer > 0) this.squatTimer--;
-    // Only stand up if the timer is out AND the player isn't holding the down key 
-    // AND there is actually room to stand up
-    if (this.squatTimer <= 0 && !this.keys.down && !this.isCeilingAbove(platforms)) {
-        this.isSquatting = false;
-        this.y -= (this.normalHeight - this.squatHeight);
-        this.height = this.normalHeight;
-    }
-}
+        if (this.isSquatting) {
+            if (this.squatTimer > 0) this.squatTimer--;
+            // Only stand up if the timer is out AND the player isn't holding the down key 
+            // AND there is actually room to stand up
+            if (this.squatTimer <= 0 && !this.keys.down && !this.isCeilingAbove(platforms)) {
+                this.isSquatting = false;
+                this.y -= (this.normalHeight - this.squatHeight);
+                this.height = this.normalHeight;
+            }
+        }
 
         if (fg && fg.star) {
             const dx = (this.x + this.width / 2) - fg.star.x;
@@ -199,15 +203,15 @@ if (this.isSquatting) {
             if (Math.sqrt(dx * dx + dy * dy) < 15) {
                 fg.star = null;
                 fg.hasStar = true;
-		collectedStars[fg.level] = true;
+                collectedStars[fg.level] = true;
                 const levelDisp = document.getElementById('level-display');
-                if (levelDisp) levelDisp.innerText += " ⭐"; 
+                if (levelDisp) levelDisp.innerText += " ⭐";
             }
         }
 
         let moving = false;
 
-      if (this.isStunned) {
+        if (this.isStunned) {
             this.stunTimer--;
             if (Math.abs(this.velocityX) > 0.01) {
                 if (this.stunType === 'oil') {
@@ -217,42 +221,66 @@ if (this.isSquatting) {
                     // NEW: Lean backwards based on direction (-0.4 radians is ~23 degrees)
                     this.rotation = this.facingRight ? -0.4 : 0.4;
                 }
-           } else {
+            } else {
                 this.rotation = 0;
             }
 
             // This only happens when the timer runs out
-            if (this.stunTimer <= 0) { 
-                this.isStunned = false; 
-                this.rotation = 0; 
-                this.stunType = null; 
+            if (this.stunTimer <= 0) {
+                this.isStunned = false;
+                this.rotation = 0;
+                this.stunType = null;
                 this.stunCooldown = 40;
             }
         } else {
             if (this.keys.left) { this.velocityX -= this.speed; this.facingRight = false; moving = true; }
             if (this.keys.right) { this.velocityX += this.speed; this.facingRight = true; moving = true; }
-           
-    if (this.onGround && this.keys.up) {
-    this.velocityY = this.jumpForce; 
-    this.onGround = false; 
-    this.onElevator = null;
- 
-    if (this.isSquatting) {
-        // If jumping while squatting, only stand up if there is room
-        if (!this.isCeilingAbove(platforms)) {
-            this.isSquatting = false;
-            this.y -= (this.normalHeight - this.squatHeight); 
-            this.height = this.normalHeight;
+
+            if (this.onGround && this.keys.up) {
+                this.velocityY = this.jumpForce;
+                this.onGround = false;
+                this.onElevator = null;
+
+                if (this.isSquatting) {
+                    // If jumping while squatting, only stand up if there is room
+                    if (!this.isCeilingAbove(platforms)) {
+                        this.isSquatting = false;
+                        this.y -= (this.normalHeight - this.squatHeight);
+                        this.height = this.normalHeight;
+                    }
+                    this.velocityX *= 0.5; // Slight penalty for jumping from a crouch
+                }
+            }
         }
-        this.velocityX *= 0.5; // Slight penalty for jumping from a crouch
-    }
-}
-}
 
         // --- Physics Application ---
+        if (this.inBubble) {
+            this.gravity = 0;      // Turn off gravity so you float
+            this.friction = 0.92;  // Makes the movement feel smooth
+
+            // Vertical Control
+            if (this.keys.up) this.velocityY -= 0.5;
+            if (this.keys.down) this.velocityY += 0.5;
+
+            // Horizontal Control
+            if (this.keys.left) this.velocityX -= 0.5;
+            if (this.keys.right) this.velocityX += 0.5;
+
+            // Limit speed so you don't fly off screen too fast
+            const maxBubbleSpeed = 2.5;
+            this.velocityX = Math.max(-maxBubbleSpeed, Math.min(maxBubbleSpeed, this.velocityX));
+            this.velocityY = Math.max(-maxBubbleSpeed, Math.min(maxBubbleSpeed, this.velocityY));
+
+            this.onGround = false; // Prevent snapping to the floor
+        } else {
+            this.gravity = 0.35;   // Normal gravity when not in a bubble
+        }
+
+
+
         this.velocityY += this.gravity;
         let finalFriction = this.isStunned ? 0.99 : (this.onGround ? 0.85 : 0.98);
-	this.velocityX *= finalFriction;
+        this.velocityX *= finalFriction;
 
         if (this.velocityX > this.maxSpeed) this.velocityX = this.maxSpeed;
         if (this.velocityX < -this.maxSpeed) this.velocityX = -this.maxSpeed;
@@ -260,21 +288,21 @@ if (this.isSquatting) {
         this.x += this.velocityX;
         this.y += this.velocityY;
 
-if (Math.abs(this.velocityX) < 0.1) {
-    this.velocityX = 0;
-}
+        if (Math.abs(this.velocityX) < 0.1) {
+            this.velocityX = 0;
+        }
 
-        this.onGround = false; 
+        this.onGround = false;
 
         if (fg && fg.clock && !fg.clock.collected) {
             const clockDx = (this.x + this.width / 2) - (fg.clock.x + 8);
             const clockDy = (this.y + this.height / 2) - (fg.clock.y + 8);
             if (Math.sqrt(clockDx * clockDx + clockDy * clockDy) < 15) {
                 fg.clock.collected = true;
-                fg.timeLeft += 10; 
+                fg.timeLeft += 10;
                 const timerElement = document.getElementById('timer-display');
                 if (timerElement) {
-                    timerElement.style.color = "#00ff00"; 
+                    timerElement.style.color = "#00ff00";
                     setTimeout(() => { if (timerElement) timerElement.style.color = "white"; }, 1000);
                 }
             }
@@ -297,116 +325,116 @@ if (Math.abs(this.velocityX) < 0.1) {
             this.onGround = true;
             this.onElevator = null;
 
-         if (groundHazards && !this.isStunned && this.stunCooldown <= 0) {
+            if (groundHazards && !this.isStunned && this.stunCooldown <= 0) {
                 const playerCenter = this.x + (this.width / 2);
                 groundHazards.forEach(h => {
                     if (playerCenter > h.x && playerCenter < h.x + h.w) {
                         this.isStunned = true;
                         this.stunTimer = 60;
                         this.stunType = h.type;
-                        
+
                         //Use velocityX to determine direction, defaulting to 4.0 if standing still
                         let pushDir = this.velocityX >= 0 ? 4.0 : -4.0;
                         this.velocityX = pushDir;
-		}
-              }); 
+                    }
+                });
             }
 
 
 
-// TRIGGER THE SPLASH (Updated for precision)
-if (this.isStunned && this.stunType === 'oil') {
-    // Check if we are still physically OVER an oil slick
-    const playerCenter = this.x + (this.width / 2);
-    const currentlyOnOil = groundHazards.some(h => 
-        h.type === 'oil' && playerCenter > h.x && playerCenter < h.x + h.w
-    );
+            // TRIGGER THE SPLASH (Updated for precision)
+            if (this.isStunned && this.stunType === 'oil') {
+                // Check if we are still physically OVER an oil slick
+                const playerCenter = this.x + (this.width / 2);
+                const currentlyOnOil = groundHazards.some(h =>
+                    h.type === 'oil' && playerCenter > h.x && playerCenter < h.x + h.w
+                );
 
-    // Only splash if the probability check AND the position check pass
-    if (currentlyOnOil && Math.random() > 0.8) { 
-        window.dispatchEvent(new CustomEvent('oilSplash', { 
-            detail: { x: this.x + (this.width / 2), y: groundY } 
-        }));
-    }
-}
-
-
-// TRIGGER THE ICE PUFF
-if (this.isStunned && this.stunType === 'ice') {
-    // Real-time check: are we still physically ON an ice slick?
-    const playerCenter = this.x + (this.width / 2);
-    const currentlyOnIce = groundHazards.some(h => 
-        h.type === 'ice' && playerCenter > h.x && playerCenter < h.x + h.w
-    );
-
-    // Subtle frost effect while sliding
-    if (currentlyOnIce && Math.random() > 0.7) { 
-        window.dispatchEvent(new CustomEvent('icePuff', { 
-            detail: { x: this.x + (this.width / 2), y: groundY } 
-        }));
-    }
-}
-} // This closes the ground check block
-
-
-
-if (platforms) {
-    platforms.forEach(p => {
-        const pW = p.w * 16;
-        const pH = p.h * 16;
-
-        // 1. Define the player's current bounding box
-        const pLeft = this.x + 1;
-        const pRight = this.x + this.width - 1;
-        const pTop = this.y;
-        const pBottom = this.y + this.height;
-
-        // 2. Check if there is ANY overlap with the platform
-        if (pRight > p.x && pLeft < p.x + pW && pBottom > p.y && pTop < p.y + pH) {
-            
-            // Calculate how far we are overlapping from each side
-            let overlapLeft = pRight - p.x;
-            let overlapRight = (p.x + pW) - pLeft;
-            let overlapTop = pBottom - p.y;
-            let overlapBottom = (p.y + pH) - pTop;
-
-            // 3. Determine the Shallowest Overlap (this tells us which side we hit)
-            // We prioritize Top/Bottom to prevent falling through or jumping through
-        let minOverlap = Math.min(overlapLeft, overlapRight, overlapTop, overlapBottom);
-
-            // LANDING ON TOP
-            if (minOverlap === overlapTop && this.velocityY >= 0) {
-                this.y = p.y - this.height;
-                this.velocityY = 0;
-                this.onGround = true;
-
-if (this.velocityY === 0) this.y = Math.floor(this.y);
-
-            } 
-            // BONKING HEAD (Breaking Brick)
-            else if (minOverlap === overlapBottom && this.velocityY < 0) {
-                // Force squat off if we bonk to prevent getting stuck
-                if (this.isSquatting) {
-                    this.isSquatting = false;
-                    this.height = this.normalHeight;
-                }
-                this.y = p.y + pH;
-                this.velocityY = 1; // Small bounce down
-                window.dispatchEvent(new CustomEvent('brickHit', { detail: { platform: p } }));
-            } 
-            // HITTING SIDES (Walls)
-            else {
-                if (minOverlap === overlapLeft) {
-                    this.x = p.x - this.width;
-                    this.velocityX = 0;
-                } else if (minOverlap === overlapRight) {
-                    this.x = p.x + pW;
-                    this.velocityX = 0;
+                // Only splash if the probability check AND the position check pass
+                if (currentlyOnOil && Math.random() > 0.8) {
+                    window.dispatchEvent(new CustomEvent('oilSplash', {
+                        detail: { x: this.x + (this.width / 2), y: groundY }
+                    }));
                 }
             }
+
+
+            // TRIGGER THE ICE PUFF
+            if (this.isStunned && this.stunType === 'ice') {
+                // Real-time check: are we still physically ON an ice slick?
+                const playerCenter = this.x + (this.width / 2);
+                const currentlyOnIce = groundHazards.some(h =>
+                    h.type === 'ice' && playerCenter > h.x && playerCenter < h.x + h.w
+                );
+
+                // Subtle frost effect while sliding
+                if (currentlyOnIce && Math.random() > 0.7) {
+                    window.dispatchEvent(new CustomEvent('icePuff', {
+                        detail: { x: this.x + (this.width / 2), y: groundY }
+                    }));
+                }
+            }
+        } // This closes the ground check block
+
+
+
+        if (platforms) {
+            platforms.forEach(p => {
+                const pW = p.w * 16;
+                const pH = p.h * 16;
+
+                // 1. Define the player's current bounding box
+                const pLeft = this.x + 1;
+                const pRight = this.x + this.width - 1;
+                const pTop = this.y;
+                const pBottom = this.y + this.height;
+
+                // 2. Check if there is ANY overlap with the platform
+                if (pRight > p.x && pLeft < p.x + pW && pBottom > p.y && pTop < p.y + pH) {
+
+                    // Calculate how far we are overlapping from each side
+                    let overlapLeft = pRight - p.x;
+                    let overlapRight = (p.x + pW) - pLeft;
+                    let overlapTop = pBottom - p.y;
+                    let overlapBottom = (p.y + pH) - pTop;
+
+                    // 3. Determine the Shallowest Overlap (this tells us which side we hit)
+                    // We prioritize Top/Bottom to prevent falling through or jumping through
+                    let minOverlap = Math.min(overlapLeft, overlapRight, overlapTop, overlapBottom);
+
+                    // LANDING ON TOP
+                    if (minOverlap === overlapTop && this.velocityY >= 0) {
+                        this.y = p.y - this.height;
+                        this.velocityY = 0;
+                        this.onGround = true;
+
+                        if (this.velocityY === 0) this.y = Math.floor(this.y);
+
+                    }
+                    // BONKING HEAD (Breaking Brick)
+                    else if (minOverlap === overlapBottom && this.velocityY < 0) {
+                        // Force squat off if we bonk to prevent getting stuck
+                        if (this.isSquatting) {
+                            this.isSquatting = false;
+                            this.height = this.normalHeight;
+                        }
+                        this.y = p.y + pH;
+                        this.velocityY = 1; // Small bounce down
+                        window.dispatchEvent(new CustomEvent('brickHit', { detail: { platform: p } }));
+                    }
+                    // HITTING SIDES (Walls)
+                    else {
+                        if (minOverlap === overlapLeft) {
+                            this.x = p.x - this.width;
+                            this.velocityX = 0;
+                        } else if (minOverlap === overlapRight) {
+                            this.x = p.x + pW;
+                            this.velocityX = 0;
+                        }
+                    }
+                }
+            });
         }
-    });
-}
 
 
 
@@ -431,54 +459,54 @@ if (this.velocityY === 0) this.y = Math.floor(this.y);
         }
 
         if (moving && this.onGround && !this.isStunned) {
-            this.walkCounter += 0.12; 
+            this.walkCounter += 0.12;
         } else if (!this.onGround) {
-            this.walkCounter = 1.5; 
+            this.walkCounter = 1.5;
         } else {
             this.walkCounter = 0;
-            if (!this.isStunned) this.velocityX *= 0.7; 
+            if (!this.isStunned) this.velocityX *= 0.7;
         }
     }
 
     draw(ctx, cameraX) {
         const screenX = this.x - cameraX;
-        const limbSwing = Math.sin(this.walkCounter) * 5; 
+        const limbSwing = Math.sin(this.walkCounter) * 5;
         ctx.save();
         ctx.translate(screenX + this.width / 2, this.y + this.height / 2);
         ctx.rotate(this.rotation);
-        
+
         const scaleY = this.isSquatting ? this.shrinkScale * 0.5 : this.shrinkScale;
         ctx.scale(this.shrinkScale, scaleY);
         ctx.translate(-(this.width / 2), -(this.height / 2));
 
-        ctx.fillStyle = '#312e81'; 
+        ctx.fillStyle = '#312e81';
         ctx.fillRect(3, 16, 4, 6 + (this.onGround ? -limbSwing : 0));
         ctx.fillRect(9, 16, 4, 6 + (this.onGround ? limbSwing : 0));
-        ctx.fillStyle = '#111827'; 
+        ctx.fillStyle = '#111827';
         ctx.fillRect(2, 21 + (this.onGround ? -limbSwing : 0), 5, 3);
         ctx.fillRect(9, 21 + (this.onGround ? limbSwing : 0), 5, 3);
-        ctx.fillStyle = '#f8fafc'; 
+        ctx.fillStyle = '#f8fafc';
         ctx.fillRect(3, 8, 10, 10);
-        ctx.fillStyle = '#451a03'; 
+        ctx.fillStyle = '#451a03';
         ctx.fillRect(3, 9, 3, 8);
         ctx.fillRect(10, 9, 3, 8);
-        ctx.fillStyle = '#1e1b4b'; 
+        ctx.fillStyle = '#1e1b4b';
         ctx.fillRect(3, 16, 10, 2);
-    	 ctx.fillStyle = '#ffdbac'; 
+        ctx.fillStyle = '#ffdbac';
         if (this.facingRight) {
             ctx.fillRect(10, 11 + (limbSwing * 0.5), 4, 4);
             // Draw red gun ONLY if player doesn't have the bow
             if (!this.hasBow) {
                 ctx.fillStyle = '#ff0000';
-                ctx.fillRect(13, 10, 7, 3); 
-                ctx.fillRect(12, 11, 3, 5); 
+                ctx.fillRect(13, 10, 7, 3);
+                ctx.fillRect(12, 11, 3, 5);
             }
         } else {
             ctx.fillRect(2, 11 + (limbSwing * 0.5), 4, 4);
             // Draw red gun ONLY if player doesn't have the bow
             if (!this.hasBow) {
                 ctx.fillStyle = '#ff0000';
-                ctx.fillRect(-4, 10, 7, 3); 
+                ctx.fillRect(-4, 10, 7, 3);
                 ctx.fillRect(1, 11, 3, 5);
             }
         }
@@ -487,11 +515,11 @@ if (this.velocityY === 0) this.y = Math.floor(this.y);
         ctx.fillStyle = '#ffdbac';
         ctx.fillRect(6, 6, 4, 2); // Neck
         ctx.fillRect(4, 0, 8, 7); // Face
-        
+
         ctx.fillStyle = '#27272a'; // Hair
-        ctx.fillRect(4, 0, 8, 3); 
-        ctx.fillRect(this.facingRight ? 4 : 10, 0, 2, 6); 
-        
+        ctx.fillRect(4, 0, 8, 3);
+        ctx.fillRect(this.facingRight ? 4 : 10, 0, 2, 6);
+
         ctx.fillStyle = '#0ea5e9'; // Eyes
         const eyeX = this.facingRight ? 9 : 5;
         ctx.fillRect(eyeX, 3, 2, 2);
@@ -505,7 +533,7 @@ if (this.velocityY === 0) this.y = Math.floor(this.y);
             ctx.strokeStyle = '#fde047';
             ctx.lineWidth = 2;
             ctx.beginPath();
-            ctx.arc(0, 0, 8, -Math.PI/2, Math.PI/2);
+            ctx.arc(0, 0, 8, -Math.PI / 2, Math.PI / 2);
             ctx.stroke();
             ctx.restore();
         }
@@ -513,16 +541,16 @@ if (this.velocityY === 0) this.y = Math.floor(this.y);
         // --- AIM LINE ---
         if (this.hasBow) {
             ctx.save();
-            ctx.translate(this.facingRight ? 10 : 2, 12); 
+            ctx.translate(this.facingRight ? 10 : 2, 12);
             ctx.rotate(this.facingRight ? this.aimAngle : -this.aimAngle);
             ctx.strokeStyle = 'rgba(253, 224, 71, 0.5)'; // Semi-transparent yellow
             ctx.beginPath();
             ctx.moveTo(0, 0);
-            ctx.lineTo(15, 0); 
+            ctx.lineTo(15, 0);
             ctx.stroke();
             ctx.restore();
         }
 
         ctx.restore();
     }
- }
+}
