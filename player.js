@@ -27,6 +27,7 @@ class Player {
         this.facingRight = true;
         this.walkCounter = 0;
         this.inBubble = false;
+        this.bubbleTimer = 0;
 
         // State Management
         this.isStunned = false;
@@ -59,7 +60,10 @@ class Player {
             // --- 1. MOVEMENT KEYS ---
             if (e.code === 'ArrowLeft' || e.code === 'KeyA') this.keys.left = true;
             if (e.code === 'ArrowRight' || e.code === 'KeyD') this.keys.right = true;
-            if (e.code === 'ArrowUp' || e.code === 'KeyW') this.keys.up = true;
+            if (e.code === 'ArrowUp') {
+                if (!this.hasBow) this.keys.up = true;
+            }
+            if (e.code === 'KeyW') this.keys.up = true;
             if (e.code === 'ArrowDown' || e.code === 'KeyS') this.keys.down = true;
 
 
@@ -233,8 +237,11 @@ class Player {
                 this.stunCooldown = 40;
             }
         } else {
-            if (this.keys.left) { this.velocityX -= this.speed; this.facingRight = false; moving = true; }
-            if (this.keys.right) { this.velocityX += this.speed; this.facingRight = true; moving = true; }
+            // Only process walking movement if NOT in a bubble
+            if (!this.inBubble) {
+                if (this.keys.left) { this.velocityX -= this.speed; this.facingRight = false; moving = true; }
+                if (this.keys.right) { this.velocityX += this.speed; this.facingRight = true; moving = true; }
+            }
 
             if (this.onGround && this.keys.up) {
                 this.velocityY = this.jumpForce;
@@ -255,25 +262,27 @@ class Player {
 
         // --- Physics Application ---
         if (this.inBubble) {
-            this.gravity = 0;      // Turn off gravity so you float
-            this.friction = 0.92;  // Makes the movement feel smooth
+            this.bubbleTimer++; // 10-second timer (600 frames)
+            if (this.bubbleTimer >= 600) {
+                this.inBubble = false;
+                this.bubbleTimer = 0;
+            }
 
-            // Vertical Control
-            if (this.keys.up) this.velocityY -= 0.5;
-            if (this.keys.down) this.velocityY += 0.5;
+            this.gravity = 0;
+            this.friction = 0.92;
 
-            // Horizontal Control
-            if (this.keys.left) this.velocityX -= 0.5;
-            if (this.keys.right) this.velocityX += 0.5;
+            // Slowed Bubble Controls
+            if (this.keys.up) this.velocityY -= 0.2;
+            if (this.keys.down) this.velocityY += 0.2;
+            if (this.keys.left) this.velocityX -= 0.2;
+            if (this.keys.right) this.velocityX += 0.2;
 
-            // Limit speed so you don't fly off screen too fast
-            const maxBubbleSpeed = 2.5;
-            this.velocityX = Math.max(-maxBubbleSpeed, Math.min(maxBubbleSpeed, this.velocityX));
-            this.velocityY = Math.max(-maxBubbleSpeed, Math.min(maxBubbleSpeed, this.velocityY));
-
-            this.onGround = false; // Prevent snapping to the floor
+            const maxBSpeed = 1.5; // Slower max speed for bubble
+            this.velocityX = Math.max(-maxBSpeed, Math.min(maxBSpeed, this.velocityX));
+            this.velocityY = Math.max(-maxBSpeed, Math.min(maxBSpeed, this.velocityY));
+            this.onGround = false;
         } else {
-            this.gravity = 0.35;   // Normal gravity when not in a bubble
+            this.gravity = 0.35;
         }
 
 
@@ -287,6 +296,13 @@ class Player {
 
         this.x += this.velocityX;
         this.y += this.velocityY;
+
+
+        // TOP BOUNDARY CHECK: Prevents flying out of the top of the screen
+        if (this.y < 0) {
+            this.y = 0;
+            this.velocityY = 0;
+        }
 
         if (Math.abs(this.velocityX) < 0.1) {
             this.velocityX = 0;
@@ -325,7 +341,7 @@ class Player {
             this.onGround = true;
             this.onElevator = null;
 
-            if (groundHazards && !this.isStunned && this.stunCooldown <= 0) {
+            if (groundHazards && !this.isStunned && this.stunCooldown <= 0 && !this.inBubble) {
                 const playerCenter = this.x + (this.width / 2);
                 groundHazards.forEach(h => {
                     if (playerCenter > h.x && playerCenter < h.x + h.w) {
@@ -378,7 +394,7 @@ class Player {
 
 
 
-        if (platforms) {
+        if (platforms && !this.inBubble) {
             platforms.forEach(p => {
                 const pW = p.w * 16;
                 const pH = p.h * 16;

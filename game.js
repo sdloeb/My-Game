@@ -217,7 +217,7 @@ function update() {
 
 
         // PLAYER COLLISION WITH ENEMY/BOSS
-        if (!isGodMode && player.x < en.x + en.width && player.x + player.width > en.x &&
+        if (!isGodMode && !player.inBubble && player.x < en.x + en.width && player.x + player.width > en.x &&
             player.y < en.y + en.height && player.y + player.height > en.y) {
             handlePlayerDeath(en.isBoss ? 'boss' : 'enemy');
         }
@@ -278,7 +278,13 @@ function update() {
         if (p.isEnemyBullet && !isGodMode) {
             if (p.x > player.x && p.x < player.x + player.width &&
                 p.y > player.y && p.y < player.y + player.height) {
-                handlePlayerDeath(p.fromBoss ? 'boss' : 'enemy');
+                if (player.inBubble) {
+                    // NEW: Pop the bubble instead of killing the player
+                    player.inBubble = false;
+                    player.bubbleTimer = 0;
+                } else {
+                    handlePlayerDeath(p.fromBoss ? 'boss' : 'enemy');
+                }
                 projectiles.splice(i, 1);
                 continue;
             }
@@ -340,8 +346,14 @@ function update() {
 
         // Collision with player
         let dist = Math.sqrt(Math.pow((player.x + 8) - b.x, 2) + Math.pow((player.y + 12) - b.y, 2));
-        if (dist < b.radius && !player.inBubble) {
+        if (dist < b.radius) {
             player.inBubble = true;
+            player.bubbleTimer = 0;
+            player.facingRight = true;    // Force face right
+            player.rotation = 0;          // Stop any stun spinning
+            player.isStunned = false;     // Cancel active stuns
+            player.isSquatting = false;   // Force stand up
+            player.height = player.normalHeight; // Reset the hitbox size
             activeBubbles.splice(i, 1);
         }
         // Remove if it floats off top
@@ -503,6 +515,7 @@ function handlePlayerDeath(deathType) {
     player.rotation = 0;
     player.stunCooldown = 0;
     player.inBubble = false;
+    player.bubbleTimer = 0;
 
     // 2. PERMANENCE: Check if items were already collected
     if (fg && (collectedStars[currentLevelNum] || collectedLevelItems[currentLevelNum])) {
