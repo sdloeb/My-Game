@@ -112,6 +112,44 @@ class Player {
             if (e.code === 'Space' || e.code === 'KeyW' || e.code === 'ArrowUp') this.keys.up = false;
             if (e.code === 'ArrowDown' || e.code === 'KeyS') this.keys.down = false;
         });
+
+        // Add this inside setupControls() in player.js
+        const handleTouch = (id, key) => {
+            const btn = document.getElementById(id);
+            if (!btn) return;
+
+            btn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                this.keys[key] = true;
+
+                // Specific logic for jumping/aiming with 'up'
+                if (key === 'up' && this.hasBow) {
+                    this.aimAngle = Math.max(this.aimAngle - 0.1, -1.5);
+                }
+            }, { passive: false });
+
+            btn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                this.keys[key] = false;
+            }, { passive: false });
+        };
+
+        // Map buttons to keys
+        handleTouch('btn-left', 'left');
+        handleTouch('btn-right', 'right');
+        handleTouch('btn-up', 'up');
+        handleTouch('btn-down', 'down');
+
+        // Special listener for the Shoot button
+        const shootBtn = document.getElementById('btn-shoot');
+        if (shootBtn) {
+            shootBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                if (this.bullets > 0 && !this.isStunned) this.shoot();
+            });
+        }
+
+
     }
 
 

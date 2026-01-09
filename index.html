@@ -5,6 +5,60 @@
     <meta charset="UTF-8">
     <title>8-Bit Side Scroller</title>
     <style>
+        #touch-controls {
+            position: absolute;
+            bottom: 10px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 10px;
+            box-sizing: border-box;
+            pointer-events: none;
+            /* Allows clicks to pass through to buttons specifically */
+            z-index: 30;
+        }
+
+        #touch-controls button {
+            pointer-events: auto;
+            width: 30px;
+            height: 30px;
+            background: rgba(255, 255, 255, 0.3);
+            border: 1px solid #fff;
+            color: white;
+            font-size: 10px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            -webkit-user-select: none;
+            /* Prevents text selection on iPhone */
+        }
+
+        .d-pad {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .horizontal-btns {
+            display: flex;
+            gap: 5px;
+        }
+
+        .action-btns {
+            display: flex;
+            align-items: flex-end;
+        }
+
+        /* Hide touch controls on desktop/computer */
+        @media (hover: hover) {
+            #touch-controls {
+                display: none;
+            }
+        }
+
+
         body {
             margin: 0;
             background: #1a1a1a;
@@ -29,6 +83,10 @@
             /* Scale up for visibility while keeping pixels sharp */
             transform: scale(2.5);
             image-rendering: pixelated;
+
+
+
+
         }
 
         canvas {
@@ -100,6 +158,21 @@
 <body>
 
     <div id="game-container">
+
+        <div id="touch-controls">
+            <div class="d-pad">
+                <button id="btn-up">▲</button>
+                <div class="horizontal-btns">
+                    <button id="btn-left">◀</button>
+                    <button id="btn-down">▼</button>
+                    <button id="btn-right">▶</button>
+                </div>
+            </div>
+            <div class="action-btns">
+                <button id="btn-shoot">B</button>
+            </div>
+        </div>
+
         <div id="start-overlay" onclick="startFullScreen()">
             <h1>8-BIT ADVENTURE</h1>
             <p>CLICK TO START</p>
