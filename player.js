@@ -20,6 +20,8 @@ class Player {
         this.gravity = 0.35;
         this.jumpForce = -9.5;
         this.aimAngle = 0;
+        this.inQuicksand = false;
+        this.quicksandTimer = 0;
 
         this.bullets = 0;
         this.onGround = false;
@@ -179,6 +181,51 @@ class Player {
     }
 
     update(groundY, platforms, elevators, groundHazards, coins, fg) {
+
+
+        if (this.inQuicksand) {
+            this.quicksandTimer++;
+
+            // 1. Sinking Logic: Sink every 0.1 seconds (roughly 6 frames at 60fps)
+            if (this.quicksandTimer >= 6) {
+                this.y += 2; // Pull down
+                this.quicksandTimer = 0;
+            }
+
+            // 2. Fighting Back: Counter sinking by tapping Space/Up
+            // We check this.keys.up which is mapped to Space, W, and Up
+            if (this.keys.up) {
+                const surfaceY = groundY - this.height + (this.height / 4);
+
+                if (this.y <= surfaceY) {
+                    // 3. Escape: If back at 1/4 depth, jump out
+                    this.inQuicksand = false;
+                    this.velocityY = this.jumpForce;
+                    this.keys.up = false; // Prevent double-jumps
+                    return;
+                } else {
+                    // Counter the sinking
+                    this.y -= 5;
+                }
+                // Reset the key to force the player to TAP the button
+                this.keys.up = false;
+            }
+
+            // Keep player from going above the 1/4 surface line while sinking
+            const surfaceLimit = groundY - this.height + (this.height / 4);
+            if (this.y < surfaceLimit) this.y = surfaceLimit;
+
+            // 4. Death Check: If head (this.y) goes below ground level
+            if (this.y > groundY) {
+                this.inQuicksand = false;
+                handlePlayerDeath('quicksand');
+            }
+
+            return; // Skip all other movement/gravity logic while in quicksand
+        }
+
+
+
         if (this.stunCooldown > 0) this.stunCooldown--;
 
         if (this.isEndingLevel) {
@@ -336,6 +383,7 @@ class Player {
         }
 
         if (this.y + this.height >= groundY) {
+            // Standard ground reset
             this.y = groundY - this.height;
             this.velocityY = 0;
             this.onGround = true;
@@ -343,15 +391,28 @@ class Player {
 
             if (groundHazards && !this.isStunned && this.stunCooldown <= 0 && !this.inBubble) {
                 const playerCenter = this.x + (this.width / 2);
+
                 groundHazards.forEach(h => {
                     if (playerCenter > h.x && playerCenter < h.x + h.w) {
-                        this.isStunned = true;
-                        this.stunTimer = 60;
-                        this.stunType = h.type;
 
-                        //Use velocityX to determine direction, defaulting to 4.0 if standing still
-                        let pushDir = this.velocityX >= 0 ? 4.0 : -4.0;
-                        this.velocityX = pushDir;
+                        // UPDATED: Only enter quicksand if we are NOT jumping (velocityY >= 0)
+                        if (h.type === 'quicksand' && !this.inQuicksand && this.velocityY >= 0) {
+                            this.inQuicksand = true;
+                            this.velocityX = 0;
+                            this.velocityY = 0;
+                            this.y = groundY - this.height + (this.height / 4);
+                            this.quicksandTimer = 0;
+                        }
+                        // EXISTING: Standard stun logic for Oil and Ice
+                        else if (h.type === 'oil' || h.type === 'ice') {
+                            this.isStunned = true;
+                            this.stunTimer = 60;
+                            this.stunType = h.type;
+
+                            // Use velocityX to determine direction, defaulting to 4.0 if standing still
+                            let pushDir = this.velocityX >= 0 ? 4.0 : -4.0;
+                            this.velocityX = pushDir;
+                        }
                     }
                 });
             }

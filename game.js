@@ -524,7 +524,7 @@ function handlePlayerDeath(deathType) {
     }
 
     // 3. CHECKPOINT LOGIC: Killed by standard Enemy
-    if (deathType === 'enemy') {
+    if (deathType === 'enemy' || deathType === 'quicksand') {
         const cp = globalCheckpoints[currentLevelNum];
 
         if (cp) {
