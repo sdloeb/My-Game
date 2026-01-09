@@ -256,10 +256,18 @@ class Foreground {
                 if (rand < 0.33) hType = 'oil';
                 else if (rand < 0.66) hType = 'ice';
                 else hType = 'quicksand';
-                const overlaps = groundOccupiedX.some(range => (hx < range.end && hx + hWidth > range.start));
+
+
+                // Check if any platform above this hazard range is too low (less than 36px clearance)
+                const hasLowBricks = this.platforms.some(p => {
+                    const horizontalOverlap = (hx < p.x + 16 && hx + hWidth > p.x);
+                    const verticalGap = this.groundY - (p.y + 16);
+                    return horizontalOverlap && verticalGap < 36;
+                });
 
                 // Final check to make sure the width of the hazard doesn't enter the zone
-                if (!overlaps && (hx + hWidth < lastScreenStart)) {
+                const overlaps = groundOccupiedX.some(range => (hx < range.end && hx + hWidth > range.start));
+                if (!overlaps && !hasLowBricks && (hx + hWidth < lastScreenStart)) {
                     this.groundHazards.push({ x: hx, w: hWidth, type: hType });
                 }
             }
@@ -716,4 +724,25 @@ class Foreground {
 
         this.drawPortal(ctx, cameraX);
     }
+
+    drawQuicksand(ctx, cameraX) {
+        this.groundHazards.forEach(h => {
+            if (h.type === 'quicksand') {
+                const screenX = h.x - cameraX;
+                if (screenX + h.w > 0 && screenX < 256) {
+                    // Draw the solid sand block
+                    ctx.fillStyle = this.groundColors.quicksand;
+                    ctx.fillRect(screenX, this.groundY, h.w, 224 - this.groundY);
+
+                    // Draw the texture grains so they appear on top
+                    ctx.fillStyle = 'rgba(0,0,0,0.1)';
+                    for (let i = 0; i < h.w; i += 8) {
+                        ctx.fillRect(screenX + i + (Math.sin(Date.now() / 500) * 2), this.groundY + 10, 2, 2);
+                    }
+                }
+            }
+        });
+    }
+
+
 }

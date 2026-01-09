@@ -420,6 +420,7 @@ function draw() {
 
     // Draw player BEFORE the fade
     player.draw(ctx, cameraX);
+    fg.drawQuicksand(ctx, cameraX);
 
     // 1. Calculate fade
     if (fadeOpacity < fadeTarget) fadeOpacity += fadeSpeed;
