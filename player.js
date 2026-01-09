@@ -424,7 +424,7 @@ if (this.inQuicksand) {
                             this.inQuicksand = true;
                             this.velocityX = 0;
                             this.velocityY = 0;
-                            this.y = groundY - this.height + (this.height / 4);
+                            this.y = groundY - this.height + (this.height *0.7);
                             this.quicksandTimer = 0;
                         }
                         // EXISTING: Standard stun logic for Oil and Ice
