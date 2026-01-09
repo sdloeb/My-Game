@@ -37,7 +37,11 @@ class Foreground {
         this.activeFlag = null;
 
         this.brickColors = { main: '#bc4a24', shadow: '#541800', highlight: '#f8b800' };
-        this.elevatorColors = { main: '#9290ff', detail: '#4b48ff' };
+        this.elevatorColors = {
+            main: '#9ca3af',    // Medium stone grey
+            shadow: '#4b5563',  // Darker shadow
+            highlight: '#d1d5db' // Light grey highlight
+        };
         this.groundColors = { grass: '#48a048', dirt: '#885010', oil: '#202020', ice: '#a0d8f8', quicksand: '#d4a373' };
 
         this.setTheme();
@@ -577,12 +581,32 @@ class Foreground {
             }
         });
 
-        this.elevators.forEach(e => {
-            const screenX = e.x - cameraX;
-            if (screenX + e.w > 0 && screenX < 256) {
-                ctx.fillStyle = this.elevatorColors.main; ctx.fillRect(screenX, e.y, e.w, e.h);
-            }
-        });
+       // Locate this section in foreground.js (around line 431)
+this.elevators.forEach(e => {
+    const screenX = e.x - cameraX;
+    if (screenX + e.w > 0 && screenX < 256) {
+        // 1. Draw the Main Stone Body
+        ctx.fillStyle = this.elevatorColors.main;
+        ctx.fillRect(screenX, e.y, e.w, e.h);
+
+        // 2. Add Top Highlight (makes it look solid/bevelled)
+        ctx.fillStyle = this.elevatorColors.highlight;
+        ctx.fillRect(screenX, e.y, e.w, 1); // Top edge
+        ctx.fillRect(screenX, e.y, 1, e.h); // Left edge
+
+        // 3. Add Bottom/Right Shadow
+        ctx.fillStyle = this.elevatorColors.shadow;
+        ctx.fillRect(screenX + 1, e.y + e.h - 1, e.w - 1, 1); // Bottom edge
+        ctx.fillRect(screenX + e.w - 1, e.y + 1, 1, e.h - 1); // Right edge
+
+        // 4. Add "Stone Texture" (Little cracks or grit)
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+        // Draw 3 small random pixels to simulate stone grit
+        ctx.fillRect(screenX + 5, e.y + 3, 2, 1);
+        ctx.fillRect(screenX + 22, e.y + 5, 1, 1);
+        ctx.fillRect(screenX + 14, e.y + 2, 1, 1);
+    }
+});
 
         this.platforms.forEach(p => {
             const screenX = p.x - cameraX;
