@@ -109,7 +109,7 @@ function update() {
     if (!fg.bird && player.x > fg.portalX - 400) {
         fg.bird = {
             x: fg.portalX,
-            y: fg.portal.y - 70,
+            y: fg.portal.y - 110,
             dir: -1,
             speed: 2,
             width: 16,
@@ -122,10 +122,10 @@ function update() {
     if (fg.bird && !fg.bird.hit) {
         fg.bird.x += fg.bird.dir * fg.bird.speed;
 
-        fg.bird.y += Math.sin(Date.now() / 200) * 4;
+      fg.bird.y = (fg.portal.y - 110) + Math.sin(Date.now() / 200) * 25;
 
 
-        if (fg.bird.x < fg.portalX - 100) fg.bird.dir = 1;
+        if (fg.bird.x < fg.portalX - 30) fg.bird.dir = 1;
         if (fg.bird.x > fg.portalX + 15) fg.bird.dir = -1;
     }
 
@@ -247,17 +247,18 @@ function update() {
 
         // 2. REACTION BIRD COLLISION & HEALTH
         if (fg.bird && !fg.bird.hit && !p.isEnemyBullet) {
-            if (p.x > fg.bird.x && p.x < fg.bird.x + fg.bird.width &&
-                p.y > fg.bird.y && p.y < fg.bird.y + fg.bird.height) {
+            const pLeft = p.isArrow ? p.x - 8 : p.x; 
+            const pRight = p.isArrow ? p.x + 6 : p.x + 4;
+                if (pRight > fg.bird.x && pLeft < fg.bird.x + fg.bird.width && 
+                    p.y > fg.bird.y && p.y < fg.bird.y + fg.bird.height) {
 
                 // Initialize health if it doesn't exist
-                if (fg.bird.health === undefined) fg.bird.health = 3;
+                if (fg.bird.health === undefined) fg.bird.health = 2;
 
-                // Check if we hit the "Key" area (bottom half of bird) or just hit the bird 3 times
-                const hitKey = p.y > fg.bird.y + 6;
+                
                 fg.bird.health--;
 
-                if (fg.bird.health <= 0 || hitKey) {
+               if (fg.bird.health <= 0) {
                     fg.bird.hit = true;
                     // Trigger the key drop in the foreground
                     fg.dropKey(fg.bird.x + 8, fg.bird.y + 8, fg.bird.dir);
