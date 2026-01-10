@@ -80,13 +80,10 @@
             /* Match internal resolution defined in game.js */
             width: 256px;
             height: 224px;
-            /* Scale up for visibility while keeping pixels sharp */
-            transform: scale(2.5);
+            /* Dynamic scale will be handled by JavaScript */
             image-rendering: pixelated;
-
-
-
-
+            /* Smooth scaling transitions */
+            transition: transform 0.2s ease-out;
         }
 
         canvas {
@@ -195,26 +192,47 @@
     <script src="game.js"></script>
 
     <script>
+        function applyResponsiveScale() {
+            const container = document.getElementById('game-container');
+            // Calculate how much we can scale the 256x224 box to fit the window
+            const scaleX = window.innerWidth / 256;
+            const scaleY = window.innerHeight / 224;
+
+            // Use the smaller of the two to ensure the game isn't cropped
+            // We subtract a tiny bit (0.95) to leave room for the white border
+            const finalScale = Math.min(scaleX, scaleY) * 0.95;
+
+            container.style.transform = `scale(${finalScale})`;
+        }
+
         function startFullScreen() {
             const container = document.getElementById('game-container');
             const overlay = document.getElementById('start-overlay');
 
             overlay.style.display = 'none';
 
-            // When not in actual browser-level fullscreen, we use CSS scale.
-            // If the user triggers actual fullscreen, the browser handles the fill.
+            // Attempt to enter native browser fullscreen on mobile
+            if (container.requestFullscreen) {
+                container.requestFullscreen().catch(err => {
+                    console.log("Auto-fullscreen blocked, staying in windowed mode.");
+                });
+            }
+
             if (typeof init === "function") init();
+
+            // Apply initial scale
+            applyResponsiveScale();
         }
+
+        // Keep the game scaled correctly if the phone is rotated
+        window.addEventListener('resize', applyResponsiveScale);
 
         window.addEventListener('keydown', (e) => {
             if (e.code === 'KeyF') {
                 const container = document.getElementById('game-container');
                 if (!document.fullscreenElement) {
-                    // Reset scale before entering native fullscreen to prevent double-scaling
-                    container.style.transform = "scale(1)";
                     container.requestFullscreen().catch(err => {
                         console.warn("Fullscreen failed:", err);
-                        container.style.transform = "scale(2.5)";
                     });
                 } else {
                     document.exitFullscreen();
@@ -222,13 +240,8 @@
             }
         });
 
-        // Reset scale when exiting native fullscreen
-        document.addEventListener('fullscreenchange', () => {
-            const container = document.getElementById('game-container');
-            if (!document.fullscreenElement) {
-                container.style.transform = "scale(2.5)";
-            }
-        });
+        // Ensure scale stays correct during fullscreen transitions
+        document.addEventListener('fullscreenchange', applyResponsiveScale);
     </script>
 
 </body>
