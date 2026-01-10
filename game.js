@@ -11,7 +11,7 @@ let isInitialized = false;
 let globalCheckpoints = {}; // Stores { level: { x, y } }
 let collectedStars = {};    // Stores { level: true }
 let currentLevelNum; // Declared here; initialized in loadLevel(1)
-let isGodMode = true; // Set to true for testing, false for normal gameplay
+let isGodMode = false; // Set to true for testing, false for normal gameplay
 let collectedLevelItems = {}; // Stores { level: true } if the quest item (Arrow) is found
 let fadeOpacity = 0;
 let fadeTarget = 0;

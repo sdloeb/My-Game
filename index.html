@@ -84,6 +84,20 @@
         /* Add this inside your <style> tag */
 #touch-controls > div:first-child {
     margin-left: 5px; /* Adjust this number to move them exactly where you want */
+
+#god-mode-ui {
+    margin-top: 20px;
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid #fff;
+    cursor: pointer;
+    font-size: 12px;
+    pointer-events: auto; /* Ensures it is clickable */
+}
+#god-mode-ui:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
 }
 
 /* This pushes the Shoot and Jump buttons further left from the right edge */
@@ -113,9 +127,10 @@
 
     <div id="game-container">
         <div id="start-overlay" onclick="startFullScreen()">
-            <h1>8-BIT ADVENTURE</h1>
-            <p>CLICK TO START</p>
-        </div>
+    <h1>8-BIT ADVENTURE</h1>
+    <p>CLICK TO START</p>
+    <div id="god-mode-ui" onclick="toggleGodMode(event)">GOD MODE: OFF</div>
+</div>
 
         <div id="ui-container">
             <div id="level-display">Level 1-1</div>
@@ -145,6 +160,21 @@
     <script src="game.js"></script>
 
     <script>
+
+function toggleGodMode(e) {
+    e.stopPropagation(); // Stops the game from starting when you click this
+
+    // Toggle the variable in game.js
+    isGodMode = !isGodMode;
+
+    // Update the button text
+    const ui = document.getElementById('god-mode-ui');
+    ui.innerText = "GOD MODE: " + (isGodMode ? "ON" : "OFF");
+    ui.style.color = isGodMode ? "#00ff00" : "#ff0000";
+}
+
+
+
     function applyResponsiveScale() {
         const container = document.getElementById('game-container');
         const canvas = document.getElementById('gameCanvas');
