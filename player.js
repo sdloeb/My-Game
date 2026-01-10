@@ -369,6 +369,17 @@ class Player {
             }
         }
 
+// Add this inside the update() method of player.js
+if (!this.hasBow && this.keys.down && this.onGround && !this.isSquatting) {
+    this.isSquatting = true;
+    this.squatTimer = 60;
+    this.y += (this.normalHeight - this.squatHeight);
+    this.height = this.squatHeight;
+}
+
+
+
+
         // --- Physics Application ---
         if (this.inBubble) {
             this.bubbleTimer++; // 10-second timer (600 frames)
