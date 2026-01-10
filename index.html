@@ -86,6 +86,13 @@
     margin-left: 5px; /* Adjust this number to move them exactly where you want */
 }
 
+/* This pushes the Shoot and Jump buttons further left from the right edge */
+#touch-controls > div:last-child {
+    margin-right: 80px; /* Increase this number to move them further toward the middle */
+}
+
+
+
         #touch-controls button {
             pointer-events: auto;
             width: 40px;
@@ -121,10 +128,9 @@
         <button id="btn-right">▶</button>
     </div>
 
-            <div style="display: flex; flex-direction: column; gap: 5px;">
-                <button id="btn-up">▲</button>
-                <button id="btn-shoot">B</button>
-            </div>
+           <div style="display: flex; gap: 5px;">
+    <button id="btn-shoot">B</button> <button id="btn-up">▲</button>
+</div>
         </div>
 
         <canvas id="gameCanvas"></canvas>
