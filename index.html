@@ -161,6 +161,8 @@
             CANVAS_WIDTH = targetWidth; // Updates the let CANVAS_WIDTH in game.js
         }
 
+        if (bg) bg.canvasWidth = targetWidth;
+
         // 4. Position the container exactly in the center
         container.style.width = targetWidth + "px";
         container.style.height = targetHeight + "px";

@@ -134,7 +134,7 @@ class Background {
         this.clouds.forEach(c => {
             const drawX = (c.x - (cameraX * 0.2)) % 1000;
             // Only draw if within or near the screen bounds (256px wide)
-            if (drawX > -c.w && drawX < 256) {
+            if (drawX > -c.w && drawX < this.canvasWidth) {
                 this.drawCloud(ctx, drawX, c.y, c.w, c.h);
             }
         });
