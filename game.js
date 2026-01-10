@@ -332,7 +332,7 @@ function update() {
 
     // Camera follow
     // Safety check: only calculate camera if player is defined
-    let targetX = (player && typeof player.x !== 'undefined') ? player.x - 35 : cameraX;
+    let targetX = (player && typeof player.x !== 'undefined') ? player.x - 60 : cameraX;
     const maxX = fg.portalX - (CANVAS_WIDTH / 2);
     cameraX = Math.max(0, Math.min(targetX, maxX));
 
