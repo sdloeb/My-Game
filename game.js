@@ -1,5 +1,5 @@
 // 1. GLOBAL CONSTANTS & VARIABLES
-const CANVAS_WIDTH = 256;
+let CANVAS_WIDTH = 256;
 const CANVAS_HEIGHT = 224;
 
 let canvas, ctx, player, fg, bg;

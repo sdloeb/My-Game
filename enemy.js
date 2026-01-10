@@ -94,7 +94,7 @@ update(platforms, player, projectiles) {
     draw(ctx, cameraX) {
         const screenX = this.x - cameraX;
         // Don't draw if off-screen
-        if (screenX + this.width < 0 || screenX > 256) return;
+        if (screenX + this.width < 0 || screenX > CANVAS_WIDTH) return;
 
         const limbSwing = Math.sin(this.walkCounter) * 4;
 

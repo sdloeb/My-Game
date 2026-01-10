@@ -8,7 +8,7 @@ class Foreground {
         this.tileSize = 16;
         this.groundY = 224 - 32;
         this.portalX = 3200;
-        this.levelWidth = this.portalX + (256 / 2);
+        this.levelWidth = this.portalX + (CANVAS_WIDTH / 2);
 
         this.platforms = [];
         this.groundHazards = [];
@@ -153,7 +153,7 @@ class Foreground {
         let x = 200;
         const groundOccupiedX = [];
         // The screen is 256px wide. We stop everything before the last 256px.
-        const lastScreenStart = this.portalX - 256;
+        const lastScreenStart = this.portalX - CANVAS_WIDTH;
 
         while (x < lastScreenStart - 40) {
             const structureType = Math.floor(Math.random() * 4);
@@ -202,7 +202,7 @@ class Foreground {
             x += structureWidth + gap;
         }
 
-        const clockCandidates = this.platforms.filter(p => p.x > 256 && p.x < 2048);
+        const clockCandidates = this.platforms.filter(p => p.x > CANVAS_WIDTH && p.x < 2048);
         for (let i = 0; i < 3; i++) {
             if (clockCandidates.length > 0) {
                 const idx = Math.floor(Math.random() * clockCandidates.length);
@@ -407,7 +407,7 @@ class Foreground {
         if (isSpecial && platformObj && !platformObj.hasPulsed) {
 
             // TRIGGER: Capture the time when the brick first appears on screen
-            if (!platformObj.pulseTriggered && x > 0 && x < 240) {
+            if (!platformObj.pulseTriggered && x > 0 && x < (CANVAS_WIDTH - 16)) {
                 platformObj.pulseTriggered = true;
                 platformObj.pulseStartTime = Date.now();
             }
@@ -450,7 +450,7 @@ class Foreground {
 
     drawPortal(ctx, cameraX) {
         const screenX = this.portal.x - cameraX;
-        if (screenX + 100 < 0 || screenX - 100 > 256) return;
+        if (screenX + 100 < 0 || screenX - 100 > CANVAS_WIDTH) return;
         ctx.save();
         ctx.translate(screenX, this.portal.y);
         ctx.beginPath();
@@ -473,7 +473,7 @@ class Foreground {
 
     draw(ctx, cameraX) {
         const groundStart = Math.floor(cameraX / this.tileSize) * this.tileSize;
-        for (let gx = groundStart; gx < cameraX + 272; gx += this.tileSize) {
+        for (let gx = groundStart; gx < cameraX + CANVAS_WIDTH + 16; gx += this.tileSize) {
             const screenX = gx - cameraX;
             ctx.fillStyle = this.groundColors.grass;
             ctx.fillRect(screenX, this.groundY, 16, 4);
@@ -485,13 +485,13 @@ class Foreground {
             ctx.fillStyle = "#ffffff";
             ctx.font = "bold 12px 'Courier New'";
             ctx.textAlign = "center";
-            ctx.fillText("CHECKPOINT!", 128, 50);
+           ctx.fillText("CHECKPOINT!", CANVAS_WIDTH / 2, 50);
             this.checkpointTextTimer--;
         }
 
         this.groundHazards.forEach(h => {
             const screenX = h.x - cameraX;
-            if (screenX + h.w > 0 && screenX < 256) {
+            if (screenX + h.w > 0 && screenX < CANVAS_WIDTH) {
                 // OIL
                 if (h.type === 'oil') {
                     ctx.fillStyle = '#111111';
@@ -541,7 +541,7 @@ class Foreground {
 
         if (this.clock && !this.clock.collected) {
             const screenX = this.clock.x - cameraX;
-            if (screenX > -20 && screenX < 276) {
+            if (screenX > -20 && screenX < CANVAS_WIDTH + 20) {
                 ctx.fillStyle = '#ffff00'; ctx.beginPath(); ctx.arc(screenX + 8, this.clock.y + 8, 6, 0, Math.PI * 2); ctx.fill();
                 ctx.strokeStyle = '#000'; ctx.lineWidth = 1; ctx.beginPath();
                 ctx.moveTo(screenX + 8, this.clock.y + 8); ctx.lineTo(screenX + 8, this.clock.y + 4);
@@ -551,7 +551,7 @@ class Foreground {
 
         this.coins.forEach(c => {
             const screenX = c.x - cameraX;
-            if (screenX > -10 && screenX < 256) {
+            if (screenX > -10 && screenX < CANVAS_WIDTH) {
                 const cx = screenX + 5;
                 const cy = c.y + 5;
 
@@ -584,7 +584,7 @@ class Foreground {
        // Locate this section in foreground.js (around line 431)
 this.elevators.forEach(e => {
     const screenX = e.x - cameraX;
-    if (screenX + e.w > 0 && screenX < 256) {
+    if (screenX + e.w > 0 && screenX < CANVAS_WIDTH) {
         // 1. Draw the Main Stone Body
         ctx.fillStyle = this.elevatorColors.main;
         ctx.fillRect(screenX, e.y, e.w, e.h);
@@ -610,7 +610,7 @@ this.elevators.forEach(e => {
 
         this.platforms.forEach(p => {
             const screenX = p.x - cameraX;
-            if (screenX + 16 > 0 && screenX < 256)
+            if (screenX + 16 > 0 && screenX < CANVAS_WIDTH)
                 this.drawBrick(ctx, screenX, p.y, p.isSecret, p.hasClock, p.isCheckpointCandidate, p);
         });
 
@@ -618,7 +618,7 @@ this.elevators.forEach(e => {
         // Locate this section in the draw(ctx, cameraX) method of foreground.js
         if (!this.bow.collected) {
             const bx = this.bow.x - cameraX;
-            if (bx > -20 && bx < 276) {
+            if (bx > -20 && bx < (CANVAS_WIDTH + 20)) {
                 // 1. Draw the Bow String (Pure White) - Moved to the left side
                 ctx.strokeStyle = '#ffffff';
                 ctx.lineWidth = 1;
@@ -646,7 +646,7 @@ this.elevators.forEach(e => {
 
         if (this.star) {
             const screenX = this.star.x - cameraX;
-            if (screenX > -30 && screenX < 286) {
+            if (screenX > -30 && screenX < (CANVAS_WIDTH + 30)) {
                 ctx.save();
                 ctx.translate(screenX, this.star.y);
 
@@ -691,7 +691,7 @@ this.elevators.forEach(e => {
 
         if (this.activeFlag && !this.activeFlag.collected) {
             const fx = this.activeFlag.x - cameraX;
-            if (fx > -20 && fx < 276) {
+           if (fx > -20 && fx < (CANVAS_WIDTH + 20)) {
                 ctx.fillStyle = '#ffffff'; ctx.fillRect(fx + 7, this.activeFlag.y - 15, 2, 31);
                 ctx.fillStyle = '#ff0000'; ctx.fillRect(fx + 9, this.activeFlag.y - 15, 12, 8);
             }
@@ -701,7 +701,7 @@ this.elevators.forEach(e => {
 
         if (this.bird && !this.bird.hit) {
             const bx = this.bird.x - cameraX;
-            if (bx > -50 && bx < 300) {
+            if (bx > -50 && bx < (CANVAS_WIDTH + 50)) {
                 // NEW: If flashTimer is active, turn the bird bright red
                 if (this.bird.flashTimer > 0) {
                     ctx.fillStyle = '#ff0000';
@@ -753,7 +753,7 @@ this.elevators.forEach(e => {
         this.groundHazards.forEach(h => {
             if (h.type === 'quicksand') {
                 const screenX = h.x - cameraX;
-                if (screenX + h.w > 0 && screenX < 256) {
+                if (screenX + h.w > 0 && screenX < CANVAS_WIDTH) {
                     // Draw the solid sand block
                     ctx.fillStyle = this.groundColors.quicksand;
                     ctx.fillRect(screenX, this.groundY, h.w, 224 - this.groundY);

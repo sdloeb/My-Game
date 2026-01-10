@@ -1,66 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>8-Bit Side Scroller</title>
     <style>
-        #touch-controls {
-            position: absolute;
-            bottom: 10px;
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            padding: 0 10px;
-            box-sizing: border-box;
-            pointer-events: none;
-            /* Allows clicks to pass through to buttons specifically */
-            z-index: 30;
-        }
-
-        #touch-controls button {
-            pointer-events: auto;
-            width: 30px;
-            height: 30px;
-            background: rgba(255, 255, 255, 0.3);
-            border: 1px solid #fff;
-            color: white;
-            font-size: 10px;
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            user-select: none;
-            -webkit-user-select: none;
-            /* Prevents text selection on iPhone */
-        }
-
-        .d-pad {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .horizontal-btns {
-            display: flex;
-            gap: 5px;
-        }
-
-        .action-btns {
-            display: flex;
-            align-items: flex-end;
-        }
-
-        /* Hide touch controls on desktop/computer */
-        @media (hover: hover) {
-            #touch-controls {
-                display: none;
-            }
-        }
-
-
+        /* 1. LAYOUT & BACKGROUND */
         body {
             margin: 0;
             background: #1a1a1a;
@@ -74,23 +19,15 @@
 
         #game-container {
             position: absolute;
-            /* Changed to absolute for better centering */
             border: 2px solid #fff;
-            /* Thinner border to save space */
             display: flex;
             justify-content: center;
             align-items: center;
             background: #5c94fc;
-            width: 256px;
-            height: 224px;
             image-rendering: pixelated;
-            /* Center the container in the middle of the screen */
             top: 50%;
             left: 50%;
-            margin-top: -112px;
-            /* Half of height */
-            margin-left: -128px;
-            /* Half of width */
+            transform-origin: center;
         }
 
         canvas {
@@ -99,6 +36,7 @@
             height: 100%;
         }
 
+        /* 2. UI ELEMENTS */
         #ui-container {
             position: absolute;
             top: 0;
@@ -108,29 +46,12 @@
             padding: 4px;
             box-sizing: border-box;
             z-index: 10;
-            /* Adjust font size for the 256px width */
             font-size: 8px;
         }
 
-        #level-display {
-            float: left;
-            color: white;
-            text-shadow: 1px 1px #000;
-        }
-
-        #bullet-display {
-            float: left;
-            color: #ffd700;
-            margin-left: 10px;
-            text-shadow: 1px 1px #000;
-        }
-
-        #timer-display {
-            float: right;
-            color: #ff0000;
-            font-weight: bold;
-            text-shadow: 1px 1px #000;
-        }
+        #level-display { float: left; color: white; text-shadow: 1px 1px #000; }
+        #bullet-display { float: left; color: #ffd700; margin-left: 10px; text-shadow: 1px 1px #000; }
+        #timer-display { float: right; color: #ff0000; font-weight: bold; text-shadow: 1px 1px #000; }
 
         #start-overlay {
             position: absolute;
@@ -146,41 +67,41 @@
             text-align: center;
         }
 
-        #start-overlay h1 {
-            margin: 0;
-            font-size: 14px;
+        /* 3. TOUCH CONTROLS */
+        #touch-controls {
+            position: absolute;
+            bottom: 10px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 10px;
+            box-sizing: border-box;
+            pointer-events: none;
+            z-index: 30;
         }
 
-        #start-overlay p {
-            margin: 4px 0 0 0;
-            color: #ccc;
-            font-size: 7px;
+        #touch-controls button {
+            pointer-events: auto;
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.3);
+            border: 1px solid #fff;
+            color: white;
+            border-radius: 4px;
+            user-select: none;
+        }
+
+        @media (hover: hover) {
+            #touch-controls { display: none; }
         }
     </style>
 </head>
-
 <body>
 
     <div id="game-container">
-
-        <div id="touch-controls">
-            <div class="d-pad">
-                <button id="btn-up">▲</button>
-                <div class="horizontal-btns">
-                    <button id="btn-left">◀</button>
-                    <button id="btn-down">▼</button>
-                    <button id="btn-right">▶</button>
-                </div>
-            </div>
-            <div class="action-btns">
-                <button id="btn-shoot">B</button>
-            </div>
-        </div>
-
         <div id="start-overlay" onclick="startFullScreen()">
             <h1>8-BIT ADVENTURE</h1>
             <p>CLICK TO START</p>
-            <p style="font-size: 6px; margin-top: 10px;">(PRESS 'F' FOR FULLSCREEN)</p>
         </div>
 
         <div id="ui-container">
@@ -189,7 +110,18 @@
             <div id="timer-display">TIME: 60</div>
         </div>
 
-        <canvas id="gameCanvas" width="256" height="224"></canvas>
+        <div id="touch-controls">
+            <div style="display: flex; gap: 5px;">
+                <button id="btn-left">◀</button>
+                <button id="btn-right">▶</button>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 5px;">
+                <button id="btn-up">▲</button>
+                <button id="btn-shoot">B</button>
+            </div>
+        </div>
+
+        <canvas id="gameCanvas"></canvas>
     </div>
 
     <script src="background.js"></script>
@@ -199,86 +131,67 @@
     <script src="game.js"></script>
 
     <script>
-        function applyResponsiveScale() {
-            const container = document.getElementById('game-container');
-            // Calculate how much we can scale the 256x224 box to fit the window
-            const scaleX = window.innerWidth / 256;
-            const scaleY = window.innerHeight / 224;
+    function applyResponsiveScale() {
+        const container = document.getElementById('game-container');
+        const canvas = document.getElementById('gameCanvas');
+        if (!container || !canvas) return;
 
-            // Use the smaller of the two to ensure the game isn't cropped
-            // We subtract a tiny bit (0.95) to leave room for the white border
-            const finalScale = Math.min(scaleX, scaleY) * 0.95;
+        const winW = window.innerWidth;
+        const winH = window.innerHeight;
 
-            container.style.transform = `scale(${finalScale})`;
+        // 1. We keep the game height fixed at 224 pixels internally
+        const targetHeight = 224;
+
+        // 2. We calculate a width based on your ACTUAL screen shape
+        // This removes the "empty space" on the sides in landscape
+        const aspectRatio = winW / winH;
+        const targetWidth = Math.floor(targetHeight * aspectRatio);
+
+        // 3. Update the Canvas and Global Variables
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
+
+        if (typeof CANVAS_WIDTH !== 'undefined') {
+            CANVAS_WIDTH = targetWidth; // Updates the let CANVAS_WIDTH in game.js
         }
 
-        function applyResponsiveScale() {
-            const container = document.getElementById('game-container');
+        // 4. Position the container exactly in the center
+        container.style.width = targetWidth + "px";
+        container.style.height = targetHeight + "px";
+        container.style.marginLeft = -(targetWidth / 2) + "px";
+        container.style.marginTop = -(targetHeight / 2) + "px";
 
-            // Get the current window dimensions
-            const winW = window.innerWidth;
-            const winH = window.innerHeight;
+        // 5. THE BIG FIX: Scale to fill the ENTIRE window height
+        // We multiply by 0.98 just to keep a tiny border visible
+        const finalScale = (winH / targetHeight) * 0.98;
+        container.style.transform = `scale(${finalScale})`;
+    }
 
-            // Calculate scale to fit width and height
-            const scaleX = winW / 256;
-            const scaleY = winH / 224;
+    function startFullScreen() {
+        const overlay = document.getElementById('start-overlay');
+        overlay.style.display = 'none';
 
-            let finalScale = Math.min(scaleX, scaleY);
-
-            // DESKTOP SAFETY: If the screen is huge (like a monitor), 
-            // don't let it grow so large it looks blurry, unless in fullscreen.
-            if (!document.fullscreenElement && winW > 800) {
-                finalScale = Math.min(finalScale, 3.0);
-            }
-
-            container.style.transform = `scale(${finalScale})`;
+        // Start logic from game.js
+        if (typeof init === "function") {
+            init();
         }
 
-        function startFullScreen() {
-            const container = document.getElementById('game-container');
-            const overlay = document.getElementById('start-overlay');
-
-            overlay.style.display = 'none';
-
-            // Attempt Fullscreen
-            // Note: iOS Safari does not support requestFullscreen on standard elements.
-            // On Android/Chrome, this will hide the address bar.
-            if (document.documentElement.requestFullscreen) {
-                document.documentElement.requestFullscreen();
-            } else if (document.documentElement.webkitRequestFullscreen) {
-                document.documentElement.webkitRequestFullscreen();
-            }
-
-            if (typeof init === "function") init();
-            applyResponsiveScale();
+        // Attempt Fullscreen for mobile users
+        if (document.documentElement.requestFullscreen) {
+            document.documentElement.requestFullscreen();
+        } else if (document.documentElement.webkitRequestFullscreen) {
+            document.documentElement.webkitRequestFullscreen();
         }
-
-        // Handle rotations and window resizing
-        window.addEventListener('resize', () => {
-            applyResponsiveScale();
-            // Small delay to catch mobile address bar changes
-            setTimeout(applyResponsiveScale, 100);
-        });
-
-        // Key listener for 'F'
-        window.addEventListener('keydown', (e) => {
-            if (e.code === 'KeyF') {
-                if (!document.fullscreenElement) {
-                    if (document.documentElement.requestFullscreen) {
-                        document.documentElement.requestFullscreen();
-                    }
-                } else {
-                    document.exitFullscreen();
-                }
-            }
-        });
-
-        document.addEventListener('fullscreenchange', applyResponsiveScale);
-
-        // Initial call to set size before start
+        
         applyResponsiveScale();
-    </script>
+    }
 
+    // Handle rotations and window resizing
+    window.addEventListener('resize', applyResponsiveScale);
+    document.addEventListener('fullscreenchange', applyResponsiveScale);
+    
+    // Initial call to set size
+    applyResponsiveScale();
+</script>
 </body>
-
 </html>
