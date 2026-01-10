@@ -3,6 +3,8 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>8-Bit Side Scroller</title>
     <style>
         #touch-controls {
@@ -71,19 +73,24 @@
         }
 
         #game-container {
-            position: relative;
-            border: 4px solid #fff;
+            position: absolute;
+            /* Changed to absolute for better centering */
+            border: 2px solid #fff;
+            /* Thinner border to save space */
             display: flex;
             justify-content: center;
             align-items: center;
             background: #5c94fc;
-            /* Match internal resolution defined in game.js */
             width: 256px;
             height: 224px;
-            /* Dynamic scale will be handled by JavaScript */
             image-rendering: pixelated;
-            /* Smooth scaling transitions */
-            transition: transform 0.2s ease-out;
+            /* Center the container in the middle of the screen */
+            top: 50%;
+            left: 50%;
+            margin-top: -112px;
+            /* Half of height */
+            margin-left: -128px;
+            /* Half of width */
         }
 
         canvas {
@@ -205,43 +212,71 @@
             container.style.transform = `scale(${finalScale})`;
         }
 
+        function applyResponsiveScale() {
+            const container = document.getElementById('game-container');
+
+            // Get the current window dimensions
+            const winW = window.innerWidth;
+            const winH = window.innerHeight;
+
+            // Calculate scale to fit width and height
+            const scaleX = winW / 256;
+            const scaleY = winH / 224;
+
+            let finalScale = Math.min(scaleX, scaleY);
+
+            // DESKTOP SAFETY: If the screen is huge (like a monitor), 
+            // don't let it grow so large it looks blurry, unless in fullscreen.
+            if (!document.fullscreenElement && winW > 800) {
+                finalScale = Math.min(finalScale, 3.0);
+            }
+
+            container.style.transform = `scale(${finalScale})`;
+        }
+
         function startFullScreen() {
             const container = document.getElementById('game-container');
             const overlay = document.getElementById('start-overlay');
 
             overlay.style.display = 'none';
 
-            // Attempt to enter native browser fullscreen on mobile
-            if (container.requestFullscreen) {
-                container.requestFullscreen().catch(err => {
-                    console.log("Auto-fullscreen blocked, staying in windowed mode.");
-                });
+            // Attempt Fullscreen
+            // Note: iOS Safari does not support requestFullscreen on standard elements.
+            // On Android/Chrome, this will hide the address bar.
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen();
+            } else if (document.documentElement.webkitRequestFullscreen) {
+                document.documentElement.webkitRequestFullscreen();
             }
 
             if (typeof init === "function") init();
-
-            // Apply initial scale
             applyResponsiveScale();
         }
 
-        // Keep the game scaled correctly if the phone is rotated
-        window.addEventListener('resize', applyResponsiveScale);
+        // Handle rotations and window resizing
+        window.addEventListener('resize', () => {
+            applyResponsiveScale();
+            // Small delay to catch mobile address bar changes
+            setTimeout(applyResponsiveScale, 100);
+        });
 
+        // Key listener for 'F'
         window.addEventListener('keydown', (e) => {
             if (e.code === 'KeyF') {
-                const container = document.getElementById('game-container');
                 if (!document.fullscreenElement) {
-                    container.requestFullscreen().catch(err => {
-                        console.warn("Fullscreen failed:", err);
-                    });
+                    if (document.documentElement.requestFullscreen) {
+                        document.documentElement.requestFullscreen();
+                    }
                 } else {
                     document.exitFullscreen();
                 }
             }
         });
 
-        // Ensure scale stays correct during fullscreen transitions
         document.addEventListener('fullscreenchange', applyResponsiveScale);
+
+        // Initial call to set size before start
+        applyResponsiveScale();
     </script>
 
 </body>
