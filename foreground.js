@@ -702,20 +702,75 @@ this.elevators.forEach(e => {
         if (this.bird && !this.bird.hit) {
             const bx = this.bird.x - cameraX;
             if (bx > -50 && bx < (CANVAS_WIDTH + 50)) {
-                // NEW: If flashTimer is active, turn the bird bright red
+                ctx.save();
+                ctx.translate(bx + 8, this.bird.y + 4);
+                // Flip the drawing if the bird is moving right
+                if (this.bird.dir === 1) ctx.scale(-1, 1);
+                
+                // 1. FLASH EFFECT (Red when hit)
+                let bodyColor = '#334155'; // Dark slate blue/grey
+                let highlightColor = '#475569';
+                let eyeColor = '#ef4444'; // Piercing red eye
+                
                 if (this.bird.flashTimer > 0) {
-                    ctx.fillStyle = '#ff0000';
-                    this.bird.flashTimer--; // Count down the timer
-                } else {
-                    ctx.fillStyle = '#334155';
+                    bodyColor = '#ff0000';
+                    highlightColor = '#ff5555';
+                    this.bird.flashTimer--;
                 }
-                ctx.fillRect(bx, this.bird.y, 16, 8);
-                const wingPos = Math.sin(Date.now() / 100) * 10;
-                ctx.beginPath(); ctx.moveTo(bx, this.bird.y + 4); ctx.lineTo(bx - 10, this.bird.y + wingPos);
-                ctx.moveTo(bx + 16, this.bird.y + 4); ctx.lineTo(bx + 26, this.bird.y + wingPos);
-                ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 2; ctx.stroke();
-                ctx.fillStyle = '#fde047'; ctx.fillRect(bx + 6, this.bird.y + 8, 4, 10);
-                ctx.fillRect(bx + 10, this.bird.y + 14, 4, 2);
+
+                // 2. WINGS (Flapping Animation)
+                const wingFlap = Math.sin(Date.now() / 800) * 0.8; // Slower, more majestic flap
+                ctx.fillStyle = highlightColor;
+                
+                // Far Wing (behind body)
+                ctx.save();
+                ctx.rotate(-wingFlap - 0.5);
+                ctx.fillRect(-4, -10, 14, 4); // Main wing span
+                ctx.fillRect(2, -6, 10, 2);  // Primary feathers
+                ctx.restore();
+
+                // 3. TAIL FEATHERS
+                ctx.fillStyle = bodyColor;
+                ctx.beginPath();
+                ctx.moveTo(8, 0);
+                ctx.lineTo(16, -4);
+                ctx.lineTo(16, 4);
+                ctx.fill();
+
+                // 4. MAIN BODY (Aerodynamic shape)
+                ctx.beginPath();
+                ctx.ellipse(0, 0, 10, 5, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 5. THE HEAD & BEAK
+                ctx.save();
+                ctx.translate(-8, -2);
+                // Head
+                ctx.beginPath();
+                ctx.arc(0, 0, 5, 0, Math.PI * 2);
+                ctx.fill();
+                // Eye
+                ctx.fillStyle = eyeColor;
+                ctx.fillRect(-2, -1, 2, 2);
+                // Beak (Sharp and pointed)
+                ctx.fillStyle = '#fde047';
+                ctx.beginPath();
+                ctx.moveTo(-4, 0);
+                ctx.lineTo(-10, 1);
+                ctx.lineTo(-4, 3);
+                ctx.fill();
+                ctx.restore();
+
+                // 6. NEAR WING (In front of body)
+                ctx.save();
+                ctx.fillStyle = bodyColor;
+                ctx.rotate(wingFlap);
+                ctx.fillRect(-2, -8, 12, 5); // Upper wing
+                ctx.fillStyle = highlightColor;
+                ctx.fillRect(2, -3, 10, 2);  // Wing highlight/shading
+                ctx.restore();
+
+                ctx.restore();
             }
         }
 

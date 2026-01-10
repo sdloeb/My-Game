@@ -235,18 +235,62 @@ class Background {
         ctx.beginPath(); ctx.arc(x + 3, s.y - 15 + bob, 3, 0, Math.PI * 2); ctx.fill(); // Head
     }
 
-    drawBuilding(ctx, x, b) {
-        ctx.fillStyle = b.color;
-        ctx.fillRect(x, b.y, b.w, b.h);
-        if (b.windows) {
-            ctx.fillStyle = '#fde047';
-            for (let wy = b.y + 10; wy < b.y + b.h - 10; wy += 15) {
-                for (let wx = x + 5; wx < x + b.w - 5; wx += 10) {
-                    ctx.fillRect(wx, wy, 3, 4);
+drawBuilding(ctx, x, b) {
+    const shadowColor = 'rgba(0, 0, 0, 0.2)';
+    const highlightColor = 'rgba(255, 255, 255, 0.1)';
+    
+    // 1. MAIN STRUCTURE
+    ctx.fillStyle = b.color;
+    ctx.fillRect(x, b.y, b.w, b.h);
+
+    // 2. DEPTH & SHADING
+    ctx.fillStyle = shadowColor;
+    ctx.fillRect(x + b.w - 4, b.y, 4, b.h);
+    
+    ctx.fillStyle = highlightColor;
+    ctx.fillRect(x, b.y, b.w, 2);
+
+    // 3. WINDOWS
+    if (b.windows) {
+        for (let wy = b.y + 10; wy < b.y + b.h - 10; wy += 15) {
+            for (let wx = x + 5; wx < x + b.w - 8; wx += 10) {
+                ctx.fillStyle = '#111827'; 
+                ctx.fillRect(wx - 1, wy - 1, 5, 6);
+                
+                // FIXED: Use the static world coordinate (b.x) and relative offset (wx - x) 
+                // to calculate the lit state instead of the moving screen coordinate (x).
+                const relativeX = wx - x;
+                const isLit = (Math.sin(relativeX * wy + b.x) > 0); 
+                
+                ctx.fillStyle = isLit ? '#fde047' : '#374151'; 
+                ctx.fillRect(wx, wy, 3, 4);
+                
+                if (isLit) {
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+                    ctx.fillRect(wx, wy, 1, 1);
                 }
             }
         }
     }
+
+    // 4. ROOF DETAILS
+    ctx.fillStyle = b.color;
+    ctx.fillRect(x - 2, b.y, b.w + 4, 3); 
+
+    if (b.w > 25) {
+        ctx.fillStyle = '#9ca3af'; 
+        ctx.fillRect(x + 5, b.y - 6, 12, 6);
+        ctx.fillStyle = '#4b5563';
+        ctx.fillRect(x + 6, b.y - 4, 3, 3); 
+        
+        ctx.fillStyle = '#1f2937';
+        ctx.fillRect(x + b.w - 10, b.y - 15, 1, 15); 
+        ctx.fillRect(x + b.w - 12, b.y - 12, 5, 1);  
+    }
+
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+    ctx.fillRect(x, b.y + b.h - 2, b.w, 2);
+}
 
     drawTent(ctx, x, s) {
         const bottomY = s.y;
