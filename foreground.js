@@ -412,22 +412,35 @@ class Foreground {
         // 1. Draw Main Body
 ctx.fillRect(x, y, 16, 16);
 
-// --- REALISTIC JAGGERY CRACK ---
-        if (isSpecial) {
-            ctx.fillStyle = this.brickColors.shadow;
-            // The deep, jagged path of the crack (Dark color)
-            ctx.fillRect(x + 3, y + 2, 3, 1); // Horizontal start
-            ctx.fillRect(x + 5, y + 3, 1, 3); // Vertical drop
-            ctx.fillRect(x + 6, y + 5, 3, 1); // Horizontal zig
-            ctx.fillRect(x + 8, y + 6, 1, 4); // Long vertical zag
-            ctx.fillRect(x + 9, y + 9, 3, 1); // Final horizontal split
-            
-            ctx.fillStyle = this.brickColors.highlight;
-            // Highlight pixels on the crack's "lip" to give it 3D depth
-            ctx.fillRect(x + 3, y + 3, 2, 1); 
-            ctx.fillRect(x + 6, y + 6, 2, 1);
-            ctx.fillRect(x + 9, y + 10, 2, 1);
-        }
+// --- WHITE LIGHT SHINE EFFECT ---
+if (isSpecial) {
+    const cycleTime = 5000; // 5 seconds in milliseconds
+    const shineDuration = 50; // How long the shine takes to cross the brick
+    const currentTime = Date.now() % cycleTime;
+
+    if (currentTime < shineDuration) {
+        const progress = currentTime / shineDuration;
+        
+        ctx.save();
+        // Create a clipping region so the light stays inside the brick
+        ctx.beginPath();
+        ctx.rect(x, y, 16, 16);
+        ctx.clip();
+
+        // Draw a diagonal white beam that moves from left to right
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        
+        // The beam starts off-left (-10) and moves to off-right (+26)
+        const shineX = x - 10 + (progress * 36);
+        ctx.moveTo(shineX, y);
+        ctx.lineTo(shineX + 8, y + 16);
+        ctx.stroke();
+        
+        ctx.restore();
+    }
+}
 
         // Highlights
         ctx.fillStyle = this.brickColors.highlight;
