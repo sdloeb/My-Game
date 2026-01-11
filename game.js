@@ -102,7 +102,7 @@ function init() {
     } else {
         // If generation takes a millisecond longer, wait and try again
         setTimeout(() => {
-            
+
             if (player && fg) requestAnimationFrame(gameLoop);
         }, 10);
     }
@@ -120,7 +120,7 @@ function update() {
     if (!player || !fg) return;
 
     // Initialize Bird if player is near portal
-    if (!fg.bird && player.x > fg.portalX - 400) {
+    if (fg.level === 1 && !fg.bird && player.x > fg.portalX - 400) {
         fg.bird = {
             x: fg.portalX,
             y: fg.portal.y - 110,
@@ -136,7 +136,7 @@ function update() {
     if (fg.bird && !fg.bird.hit) {
         fg.bird.x += fg.bird.dir * fg.bird.speed;
 
-      fg.bird.y = (fg.portal.y - 110) + Math.sin(Date.now() / 200) * 25;
+        fg.bird.y = (fg.portal.y - 110) + Math.sin(Date.now() / 200) * 25;
 
 
         if (fg.bird.x < fg.portalX - 30) fg.bird.dir = 1;
@@ -261,18 +261,18 @@ function update() {
 
         // 2. REACTION BIRD COLLISION & HEALTH
         if (fg.bird && !fg.bird.hit && !p.isEnemyBullet) {
-            const pLeft = p.isArrow ? p.x - 8 : p.x; 
+            const pLeft = p.isArrow ? p.x - 8 : p.x;
             const pRight = p.isArrow ? p.x + 6 : p.x + 4;
-                if (pRight > fg.bird.x && pLeft < fg.bird.x + fg.bird.width && 
-                    p.y > fg.bird.y && p.y < fg.bird.y + fg.bird.height) {
+            if (pRight > fg.bird.x && pLeft < fg.bird.x + fg.bird.width &&
+                p.y > fg.bird.y && p.y < fg.bird.y + fg.bird.height) {
 
                 // Initialize health if it doesn't exist
                 if (fg.bird.health === undefined) fg.bird.health = 2;
 
-                
+
                 fg.bird.health--;
 
-               if (fg.bird.health <= 0) {
+                if (fg.bird.health <= 0) {
                     fg.bird.hit = true;
                     // Trigger the key drop in the foreground
                     fg.dropKey(fg.bird.x + 8, fg.bird.y + 8, fg.bird.dir);
@@ -388,9 +388,9 @@ function draw() {
     ctx.fillStyle = '#5c94fc';
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-   bg.draw(ctx, cameraX);
+    bg.draw(ctx, cameraX);
     // Draw the player early if in sand so ground tiles cover their edges
-    if (player.inQuicksand) player.draw(ctx, cameraX); 
+    if (player.inQuicksand) player.draw(ctx, cameraX);
     fg.draw(ctx, cameraX);
     enemies.forEach(en => en.draw(ctx, cameraX));
 
@@ -399,15 +399,29 @@ function draw() {
         ctx.fillRect(p.x - cameraX, p.y, 2, 2);
     });
 
+    // --- DRAWING THE TROLL'S FLOATING BUBBLES ---
     activeBubbles.forEach(b => {
+        const bx = b.x - cameraX;
+        ctx.save();
+
+        // 1. Start a fresh path to prevent the 'nipple' line from the Troll's mouth
+        ctx.beginPath();
         ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
         ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.arc(b.x - cameraX, b.y, b.radius, 0, Math.PI * 2);
+
+        // 2. Draw the bubble circle
+        ctx.arc(bx, b.y, b.radius, 0, Math.PI * 2);
         ctx.stroke();
-        // Highlight shine
-        ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
-        ctx.fillRect(b.x - cameraX - 5, b.y - 10, 4, 4);
+
+        // 3. Draw a circular highlight (Replaces the square fillRect)
+        ctx.beginPath();
+        const shimmerSize = b.radius * 0.25; // Scales with the bubble
+        const shimmerOffset = b.radius * 0.3;
+        ctx.arc(bx - shimmerOffset, b.y - shimmerOffset, shimmerSize, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+        ctx.fill();
+
+        ctx.restore();
     });
 
     if (player.inBubble) {
@@ -420,22 +434,55 @@ function draw() {
 
     projectiles.forEach(p => {
         ctx.fillStyle = p.color || '#ffffff';
+
         if (p.isArrow) {
             ctx.save();
             ctx.translate(p.x - cameraX, p.y);
+            // This ensures the dart/arrow points in the direction it is moving
             ctx.rotate(Math.atan2(p.vy, p.vx));
-            ctx.fillRect(-8, -1, 10, 2);
-            ctx.fillStyle = '#ffffff';
-            ctx.beginPath();
-            ctx.moveTo(2, -3); ctx.lineTo(6, 0); ctx.lineTo(2, 3);
-            ctx.fill();
+
+            if (fg.level === 2) {
+                // --- FLYING DART (Level 1-2) ---
+                // 1. Metal Body
+                ctx.fillStyle = '#94a3b8';
+                ctx.fillRect(-4, -1, 10, 2);
+
+                // 2. Sharp Tip
+                ctx.fillStyle = '#f8fafc';
+                ctx.beginPath();
+                ctx.moveTo(6, -2); ctx.lineTo(10, 0); ctx.lineTo(6, 2);
+                ctx.fill();
+
+                // 3. Red Fins (at the back)
+                ctx.fillStyle = '#ef4444';
+                ctx.beginPath();
+                ctx.moveTo(-4, 0); ctx.lineTo(-9, -4); ctx.lineTo(-9, 4);
+                ctx.fill();
+            } else {
+                // --- FLYING ARROW (Level 1-1) ---
+                // 1. Wood Shaft
+                ctx.fillStyle = '#7c2d12';
+                ctx.fillRect(-8, -1, 12, 2);
+
+                // 2. Arrowhead
+                ctx.fillStyle = '#d1d5db';
+                ctx.beginPath();
+                ctx.moveTo(4, -3); ctx.lineTo(10, 0); ctx.lineTo(4, 3);
+                ctx.fill();
+
+                // 3. Tiny Red Feathers
+                ctx.fillStyle = '#ef4444';
+                ctx.fillRect(-10, -2, 3, 1);
+                ctx.fillRect(-10, 1, 3, 1);
+            }
             ctx.restore();
         } else {
+            // Standard enemy or player bullets
             ctx.fillRect(p.x - cameraX, p.y, 4, 2);
         }
     });
 
-  // Only draw the player here if they are NOT in quicksand
+    // Only draw the player here if they are NOT in quicksand
     if (!player.inQuicksand) player.draw(ctx, cameraX);
     fg.drawQuicksand(ctx, cameraX);
 
@@ -625,10 +672,10 @@ function spawnEnemies() {
         for (let i = 0; i < count; i++) {
             // Randomly place between 400px and 150px before the portal
             const rx = 400 + (Math.random() * (fg.portal.x - 550));
-            
+
             // Adjust height based on the enemy type (Spiders are shorter)
             const spawnY = type === 'spider' ? fg.groundY - 12 : fg.groundY - 24;
-            
+
             enemies.push(new Enemy(type, rx, spawnY));
         }
     };

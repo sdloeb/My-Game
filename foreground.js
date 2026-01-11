@@ -23,6 +23,7 @@ class Foreground {
         this.hasKey = false;
         this.portalLocked = true;
         this.bow = { x: this.portalX - 175, y: this.groundY - 20, collected: false }; //bow location
+        this.troll = { x: this.portalX + 40, y: this.groundY, width: 32, height: 40, health: 5, hit: false, flashTimer: 0, bubbleTimer: 0 };
 
         this.portal = {
             x: this.portalX,
@@ -58,9 +59,9 @@ class Foreground {
         }
     }
 
-  setTheme() {
+    setTheme() {
         // Levels 1 and 2 now both use the green grass and brown dirt theme
-        if (this.level === 3) { 
+        if (this.level === 3) {
             this.groundColors.grass = '#0058f8'; // You can move the dark theme here or change it
             this.groundColors.dirt = '#000000';
         } else {
@@ -204,10 +205,10 @@ class Foreground {
         }
 
         const clockCandidates = this.platforms.filter(p => {
-    // Check if there's any brick directly above this one
-    const isUnderneath = this.platforms.some(other => other.x === p.x && other.y < p.y);
-    return p.x > CANVAS_WIDTH && p.x < 2048 && !isUnderneath;
-});
+            // Check if there's any brick directly above this one
+            const isUnderneath = this.platforms.some(other => other.x === p.x && other.y < p.y);
+            return p.x > CANVAS_WIDTH && p.x < 2048 && !isUnderneath;
+        });
         for (let i = 0; i < 3; i++) {
             if (clockCandidates.length > 0) {
                 const idx = Math.floor(Math.random() * clockCandidates.length);
@@ -239,30 +240,30 @@ class Foreground {
         }
 
         // --- SPREAD OUT CHECKPOINTS ACROSS 3 ZONES ---
-const checkpointZones = [
-    { min: 0, max: 975 },
-    { min: 1000, max: 1975 },
-    { min: 2000, max: 3000 }
-];
+        const checkpointZones = [
+            { min: 0, max: 975 },
+            { min: 1000, max: 1975 },
+            { min: 2000, max: 3000 }
+        ];
 
-checkpointZones.forEach(zone => {
-    // Find all bricks within THIS specific zone
-   const zoneCandidates = this.platforms.filter(p => {
-    // Check if there's any brick directly above this one
-    const isUnderneath = this.platforms.some(other => other.x === p.x && other.y < p.y);
-    return !p.hasClock && !p.isSecret && p.x >= zone.min && p.x <= zone.max && !isUnderneath;
-});
+        checkpointZones.forEach(zone => {
+            // Find all bricks within THIS specific zone
+            const zoneCandidates = this.platforms.filter(p => {
+                // Check if there's any brick directly above this one
+                const isUnderneath = this.platforms.some(other => other.x === p.x && other.y < p.y);
+                return !p.hasClock && !p.isSecret && p.x >= zone.min && p.x <= zone.max && !isUnderneath;
+            });
 
-    if (zoneCandidates.length > 0) {
-        const idx = Math.floor(Math.random() * zoneCandidates.length);
-        const target = zoneCandidates[idx];
-        
-        target.isCheckpointCandidate = true;
-        target.hasPulsed = false;
-        target.visibleStartTime = null;
-        target.pulseTriggered = false;
-    }
-});
+            if (zoneCandidates.length > 0) {
+                const idx = Math.floor(Math.random() * zoneCandidates.length);
+                const target = zoneCandidates[idx];
+
+                target.isCheckpointCandidate = true;
+                target.hasPulsed = false;
+                target.visibleStartTime = null;
+                target.pulseTriggered = false;
+            }
+        });
 
         const starX = 768 + Math.random() * 1500;
         let starHighestY = this.groundY;
@@ -415,6 +416,24 @@ checkpointZones.forEach(zone => {
                 if (h.life <= 0) this.groundHazards.splice(i, 1);
             }
         }
+
+        // --- TROLL BUBBLE LOGIC (Level 2) ---
+        if (this.level === 2 && !this.troll.hit && player.x > this.portalX - 300) {
+            this.troll.bubbleTimer++;
+            if (this.troll.bubbleTimer > 60) { // Blow a bubble every second
+                this.troll.bubbleTimer = 0;
+                // Constraints: Not hitting gate (vx > -0.8) and not going off right (vx < 0.3)
+                const randomVx = -0.8 + Math.random() * 1.1;
+                activeBubbles.push({
+                    x: this.troll.x + 5,
+                    y: this.troll.y - 30,
+                    radius: 6 + Math.random() * 3,
+                    vx: randomVx,
+                    vy: -1.5 - Math.random() * 1.0 // Blowing upwards
+                });
+            }
+        }
+
     }
 
     drawBrick(ctx, x, y, isSecret, hasClock, isCheckpointCandidate, platformObj) {
@@ -422,43 +441,43 @@ checkpointZones.forEach(zone => {
         let offsetY = 0;
         const isSpecial = isSecret || hasClock || isCheckpointCandidate;
 
-        
+
 
         ctx.save();
         ctx.translate(0, offsetY);
         // Main Body
         // 1. Draw Main Body
-ctx.fillRect(x, y, 16, 16);
+        ctx.fillRect(x, y, 16, 16);
 
-// --- WHITE LIGHT SHINE EFFECT ---
-if (isSpecial) {
-    const cycleTime = 5000; // 5 seconds in milliseconds
-    const shineDuration = 50; // How long the shine takes to cross the brick
-    const currentTime = Date.now() % cycleTime;
+        // --- WHITE LIGHT SHINE EFFECT ---
+        if (isSpecial) {
+            const cycleTime = 5000; // 5 seconds in milliseconds
+            const shineDuration = 50; // How long the shine takes to cross the brick
+            const currentTime = Date.now() % cycleTime;
 
-    if (currentTime < shineDuration) {
-        const progress = currentTime / shineDuration;
-        
-        ctx.save();
-        // Create a clipping region so the light stays inside the brick
-        ctx.beginPath();
-        ctx.rect(x, y, 16, 16);
-        ctx.clip();
+            if (currentTime < shineDuration) {
+                const progress = currentTime / shineDuration;
 
-        // Draw a diagonal white beam that moves from left to right
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
-        ctx.lineWidth = 4;
-        ctx.beginPath();
-        
-        // The beam starts off-left (-10) and moves to off-right (+26)
-        const shineX = x - 10 + (progress * 36);
-        ctx.moveTo(shineX, y);
-        ctx.lineTo(shineX + 8, y + 16);
-        ctx.stroke();
-        
-        ctx.restore();
-    }
-}
+                ctx.save();
+                // Create a clipping region so the light stays inside the brick
+                ctx.beginPath();
+                ctx.rect(x, y, 16, 16);
+                ctx.clip();
+
+                // Draw a diagonal white beam that moves from left to right
+                ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+
+                // The beam starts off-left (-10) and moves to off-right (+26)
+                const shineX = x - 10 + (progress * 36);
+                ctx.moveTo(shineX, y);
+                ctx.lineTo(shineX + 8, y + 16);
+                ctx.stroke();
+
+                ctx.restore();
+            }
+        }
 
         // Highlights
         ctx.fillStyle = this.brickColors.highlight;
@@ -505,7 +524,7 @@ if (isSpecial) {
             ctx.fillStyle = "#ffffff";
             ctx.font = "bold 12px 'Courier New'";
             ctx.textAlign = "center";
-           ctx.fillText("CHECKPOINT!", CANVAS_WIDTH / 2, 50);
+            ctx.fillText("CHECKPOINT!", CANVAS_WIDTH / 2, 50);
             this.checkpointTextTimer--;
         }
 
@@ -601,32 +620,32 @@ if (isSpecial) {
             }
         });
 
-       // Locate this section in foreground.js (around line 431)
-this.elevators.forEach(e => {
-    const screenX = e.x - cameraX;
-    if (screenX + e.w > 0 && screenX < CANVAS_WIDTH) {
-        // 1. Draw the Main Stone Body
-        ctx.fillStyle = this.elevatorColors.main;
-        ctx.fillRect(screenX, e.y, e.w, e.h);
+        // Locate this section in foreground.js (around line 431)
+        this.elevators.forEach(e => {
+            const screenX = e.x - cameraX;
+            if (screenX + e.w > 0 && screenX < CANVAS_WIDTH) {
+                // 1. Draw the Main Stone Body
+                ctx.fillStyle = this.elevatorColors.main;
+                ctx.fillRect(screenX, e.y, e.w, e.h);
 
-        // 2. Add Top Highlight (makes it look solid/bevelled)
-        ctx.fillStyle = this.elevatorColors.highlight;
-        ctx.fillRect(screenX, e.y, e.w, 1); // Top edge
-        ctx.fillRect(screenX, e.y, 1, e.h); // Left edge
+                // 2. Add Top Highlight (makes it look solid/bevelled)
+                ctx.fillStyle = this.elevatorColors.highlight;
+                ctx.fillRect(screenX, e.y, e.w, 1); // Top edge
+                ctx.fillRect(screenX, e.y, 1, e.h); // Left edge
 
-        // 3. Add Bottom/Right Shadow
-        ctx.fillStyle = this.elevatorColors.shadow;
-        ctx.fillRect(screenX + 1, e.y + e.h - 1, e.w - 1, 1); // Bottom edge
-        ctx.fillRect(screenX + e.w - 1, e.y + 1, 1, e.h - 1); // Right edge
+                // 3. Add Bottom/Right Shadow
+                ctx.fillStyle = this.elevatorColors.shadow;
+                ctx.fillRect(screenX + 1, e.y + e.h - 1, e.w - 1, 1); // Bottom edge
+                ctx.fillRect(screenX + e.w - 1, e.y + 1, 1, e.h - 1); // Right edge
 
-        // 4. Add "Stone Texture" (Little cracks or grit)
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
-        // Draw 3 small random pixels to simulate stone grit
-        ctx.fillRect(screenX + 5, e.y + 3, 2, 1);
-        ctx.fillRect(screenX + 22, e.y + 5, 1, 1);
-        ctx.fillRect(screenX + 14, e.y + 2, 1, 1);
-    }
-});
+                // 4. Add "Stone Texture" (Little cracks or grit)
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+                // Draw 3 small random pixels to simulate stone grit
+                ctx.fillRect(screenX + 5, e.y + 3, 2, 1);
+                ctx.fillRect(screenX + 22, e.y + 5, 1, 1);
+                ctx.fillRect(screenX + 14, e.y + 2, 1, 1);
+            }
+        });
 
         this.platforms.forEach(p => {
             const screenX = p.x - cameraX;
@@ -636,65 +655,74 @@ this.elevators.forEach(e => {
 
         //DRAW BOW LEVEL 1-1
         // Locate this section in the draw(ctx, cameraX) method of foreground.js
+        // DRAW WEAPON PICKUP (Bow/Dart Gun)
         if (!this.bow.collected) {
             const bx = this.bow.x - cameraX;
             if (bx > -20 && bx < (CANVAS_WIDTH + 20)) {
-                // 1. Draw the Bow String (Pure White) - Moved to the left side
-                ctx.strokeStyle = '#ffffff';
-                ctx.lineWidth = 1;
-                ctx.beginPath();
-                ctx.moveTo(bx - 4, this.bow.y - 10);
-                ctx.lineTo(bx - 4, this.bow.y + 10);
-                ctx.stroke();
+                if (this.level === 2) {
+                    // --- DART GUN (Level 2) ---
+                    ctx.fillStyle = '#475569'; // Gun Metal
+                    // We use -3 to center the barrel where the Bow grip was
+                    ctx.fillRect(bx, this.bow.y - 3, 14, 6); // Barrel
+                    ctx.fillRect(bx, this.bow.y + 1, 4, 8);  // Handle
+                    ctx.fillStyle = '#ef4444'; // Red stripe detail
+                    ctx.fillRect(bx + 4, this.bow.y - 2, 6, 2);
+                } else {
+                    // --- BOW (Level 1) ---
+                    // 1. Draw the Bow String (Pure White)
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(bx - 4, this.bow.y - 10);
+                    ctx.lineTo(bx - 4, this.bow.y + 10);
+                    ctx.stroke();
 
-                // 2. Draw the Bow Frame (Flipped Horizontally)
-                ctx.fillStyle = '#fde047';
-                // Top Limb - Offsets are now positive to move right
-                ctx.fillRect(bx - 4, this.bow.y - 10, 5, 3);
-                ctx.fillRect(bx - 1, this.bow.y - 8, 4, 3);
-                // Middle Grip
-                ctx.fillRect(bx + 1, this.bow.y - 5, 4, 10);
-                // Bottom Limb
-                ctx.fillRect(bx - 1, this.bow.y + 5, 4, 3);
-                ctx.fillRect(bx - 4, this.bow.y + 7, 5, 3);
+                    // 2. Draw the Bow Frame
+                    ctx.fillStyle = '#fde047';
+                    ctx.fillRect(bx - 4, this.bow.y - 10, 5, 3);
+                    ctx.fillRect(bx - 1, this.bow.y - 8, 4, 3);
+                    ctx.fillRect(bx + 1, this.bow.y - 5, 4, 10); // Grip
+                    ctx.fillRect(bx - 1, this.bow.y + 5, 4, 3);
+                    ctx.fillRect(bx - 4, this.bow.y + 7, 5, 3);
 
-                // 3. Shimmer on the grip
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(bx + 2, this.bow.y - 2, 2, 2);
+                    // 3. Shimmer on the grip
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(bx + 2, this.bow.y - 2, 2, 2);
+                }
             }
-        }
+        } // <--- This was the missing brace!
 
         // --- IRON PORTCULLIS (GATE) ---
-if (!this.key.dropped) {
-    // We position the gate 20 pixels to the right of the bow
-    const gateX = (this.bow.x + 20) - cameraX; 
-    
-    if (gateX > -30 && gateX < (CANVAS_WIDTH + 30)) {
-        ctx.fillStyle = '#334155'; // Dark iron grey
-        
-        // Draw 5 vertical bars
-        for (let i = 0; i < 5; i++) {
-            const barX = gateX + (i * 6);
-            // Bars go from the top of the screen to the ground
-            ctx.fillRect(barX, 0, 2, this.groundY);
-            
-            // Pointed tips at the top for detail
-            ctx.beginPath();
-            ctx.moveTo(barX - 1, 12);
-            ctx.lineTo(barX + 1, 2);
-            ctx.lineTo(barX + 3, 12);
-            ctx.fill();
-        }
+        if (!this.key.dropped) {
+            // We position the gate 20 pixels to the right of the bow
+            const gateX = (this.bow.x + 20) - cameraX;
 
-        // Two horizontal cross-beams
-        ctx.fillRect(gateX - 2, 40, 28, 4);
-        ctx.fillRect(gateX - 2, 120, 28, 4);
-        
-        // Ground shadow
-        ctx.fillStyle = 'rgba(0,0,0,0.3)';
-        ctx.fillRect(gateX - 2, this.groundY, 28, 2);
-    }
-}
+            if (gateX > -30 && gateX < (CANVAS_WIDTH + 30)) {
+                ctx.fillStyle = '#334155'; // Dark iron grey
+
+                // Draw 5 vertical bars
+                for (let i = 0; i < 5; i++) {
+                    const barX = gateX + (i * 6);
+                    // Bars go from the top of the screen to the ground
+                    ctx.fillRect(barX, 0, 2, this.groundY);
+
+                    // Pointed tips at the top for detail
+                    ctx.beginPath();
+                    ctx.moveTo(barX - 1, 12);
+                    ctx.lineTo(barX + 1, 2);
+                    ctx.lineTo(barX + 3, 12);
+                    ctx.fill();
+                }
+
+                // Two horizontal cross-beams
+                ctx.fillRect(gateX - 2, 40, 28, 4);
+                ctx.fillRect(gateX - 2, 120, 28, 4);
+
+                // Ground shadow
+                ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                ctx.fillRect(gateX - 2, this.groundY, 28, 2);
+            }
+        }
 
         if (this.star) {
             const screenX = this.star.x - cameraX;
@@ -703,29 +731,52 @@ if (!this.key.dropped) {
                 ctx.translate(screenX, this.star.y);
 
                 if (this.level === 1) {
-                    // 1. Shaft (Wood color)
-                    ctx.fillStyle = '#7c2d12';
+                    // --- ARROW (Level 1) ---
+                    ctx.fillStyle = '#7c2d12'; // Shaft
                     ctx.fillRect(-6, 0, 12, 2);
 
-                    // 2. Arrowhead (Shiny Silver/Grey)
-                    ctx.fillStyle = '#d1d5db';
+                    ctx.fillStyle = '#d1d5db'; // Arrowhead
                     ctx.beginPath();
                     ctx.moveTo(6, -2);
                     ctx.lineTo(12, 1);
                     ctx.lineTo(6, 4);
                     ctx.fill();
 
-                    // 3. Fletching/Feathers (White/Red for visibility)
-                    ctx.fillStyle = '#ef4444';
-                    ctx.fillRect(-10, -2, 4, 2); // Top feather
-                    ctx.fillRect(-10, 2, 4, 2);  // Bottom feather
+                    ctx.fillStyle = '#ef4444'; // Fletching
+                    ctx.fillRect(-10, -2, 4, 2);
+                    ctx.fillRect(-10, 2, 4, 2);
 
-                    // 4. Added "Gleam" on the arrowhead
-                    ctx.fillStyle = '#ffffff';
+                    ctx.fillStyle = '#ffffff'; // Gleam
                     ctx.fillRect(7, -1, 2, 1);
 
+                } else if (this.level === 2) {
+                    // --- DART (Level 2) ---
+                    // 1. Silver Metal Body
+                    ctx.fillStyle = '#94a3b8';
+                    ctx.fillRect(-4, 0, 10, 2);
+
+                    // 2. Sharp Needle Tip
+                    ctx.fillStyle = '#f8fafc';
+                    ctx.beginPath();
+                    ctx.moveTo(6, -1);
+                    ctx.lineTo(11, 1);
+                    ctx.lineTo(6, 3);
+                    ctx.fill();
+
+                    // 3. Red Fins (Fletching)
+                    ctx.fillStyle = '#ef4444';
+                    ctx.beginPath();
+                    ctx.moveTo(-4, 1);
+                    ctx.lineTo(-10, -4);
+                    ctx.lineTo(-10, 6);
+                    ctx.fill();
+
+                    // 4. Grip detail
+                    ctx.fillStyle = '#475569';
+                    ctx.fillRect(0, 0, 3, 2);
+
                 } else {
-                    // Keep your Level 2/3 Star logic here
+                    // --- STAR (Level 3+) ---
                     const pulse = 1 + Math.sin(Date.now() / 200) * 0.2;
                     ctx.scale(pulse, pulse);
                     ctx.fillStyle = '#ffff00';
@@ -735,7 +786,8 @@ if (!this.key.dropped) {
                         const angle = (Math.PI / 5) * i - Math.PI / 2;
                         ctx.lineTo(Math.cos(angle) * r, Math.sin(angle) * r);
                     }
-                    ctx.closePath(); ctx.fill();
+                    ctx.closePath();
+                    ctx.fill();
                 }
                 ctx.restore();
             }
@@ -743,7 +795,7 @@ if (!this.key.dropped) {
 
         if (this.activeFlag && !this.activeFlag.collected) {
             const fx = this.activeFlag.x - cameraX;
-           if (fx > -20 && fx < (CANVAS_WIDTH + 20)) {
+            if (fx > -20 && fx < (CANVAS_WIDTH + 20)) {
                 ctx.fillStyle = '#ffffff'; ctx.fillRect(fx + 7, this.activeFlag.y - 15, 2, 31);
                 ctx.fillStyle = '#ff0000'; ctx.fillRect(fx + 9, this.activeFlag.y - 15, 12, 8);
             }
@@ -758,12 +810,12 @@ if (!this.key.dropped) {
                 ctx.translate(bx + 8, this.bird.y + 4);
                 // Flip the drawing if the bird is moving right
                 if (this.bird.dir === 1) ctx.scale(-1, 1);
-                
+
                 // 1. FLASH EFFECT (Red when hit)
                 let bodyColor = '#334155'; // Dark slate blue/grey
                 let highlightColor = '#475569';
                 let eyeColor = '#ef4444'; // Piercing red eye
-                
+
                 if (this.bird.flashTimer > 0) {
                     bodyColor = '#ff0000';
                     highlightColor = '#ff5555';
@@ -773,7 +825,7 @@ if (!this.key.dropped) {
                 // 2. WINGS (Flapping Animation)
                 const wingFlap = Math.sin(Date.now() / 800) * 0.8; // Slower, more majestic flap
                 ctx.fillStyle = highlightColor;
-                
+
                 // Far Wing (behind body)
                 ctx.save();
                 ctx.rotate(-wingFlap - 0.5);
@@ -825,6 +877,121 @@ if (!this.key.dropped) {
                 ctx.restore();
             }
         }
+
+        // --- FRONT-FACING TROLL MINI-BOSS (Level 2) ---
+        if (this.level === 2 && !this.troll.hit) {
+            const tx = this.troll.x - cameraX;
+            if (tx > -60 && tx < CANVAS_WIDTH + 60) {
+                const isBlowing = this.troll.bubbleTimer > 40;
+                // Heave effect makes the chest/head expand when breathing in
+                const heave = isBlowing ? Math.sin(Date.now() / 50) * 2 : 0;
+
+                ctx.save();
+                ctx.translate(tx + 16, this.troll.y); // Center drawing on the hitbox
+
+                if (this.troll.flashTimer > 0) {
+                    ctx.filter = 'brightness(250%) saturate(0%)';
+                    this.troll.flashTimer--;
+                }
+
+                // 1. LEGS (Muscular wide stance)
+                ctx.fillStyle = '#052e16'; // Shadow parts
+                ctx.fillRect(-16, -12, 10, 12);
+                ctx.fillRect(6, -12, 10, 12);
+                ctx.fillStyle = '#15803d'; // Front skin
+                ctx.fillRect(-14, -18, 8, 14);
+                ctx.fillRect(6, -18, 8, 14);
+                // Big flat feet
+                ctx.fillStyle = '#052e16';
+                ctx.fillRect(-17, -4, 12, 4);
+                ctx.fillRect(5, -4, 12, 4);
+
+                // 2. ARMS (Bulky shoulders and forearms at the sides)
+                ctx.fillStyle = '#15803d';
+                ctx.fillRect(-24, -36, 10, 18); // Left shoulder
+                ctx.fillRect(14, -36, 10, 18);  // Right shoulder
+                ctx.fillStyle = '#16a34a'; // Bright forearms
+                ctx.fillRect(-26, -20, 8, 16);
+                ctx.fillRect(18, -20, 8, 16);
+                // Heavy knuckles resting on ground
+                ctx.fillStyle = '#052e16';
+                ctx.fillRect(-28, -6, 10, 6);
+                ctx.fillRect(18, -6, 10, 6);
+
+                // 3. TORSO (Broad Chest)
+                ctx.fillStyle = '#15803d';
+                ctx.fillRect(-15 - heave, -38, 30 + (heave * 2), 22);
+                // Chest Highlights (Pectorals)
+                ctx.fillStyle = '#4ade80';
+                ctx.fillRect(-10 - heave, -34, 8, 4);
+                ctx.fillRect(2 + heave, -34, 8, 4);
+
+                // Loincloth
+                ctx.fillStyle = '#451a03';
+                ctx.fillRect(-16, -18, 32, 10);
+                ctx.fillStyle = '#78350f';
+                ctx.fillRect(-6, -10, 12, 8);
+
+                // 4. THE HEAD (Centered)
+                ctx.save();
+                ctx.translate(0, -42 - heave); // Head bobs with chest heaving
+                ctx.fillStyle = '#15803d';
+                ctx.fillRect(-11, -11, 22, 22); // Face base
+
+                // Hair (Messy top)
+                ctx.fillStyle = '#1e1b4b';
+                ctx.fillRect(-12, -13, 24, 6);
+                ctx.fillRect(-8, -15, 16, 4);
+
+                // Brow Ridge and Shading
+                ctx.fillStyle = '#052e16';
+                ctx.fillRect(-9, -4, 18, 3);
+                ctx.fillRect(-11, 4, 2, 8); // Side shadows
+                ctx.fillRect(9, 4, 2, 8);
+
+                // Eyes (Glowing Symmetrical)
+                ctx.fillStyle = '#fde047';
+                ctx.fillRect(-7, -1, 4, 3); // Left
+                ctx.fillRect(3, -1, 4, 3);  // Right
+                ctx.fillStyle = '#000';
+                ctx.fillRect(-5, 0, 1, 1);
+                ctx.fillRect(4, 0, 1, 1);
+
+                // Nose (Large snout)
+                ctx.fillStyle = '#166534';
+                ctx.fillRect(-3, 1, 6, 7);
+
+                // Tusks (One on each side)
+                ctx.fillStyle = '#fefce8';
+                ctx.fillRect(-10, 6, 3, 8); // Left
+                ctx.fillRect(7, 6, 3, 8);  // Right
+
+                // MOUTH (Centered Blowing)
+                if (isBlowing) {
+                    ctx.fillStyle = '#000';
+                    ctx.beginPath();
+                    ctx.arc(0, 11, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                    // Saliva/Bubble gleam
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+                    ctx.fillRect(-2, 9, 2, 2);
+                } else {
+                    ctx.fillStyle = '#052e16';
+                    ctx.fillRect(-6, 12, 12, 2); // Grimace line
+                }
+
+                // Ears (Pointed out sides)
+                ctx.fillStyle = '#15803d';
+                ctx.beginPath();
+                ctx.moveTo(-11, -5); ctx.lineTo(-18, -10); ctx.lineTo(-11, 5); ctx.fill();
+                ctx.beginPath();
+                ctx.moveTo(11, -5); ctx.lineTo(18, -10); ctx.lineTo(11, 5); ctx.fill();
+
+                ctx.restore();
+                ctx.restore();
+            }
+        }
+
 
         if (this.key.dropped && !this.key.collected) {
             const kx = this.key.x - cameraX;

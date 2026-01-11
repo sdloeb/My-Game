@@ -369,13 +369,13 @@ class Player {
             }
         }
 
-// Add this inside the update() method of player.js
-if (!this.hasBow && this.keys.down && this.onGround && !this.isSquatting) {
-    this.isSquatting = true;
-    this.squatTimer = 60;
-    this.y += (this.normalHeight - this.squatHeight);
-    this.height = this.squatHeight;
-}
+        // Add this inside the update() method of player.js
+        if (!this.hasBow && this.keys.down && this.onGround && !this.isSquatting) {
+            this.isSquatting = true;
+            this.squatTimer = 60;
+            this.y += (this.normalHeight - this.squatHeight);
+            this.height = this.squatHeight;
+        }
 
 
 
@@ -675,17 +675,52 @@ if (!this.hasBow && this.keys.down && this.onGround && !this.isSquatting) {
         const eyeX = this.facingRight ? 9 : 5;
         ctx.fillRect(eyeX, 3, 2, 2);
 
-        // --- BOW DRAWING ---
+        // --- WEAPON DRAWING (In Player's Hand) ---
         if (this.hasBow) {
             ctx.save();
+
+            // Adjust position based on where the player's "hand" is
+            // We translate to the hand position and rotate based on aiming angle
             ctx.translate(this.facingRight ? 12 : 4, 12);
-            // Flip the bow rotation based on facing direction
             ctx.rotate(this.facingRight ? this.aimAngle : Math.PI - this.aimAngle);
-            ctx.strokeStyle = '#fde047';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.arc(0, 0, 8, -Math.PI / 2, Math.PI / 2);
-            ctx.stroke();
+
+            if (currentLevelNum === 2) {
+                // --- DART GUN (Level 1-2) ---
+                ctx.fillStyle = '#475569'; // Gun Metal Grey
+
+                // Barrel
+                ctx.fillRect(0, -3, 14, 6);
+
+                // Handle/Grip (Pointing down slightly)
+                ctx.fillRect(0, 1, 4, 7);
+
+                // Red Accent Stripe
+                ctx.fillStyle = '#ef4444';
+                ctx.fillRect(4, -2, 6, 2);
+
+                // Small Trigger Guard
+                ctx.strokeStyle = '#334155';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(1, 1, 4, 3);
+
+            } else {
+                // --- BOW (Level 1-1) ---
+                // 1. Bow Frame (Yellow)
+                ctx.strokeStyle = '#fde047';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(0, 0, 8, -Math.PI / 2, Math.PI / 2);
+                ctx.stroke();
+
+                // 2. Bow String (White)
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(0, -8);
+                ctx.lineTo(0, 8);
+                ctx.stroke();
+            }
+
             ctx.restore();
         }
 
