@@ -78,30 +78,40 @@ class Background {
         }
     }
 
-    generateCarnivalTheme() {
+   generateCarnivalTheme() {
         this.scenery = [];
         let cx = 100;
-        // Guaranteed pool of every unique asset you created
         const pool = ['tent', 'wheel', 'stand', 'rollercoaster', 'stall', 'carousel', 'swingride', 'elephant', 'popcorn'];
 
-        // Loop twice to ensure the level feels full
-        for (let i = 0; i < 2; i++) {
-            pool.forEach(type => {
-                this.scenery.push({
-                    type: type,
-                    x: cx,
-                    y: this.groundY, // Baseline exactly at grass level
-                    color: Math.random() > 0.5 ? '#ef4444' : '#ffffff',
-                    hasLights: true
-                });
-                cx += 280; // Enough space so they don't overlap
-            });
-        }
+        let itemsToPlace = [];
+        pool.forEach(type => {
+            itemsToPlace.push(type);
+            itemsToPlace.push(type);
+        });
 
+        itemsToPlace.sort(() => Math.random() - 0.5);
+
+        itemsToPlace.forEach(type => {
+            this.scenery.push({
+                type: type,
+                x: cx,
+                y: this.groundY,
+                color: Math.random() > 0.5 ? '#ef4444' : '#ffffff'
+            });
+
+            // Tighter spacing (115px) ensures all 18 items fit visually before the bow area
+            cx += 110 + Math.random() * 15;
+        });
+
+        // Limit children to the first 1200 pixels of background space
+        // At 0.4 parallax, this ensures they are gone by the time you reach the bow
         for (let i = 0; i < 30; i++) {
             this.scenery.push({
-                type: 'child', x: Math.random() * 5000, y: this.groundY,
-                speed: 0.3 + Math.random() * 0.4, dir: Math.random() > 0.5 ? 1 : -1,
+                type: 'child', 
+                x: Math.random() * 1200, 
+                y: this.groundY,
+                speed: 0.3 + Math.random() * 0.4, 
+                dir: Math.random() > 0.5 ? 1 : -1,
                 size: 6 + Math.random() * 4
             });
         }
@@ -141,10 +151,10 @@ class Background {
         });
 
         // 3. Draw "Far" Scenery Layer (Children walk behind buildings)
-        this.scenery.forEach(s => {
-            if (s.type !== 'child') return; // Skip everything except children for now
+   this.scenery.forEach(s => {
+            if (s.type !== 'child') return; 
 
-            const drawX = s.x - (cameraX * 0.4); // Children move at 0.4 parallax
+            const drawX = s.x - (cameraX * 0.4); 
             if (drawX + 50 < 0 || drawX > this.canvasWidth) return;
 
             this.drawChild(ctx, drawX, s);
@@ -154,7 +164,7 @@ class Background {
         this.scenery.forEach(s => {
             if (s.type === 'child') return; // Skip children, we already drew them
 
-            const parallax = (this.level === 3) ? 0.1 : 0.5;
+           const parallax = (this.level === 3) ? 0.1 : (this.level === 2 ? 0.8 : 0.5);
             const drawX = s.x - (cameraX * parallax);
 
             if (drawX + 300 < 0 || drawX > this.canvasWidth) return;
@@ -174,10 +184,7 @@ class Background {
             else if (['jupiter', 'saturn', 'moon'].includes(s.type)) this.drawPlanet(ctx, drawX, s);
             else if (s.type === 'blackhole') this.drawBlackHole(ctx, drawX, s);
 
-            // Blinking lights for buildings and carnival stalls
-            if (s.hasLights && Math.random() > 0.1) {
-                this.drawLights(ctx, drawX, s);
-            }
+           
         });
     }
 
@@ -624,17 +631,69 @@ drawBuilding(ctx, x, b) {
 
     drawElephant(ctx, x, s) {
         const bottomY = s.y;
-        ctx.fillStyle = '#64748b'; // Slate Grey
-        // Body - Lifted 15px so it sits ON the grass
+        const bodyColor = '#64748b'; // Slate Grey
+        const darkGrey = '#475569';
+        const lightGrey = '#94a3b8';
+
+        ctx.save();
+        ctx.translate(x, bottomY);
+
+        // 1. LEGS (Draw back legs first for depth)
+        ctx.fillStyle = darkGrey;
+        ctx.fillRect(8, -10, 6, 10);  // Back-left
+        ctx.fillRect(25, -10, 6, 10); // Back-right
+
+        // 2. TAIL (Behind the body)
+        ctx.strokeStyle = darkGrey;
+        ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.ellipse(x + 20, bottomY - 15, 18, 12, 0, 0, Math.PI * 2);
-        ctx.fill();
-        // Head
-        ctx.beginPath();
-        ctx.arc(x + 5, bottomY - 18, 8, 0, Math.PI * 2);
-        ctx.fill();
-        // Trunk - Added this to make it recognizable as an elephant
-        ctx.fillRect(x - 5, bottomY - 18, 4, 12);
+        ctx.moveTo(35, -20);
+        ctx.lineTo(40, -8);
+        ctx.stroke();
+
+        // 3. MAIN BODY
+        ctx.fillStyle = bodyColor;
+        // Central mass
+        ctx.fillRect(0, -28, 35, 20);
+        // Rounded top and sides
+        ctx.fillRect(4, -31, 27, 3); 
+        ctx.fillRect(-2, -25, 2, 14);
+
+        // 4. FRONT LEGS (With toe highlights)
+        ctx.fillStyle = bodyColor;
+        ctx.fillRect(2, -10, 7, 10);  // Front-left
+        ctx.fillRect(20, -10, 7, 10); // Front-right
+        ctx.fillStyle = lightGrey;
+        ctx.fillRect(2, -2, 3, 2);
+        ctx.fillRect(20, -2, 3, 2);
+
+        // 5. THE HEAD
+        ctx.fillStyle = bodyColor;
+        ctx.fillRect(-14, -32, 16, 15);
+        // Eye
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(-10, -26, 2, 2);
+
+        // 6. THE TRUNK (Detailed curve)
+        ctx.fillStyle = bodyColor;
+        ctx.fillRect(-18, -25, 6, 10); // Upper
+        ctx.fillRect(-22, -16, 6, 10); // Middle
+        ctx.fillRect(-24, -8, 4, 4);   // Tip
+
+        // 7. TUSK (White)
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(-16, -19, 4, 2);
+        ctx.fillRect(-18, -17, 2, 2);
+
+        // 8. THE EAR (Large and layered)
+        ctx.fillStyle = darkGrey;
+        ctx.fillRect(-5, -34, 14, 20); // Shadow/Back
+        ctx.fillStyle = bodyColor;
+        ctx.fillRect(-3, -32, 12, 16); // Main flap
+        ctx.fillStyle = lightGrey;
+        ctx.fillRect(-3, -32, 10, 2);  // Top highlight
+
+        ctx.restore();
     }
 
     drawPopcorn(ctx, x, s) {
@@ -672,8 +731,5 @@ drawBuilding(ctx, x, b) {
         ctx.strokeStyle = '#6366f1'; ctx.beginPath(); ctx.arc(x, s.y, s.size + 2, 0, Math.PI * 2); ctx.stroke();
     }
 
-    drawLights(ctx, x, s) {
-        ctx.fillStyle = (Date.now() % 400 < 200) ? '#ffff00' : '#ff0000';
-        ctx.fillRect(x + 5, s.y - 32, 2, 2);
-    }
+    
 }
