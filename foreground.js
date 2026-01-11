@@ -202,7 +202,11 @@ class Foreground {
             x += structureWidth + gap;
         }
 
-        const clockCandidates = this.platforms.filter(p => p.x > CANVAS_WIDTH && p.x < 2048);
+        const clockCandidates = this.platforms.filter(p => {
+    // Check if there's any brick directly above this one
+    const isUnderneath = this.platforms.some(other => other.x === p.x && other.y < p.y);
+    return p.x > CANVAS_WIDTH && p.x < 2048 && !isUnderneath;
+});
         for (let i = 0; i < 3; i++) {
             if (clockCandidates.length > 0) {
                 const idx = Math.floor(Math.random() * clockCandidates.length);
@@ -233,18 +237,31 @@ class Foreground {
             }
         }
 
-        const checkpointCandidates = this.platforms.filter(p => !p.hasClock && !p.isSecret && p.x > 400 && p.x < 2000);
-        for (let i = 0; i < 3; i++) {
-            if (checkpointCandidates.length > 0) {
-                const idx = Math.floor(Math.random() * checkpointCandidates.length);
-                const target = checkpointCandidates[idx];
-                target.isCheckpointCandidate = true;
-                target.hasPulsed = false;
-                target.visibleStartTime = null;
-                target.pulseTriggered = false;
-                checkpointCandidates.splice(idx, 1);
-            }
-        }
+        // --- SPREAD OUT CHECKPOINTS ACROSS 3 ZONES ---
+const checkpointZones = [
+    { min: 0, max: 975 },
+    { min: 1000, max: 1975 },
+    { min: 2000, max: 3000 }
+];
+
+checkpointZones.forEach(zone => {
+    // Find all bricks within THIS specific zone
+   const zoneCandidates = this.platforms.filter(p => {
+    // Check if there's any brick directly above this one
+    const isUnderneath = this.platforms.some(other => other.x === p.x && other.y < p.y);
+    return !p.hasClock && !p.isSecret && p.x >= zone.min && p.x <= zone.max && !isUnderneath;
+});
+
+    if (zoneCandidates.length > 0) {
+        const idx = Math.floor(Math.random() * zoneCandidates.length);
+        const target = zoneCandidates[idx];
+        
+        target.isCheckpointCandidate = true;
+        target.hasPulsed = false;
+        target.visibleStartTime = null;
+        target.pulseTriggered = false;
+    }
+});
 
         const starX = 768 + Math.random() * 1500;
         let starHighestY = this.groundY;
