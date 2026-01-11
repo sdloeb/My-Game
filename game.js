@@ -20,6 +20,19 @@ let pendingLevelChange = false;
 let levelKills = 0;
 let activeBubbles = [];
 
+// --- LEVEL DIFFICULTY CONFIGURATION ---
+const levelEnemies = {
+    1: { skeleton: 3, zombie: 3, spider: 3 },
+    2: { skeleton: 4, zombie: 3, spider: 3 },
+    3: { skeleton: 4, zombie: 4, spider: 3 }, // Boss levels might have fewer minions
+    // Add level 4, 5, etc., here to make them harder
+};
+
+// Default settings if a level is not defined above
+const defaultEnemies = { skeleton: 4, zombie: 4, spider: 4 };
+
+
+
 
 // 2. INITIALIZATION
 function init() {
@@ -599,16 +612,29 @@ function spawnEnemies() {
     if (!fg || typeof fg.groundY === 'undefined') return;
     enemies = [];
 
+    // 1. Handle Boss Spawning
     if (currentLevelNum % 3 === 0) {
         enemies.push(new Boss(fg.portal.x - 120, fg.groundY - 140));
     }
 
-    const types = ['skeleton', 'zombie', 'spider'];
-    const count = (currentLevelNum % 3 === 0) ? 4 : 8;
-    for (let i = 0; i < count; i++) {
-        const type = types[Math.floor(Math.random() * types.length)];
-        const rx = 400 + (Math.random() * (fg.portal.x - 600));
-        const spawnY = type === 'spider' ? fg.groundY - 16 : fg.groundY - 24;
-        enemies.push(new Enemy(type, rx, spawnY));
-    }
+    // 2. Get the specific counts for the current level
+    const counts = levelEnemies[currentLevelNum] || defaultEnemies;
+
+    // 3. Helper function to spawn a specific type multiple times
+    const spawnType = (type, count) => {
+        for (let i = 0; i < count; i++) {
+            // Randomly place between 400px and 150px before the portal
+            const rx = 400 + (Math.random() * (fg.portal.x - 550));
+            
+            // Adjust height based on the enemy type (Spiders are shorter)
+            const spawnY = type === 'spider' ? fg.groundY - 12 : fg.groundY - 24;
+            
+            enemies.push(new Enemy(type, rx, spawnY));
+        }
+    };
+
+    // 4. Run the spawner for each type defined in your config
+    Object.keys(counts).forEach(type => {
+        spawnType(type, counts[type]);
+    });
 }

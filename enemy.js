@@ -68,6 +68,15 @@ update(platforms, player, projectiles) {
                 else if (this.dir === -1 && this.x < p.x + pW && this.x + this.width > p.x + pW) this.dir = 1;
             }
         });
+        // --- WORLD BOUNDARY CHECK ---
+        // Prevent enemies from walking past the portal (pixel 3000)
+        if (this.x + this.width > 3000 && this.dir === 1) {
+            this.dir = -1;
+        }
+        // Optional: Prevent them from walking off the left side of the map
+        if (this.x < 0 && this.dir === -1) {
+            this.dir = 1;
+        }
     }
 
     this.shootTimer--;
