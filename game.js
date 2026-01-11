@@ -89,6 +89,7 @@ function init() {
     } else {
         // If generation takes a millisecond longer, wait and try again
         setTimeout(() => {
+            
             if (player && fg) requestAnimationFrame(gameLoop);
         }, 10);
     }
@@ -374,7 +375,9 @@ function draw() {
     ctx.fillStyle = '#5c94fc';
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-    bg.draw(ctx, cameraX);
+   bg.draw(ctx, cameraX);
+    // Draw the player early if in sand so ground tiles cover their edges
+    if (player.inQuicksand) player.draw(ctx, cameraX); 
     fg.draw(ctx, cameraX);
     enemies.forEach(en => en.draw(ctx, cameraX));
 
@@ -419,8 +422,8 @@ function draw() {
         }
     });
 
-    // Draw player BEFORE the fade
-    player.draw(ctx, cameraX);
+  // Only draw the player here if they are NOT in quicksand
+    if (!player.inQuicksand) player.draw(ctx, cameraX);
     fg.drawQuicksand(ctx, cameraX);
 
     // 1. Calculate fade

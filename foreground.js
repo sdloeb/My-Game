@@ -472,14 +472,11 @@ class Foreground {
     }
 
     draw(ctx, cameraX) {
-        const groundStart = Math.floor(cameraX / this.tileSize) * this.tileSize;
-        for (let gx = groundStart; gx < cameraX + CANVAS_WIDTH + 16; gx += this.tileSize) {
-            const screenX = gx - cameraX;
-            ctx.fillStyle = this.groundColors.grass;
-            ctx.fillRect(screenX, this.groundY, 16, 4);
-            ctx.fillStyle = this.groundColors.dirt;
-            ctx.fillRect(screenX, this.groundY + 4, 16, 32);
-        }
+        // Draw Ground as solid blocks to prevent vertical seam lines
+        ctx.fillStyle = this.groundColors.grass;
+        ctx.fillRect(0, this.groundY, CANVAS_WIDTH, 4);
+        ctx.fillStyle = this.groundColors.dirt;
+        ctx.fillRect(0, this.groundY + 4, CANVAS_WIDTH, 32);
 
         if (this.checkpointTextTimer > 0) {
             ctx.fillStyle = "#ffffff";
@@ -643,6 +640,38 @@ this.elevators.forEach(e => {
                 ctx.fillRect(bx + 2, this.bow.y - 2, 2, 2);
             }
         }
+
+        // --- IRON PORTCULLIS (GATE) ---
+if (!this.key.dropped) {
+    // We position the gate 20 pixels to the right of the bow
+    const gateX = (this.bow.x + 20) - cameraX; 
+    
+    if (gateX > -30 && gateX < (CANVAS_WIDTH + 30)) {
+        ctx.fillStyle = '#334155'; // Dark iron grey
+        
+        // Draw 5 vertical bars
+        for (let i = 0; i < 5; i++) {
+            const barX = gateX + (i * 6);
+            // Bars go from the top of the screen to the ground
+            ctx.fillRect(barX, 0, 2, this.groundY);
+            
+            // Pointed tips at the top for detail
+            ctx.beginPath();
+            ctx.moveTo(barX - 1, 12);
+            ctx.lineTo(barX + 1, 2);
+            ctx.lineTo(barX + 3, 12);
+            ctx.fill();
+        }
+
+        // Two horizontal cross-beams
+        ctx.fillRect(gateX - 2, 40, 28, 4);
+        ctx.fillRect(gateX - 2, 120, 28, 4);
+        
+        // Ground shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        ctx.fillRect(gateX - 2, this.groundY, 28, 2);
+    }
+}
 
         if (this.star) {
             const screenX = this.star.x - cameraX;
