@@ -112,7 +112,7 @@ class Background {
                 y: this.groundY,
                 speed: 0.3 + Math.random() * 0.4, 
                 dir: Math.random() > 0.5 ? 1 : -1,
-                size: 6 + Math.random() * 4
+                size: 3 + Math.random() * 2 // Roughly 50% smaller
             });
         }
     }
@@ -347,11 +347,18 @@ class Background {
         ctx.fillRect(poleX - 12, bottomY - 5, 24, 5);
     }
 
-    drawChild(ctx, x, s) {
+  drawChild(ctx, x, s) {
         const bob = Math.sin(Date.now() / 150) * 2;
         ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-        ctx.fillRect(x, s.y - 12 + bob, 6, 12); // Body
-        ctx.beginPath(); ctx.arc(x + 3, s.y - 15 + bob, 3, 0, Math.PI * 2); ctx.fill(); // Head
+        
+        // Use s.size to determine the height/width
+        const height = s.size * 1.5;
+        const width = s.size * 0.75;
+        
+        ctx.fillRect(x, s.y - height + bob, width, height); // Body
+        ctx.beginPath(); 
+        ctx.arc(x + width / 2, s.y - height - (width / 2) + bob, width / 2, 0, Math.PI * 2); 
+        ctx.fill(); // Head
     }
 
 drawBuilding(ctx, x, b) {
@@ -637,6 +644,9 @@ drawBuilding(ctx, x, b) {
 
         ctx.save();
         ctx.translate(x, bottomY);
+        
+        // --- SCALE ADDED HERE: Makes the whole drawing 25% smaller ---
+        ctx.scale(0.75, 0.75); 
 
         // 1. LEGS (Draw back legs first for depth)
         ctx.fillStyle = darkGrey;
@@ -653,9 +663,7 @@ drawBuilding(ctx, x, b) {
 
         // 3. MAIN BODY
         ctx.fillStyle = bodyColor;
-        // Central mass
         ctx.fillRect(0, -28, 35, 20);
-        // Rounded top and sides
         ctx.fillRect(4, -31, 27, 3); 
         ctx.fillRect(-2, -25, 2, 14);
 
@@ -670,7 +678,6 @@ drawBuilding(ctx, x, b) {
         // 5. THE HEAD
         ctx.fillStyle = bodyColor;
         ctx.fillRect(-14, -32, 16, 15);
-        // Eye
         ctx.fillStyle = '#000000';
         ctx.fillRect(-10, -26, 2, 2);
 
