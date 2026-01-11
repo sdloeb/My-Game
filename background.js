@@ -208,25 +208,136 @@ class Background {
 
 
 
-    drawCarousel(ctx, x, s) {
-        ctx.fillStyle = s.color;
-        ctx.fillRect(x, s.y - 5, 50, 5); // Base
-        ctx.beginPath(); // Roof
-        ctx.moveTo(x - 5, s.y - 35); ctx.lineTo(x + 25, s.y - 50); ctx.lineTo(x + 55, s.y - 35);
+   drawCarousel(ctx, x, s) {
+        const bottomY = s.y;
+        const centerX = x + 30;
+        const carouselWidth = 60;
+        const time = Date.now() / 1000;
+
+        // 1. THE BASE
+        ctx.fillStyle = '#475569';
+        ctx.fillRect(x - 5, bottomY - 5, carouselWidth + 10, 5);
+        ctx.fillStyle = '#334155';
+        ctx.fillRect(x - 5, bottomY - 2, carouselWidth + 10, 2);
+
+        // 2. THE CENTRAL PILLAR
+        ctx.fillStyle = '#d1d5db';
+        ctx.fillRect(centerX - 4, bottomY - 45, 8, 40);
+
+        // 3. MOVING HORSES & POLES
+        // We draw 3 horses at different rotation points
+        for (let i = 0; i < 3; i++) {
+            const phase = i * (Math.PI * 2 / 3);
+            // Horizontal "Rotation" effect using Cosine
+            const rotX = Math.cos(time + phase) * 22;
+            // Vertical "Bobbing" effect using Sine
+            const bobY = Math.sin(time * 2 + phase) * 5;
+            
+            const horseX = centerX + rotX;
+            const horseY = bottomY - 25 + bobY;
+
+            // Draw the Pole (Silver)
+            ctx.strokeStyle = '#94a3b8';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(horseX, bottomY - 45);
+            ctx.lineTo(horseX, bottomY - 5);
+            ctx.stroke();
+
+            // Draw the Horse (Only if it's "in front" of or beside the center)
+            // This simple depth check makes it look like it's going around
+            ctx.fillStyle = i % 2 === 0 ? '#ffffff' : '#fde047'; 
+            
+            // Body
+            ctx.fillRect(horseX - 5, horseY, 10, 5);
+            // Head & Neck
+            ctx.fillRect(horseX + (rotX > 0 ? 3 : -7), horseY - 4, 4, 5);
+            // Tail
+            ctx.fillStyle = '#ef4444';
+            ctx.fillRect(horseX + (rotX > 0 ? -7 : 5), horseY, 2, 2);
+        }
+
+        // 4. THE ROOF (Striped Peaked Canopy)
+        ctx.fillStyle = '#ef4444'; // Red
+        ctx.beginPath();
+        ctx.moveTo(x - 10, bottomY - 45);
+        ctx.lineTo(centerX, bottomY - 65);
+        ctx.lineTo(x + carouselWidth + 10, bottomY - 45);
         ctx.fill();
-        ctx.strokeStyle = '#94a3b8';
-        ctx.strokeRect(x + 10, s.y - 35, 2, 30); ctx.strokeRect(x + 40, s.y - 35, 2, 30);
+
+        // Roof Stripes (Yellow)
+        ctx.fillStyle = '#fde047';
+        ctx.beginPath();
+        ctx.moveTo(centerX, bottomY - 65);
+        ctx.lineTo(centerX - 8, bottomY - 45);
+        ctx.lineTo(centerX + 8, bottomY - 45);
+        ctx.fill();
+
+        // Decorative Valance (The hanging edge of the roof)
+        ctx.fillStyle = '#ef4444';
+        ctx.fillRect(x - 10, bottomY - 45, carouselWidth + 20, 4);
     }
 
-    drawSwingRide(ctx, x, s) {
-        const swing = Math.sin(Date.now() / 800) * 15;
-        ctx.fillStyle = '#475569';
-        ctx.fillRect(x + 20, s.y - 60, 8, 60);
-        ctx.strokeStyle = '#cbd5e1';
+   drawSwingRide(ctx, x, s) {
+        const bottomY = s.y;
+        const poleX = x + 25;
+        const poleHeight = 70;
+        const topY = bottomY - poleHeight;
+        
+        // 1. THE CENTRAL POLE
+        ctx.fillStyle = '#475569'; // Slate grey
+        ctx.fillRect(poleX - 4, topY, 8, poleHeight);
+        
+        // Add some detail to the pole (stripes)
+        ctx.fillStyle = '#64748b';
+        ctx.fillRect(poleX - 4, topY + 10, 8, 4);
+        ctx.fillRect(poleX - 4, topY + 30, 8, 4);
+        ctx.fillRect(poleX - 4, topY + 50, 8, 4);
+
+        // 2. THE TOP CANOPY (The "Cap")
+        ctx.fillStyle = '#ef4444'; // Red top
         ctx.beginPath();
-        ctx.moveTo(x + 24, s.y - 60); ctx.lineTo(x + 10 + swing, s.y - 25);
-        ctx.moveTo(x + 24, s.y - 60); ctx.lineTo(x + 40 + swing, s.y - 25);
-        ctx.stroke();
+        ctx.moveTo(poleX - 25, topY);
+        ctx.lineTo(poleX, topY - 15);
+        ctx.lineTo(poleX + 25, topY);
+        ctx.fill();
+        
+        // Yellow trim on the cap
+        ctx.fillStyle = '#fde047';
+        ctx.fillRect(poleX - 25, topY - 2, 50, 4);
+
+        // 3. THE SWINGING SEATS
+        const swingRange = 25; // How far they swing out
+        const time = Date.now() / 800;
+        
+        // Draw 3 seats at different depths/angles
+        const seatOffsets = [-1, 0, 1];
+        seatOffsets.forEach(offset => {
+            // Calculate a slightly staggered swing for each seat
+            const swing = Math.sin(time + offset) * swingRange;
+            const seatX = poleX + (offset * 15) + swing;
+            const seatY = topY + 45;
+
+            // Draw the Chain
+            ctx.strokeStyle = '#cbd5e1';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(poleX + (offset * 10), topY);
+            ctx.lineTo(seatX, seatY);
+            ctx.stroke();
+
+            // Draw the Seat
+            ctx.fillStyle = '#1e3a8a'; // Blue seat
+            ctx.fillRect(seatX - 4, seatY, 8, 3);
+            
+            // Draw a tiny Passenger Head
+            ctx.fillStyle = '#ffdbac';
+            ctx.fillRect(seatX - 2, seatY - 4, 4, 4);
+        });
+
+        // 4. THE BASE
+        ctx.fillStyle = '#334155';
+        ctx.fillRect(poleX - 12, bottomY - 5, 24, 5);
     }
 
     drawChild(ctx, x, s) {
@@ -295,43 +406,128 @@ drawBuilding(ctx, x, b) {
 
     drawTent(ctx, x, s) {
         const bottomY = s.y;
-        // Main Tent Body
-        ctx.fillStyle = s.color;
+        const tentWidth = 80;
+        const tentHeight = 60;
+        const centerX = x + tentWidth / 2;
+        
+        // 1. DRAW MAIN BODY (Red and White Stripes)
+        // Base Background
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(x, bottomY - 40, tentWidth, 40);
+        
+        // Red Stripes
+        ctx.fillStyle = '#ef4444';
+        for (let i = 0; i < tentWidth; i += 20) {
+            ctx.fillRect(x + i, bottomY - 40, 10, 40);
+        }
+
+        // 2. DRAW THE ROOF (The "Big Top" Peak)
+        ctx.fillStyle = '#ef4444';
         ctx.beginPath();
-        ctx.moveTo(x, bottomY);
-        ctx.lineTo(x + 30, bottomY - 50);
-        ctx.lineTo(x + 60, bottomY);
+        ctx.moveTo(x - 5, bottomY - 40);
+        ctx.lineTo(centerX, bottomY - tentHeight);
+        ctx.lineTo(x + tentWidth + 5, bottomY - 40);
         ctx.fill();
 
-        // Add a "Flag" on top to make it look like a carnival tent
-        ctx.fillStyle = '#ff0000';
-        ctx.fillRect(x + 30, bottomY - 60, 8, 5);
-        ctx.strokeStyle = '#fff';
+        // Roof Stripes (Darker red for depth)
+        ctx.fillStyle = '#b91c1c';
         ctx.beginPath();
-        ctx.moveTo(x + 30, bottomY - 50);
-        ctx.lineTo(x + 30, bottomY - 60);
-        ctx.stroke();
+        ctx.moveTo(centerX, bottomY - tentHeight);
+        ctx.lineTo(centerX - 15, bottomY - 40);
+        ctx.lineTo(centerX + 15, bottomY - 40);
+        ctx.fill();
 
-        // Stripes (To add 8-bit detail)
-        ctx.fillStyle = 'rgba(0,0,0,0.2)';
-        ctx.fillRect(x + 15, bottomY - 25, 5, 25);
-        ctx.fillRect(x + 40, bottomY - 25, 5, 25);
+        // 3. SCALLOPED EDGES (The decorative trim)
+        ctx.fillStyle = '#fde047'; // Yellow trim
+        for (let i = -5; i <= tentWidth + 5; i += 10) {
+            ctx.beginPath();
+            ctx.arc(x + i, bottomY - 40, 5, 0, Math.PI);
+            ctx.fill();
+        }
+
+        // 4. THE ENTRANCE
+        ctx.fillStyle = '#1e1b4b'; // Dark blue interior
+        ctx.beginPath();
+        ctx.moveTo(centerX - 10, bottomY);
+        ctx.lineTo(centerX, bottomY - 25);
+        ctx.lineTo(centerX + 10, bottomY);
+        ctx.fill();
+
+        // 5. THE FLAG
+        // Pole
+        ctx.strokeStyle = '#94a3b8';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(centerX, bottomY - tentHeight);
+        ctx.lineTo(centerX, bottomY - tentHeight - 15);
+        ctx.stroke();
+        
+        // Flag Fabric (Waving effect)
+        const wave = Math.sin(Date.now() / 300) * 3;
+        ctx.fillStyle = '#fde047';
+        ctx.beginPath();
+        ctx.moveTo(centerX, bottomY - tentHeight - 15);
+        ctx.lineTo(centerX + 12, bottomY - tentHeight - 10 + wave);
+        ctx.lineTo(centerX, bottomY - tentHeight - 5);
+        ctx.fill();
     }
 
     drawFoodStand(ctx, x, s) {
         const bottomY = s.y;
-        // Main Wood Frame
-        ctx.fillStyle = '#7c2d12';
-        ctx.fillRect(x, bottomY - 30, 50, 30);
-        // The Red "Counter" Area
-        ctx.fillStyle = '#ef4444';
-        ctx.fillRect(x + 5, bottomY - 25, 40, 15);
-        // Yellow Awning (Top edge)
-        ctx.fillStyle = '#fbbf24';
-        ctx.fillRect(x - 5, bottomY - 30, 60, 6);
-        // Ground Shadow (Prevents the "hidden in dirt" look)
+        const standWidth = 50;
+        const standHeight = 35;
+        const woodColor = '#7c2d12';
+        const shadowColor = '#451a03';
+
+        // 1. MAIN WOODEN BASE
+        ctx.fillStyle = woodColor;
+        ctx.fillRect(x, bottomY - standHeight, standWidth, standHeight);
+        
+        // Add "Plank" lines for texture
+        ctx.fillStyle = shadowColor;
+        ctx.fillRect(x, bottomY - 24, standWidth, 1);
+        ctx.fillRect(x, bottomY - 12, standWidth, 1);
+
+        // 2. COUNTERTOP
+        ctx.fillStyle = '#94a3b8'; // Slate grey counter
+        ctx.fillRect(x - 2, bottomY - 28, standWidth + 4, 3);
+
+        // 3. MENU BOARD (On the side)
+        ctx.fillStyle = '#111827'; // Black chalkboard
+        ctx.fillRect(x + 5, bottomY - 22, 12, 15);
+        ctx.fillStyle = '#ffffff'; // White "chalk" lines
+        ctx.fillRect(x + 7, bottomY - 19, 8, 1);
+        ctx.fillRect(x + 7, bottomY - 16, 6, 1);
+        ctx.fillRect(x + 7, bottomY - 13, 7, 1);
+
+        // 4. STRIPED AWNING
+        // Awning Supports
+        ctx.strokeStyle = '#d1d5db';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x + 2, bottomY - standHeight);
+        ctx.lineTo(x + 2, bottomY - 50);
+        ctx.moveTo(x + standWidth - 2, bottomY - standHeight);
+        ctx.lineTo(x + standWidth - 2, bottomY - 50);
+        ctx.stroke();
+
+        // Main Awning Body (Yellow and White Stripes)
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(x - 5, bottomY - 55, standWidth + 10, 8);
+        ctx.fillStyle = '#fbbf24'; // Golden yellow
+        for (let i = -5; i < standWidth + 10; i += 12) {
+            ctx.fillRect(x + i, bottomY - 55, 6, 8);
+        }
+
+        // 5. SIGNAGE
+        ctx.fillStyle = '#ef4444'; // Red sign board
+        ctx.fillRect(x + 20, bottomY - 52, 25, 10);
+        ctx.fillStyle = '#ffffff'; // Simple pixel "text"
+        ctx.fillRect(x + 23, bottomY - 48, 19, 2);
+
+        // 6. GROUND SHADOW
         ctx.fillStyle = 'rgba(0,0,0,0.3)';
-        ctx.fillRect(x, bottomY, 50, 2);
+        ctx.fillRect(x - 2, bottomY, standWidth + 4, 2);
     }
 
     drawGameStall(ctx, x, s) {
@@ -350,21 +546,79 @@ drawBuilding(ctx, x, b) {
 
     drawRollercoaster(ctx, x, s) {
         const bottomY = s.y;
+        const totalWidth = 220;
+        
+        // 1. Path Calculation: A consistent function for track, supports, and carts
+        const getTrackY = (relX) => {
+            if (relX < 0 || relX > totalWidth) return bottomY;
+            let h = 0;
+            if (relX < 130) {
+                // First Hill (taller)
+                h = Math.sin((relX / 130) * Math.PI) * 150; 
+            } else {
+                // Second Hill (shorter)
+                h = Math.sin(((relX - 130) / (totalWidth - 130)) * Math.PI) * 70;
+            }
+            return bottomY - h;
+        };
+
+        // 2. Draw Support Lattice
+        ctx.strokeStyle = '#475569';
+        ctx.lineWidth = 1;
+        for (let sx = 0; sx <= totalWidth; sx += 20) {
+            const trackY = getTrackY(sx);
+            // Vertical beam
+            ctx.beginPath();
+            ctx.moveTo(x + sx, bottomY);
+            ctx.lineTo(x + sx, trackY);
+            ctx.stroke();
+            
+            // Diagonal bracing
+            if (sx < totalWidth) {
+                ctx.beginPath();
+                ctx.moveTo(x + sx, bottomY);
+                ctx.lineTo(x + sx + 20, getTrackY(sx + 20));
+                ctx.stroke();
+            }
+        }
+
+        // 3. Draw Main Rails
         ctx.strokeStyle = '#334155';
-        ctx.lineWidth = 4;
+        ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.moveTo(x, bottomY);
-        // Increased the height significantly so the "arch" is high in the sky
-        ctx.bezierCurveTo(x + 60, bottomY - 200, x + 120, bottomY - 200, x + 180, bottomY);
+        for (let i = 0; i <= totalWidth; i += 5) {
+            ctx.lineTo(x + i, getTrackY(i));
+        }
         ctx.stroke();
 
-        // Add structural support beams so it doesn't look like a floating line
-        ctx.lineWidth = 1;
-        for (let i = 30; i < 160; i += 30) {
-            ctx.beginPath();
-            ctx.moveTo(x + i, bottomY);
-            ctx.lineTo(x + i, bottomY - 40); // Beams connecting to the ground
-            ctx.stroke();
+        // 4. Draw Moving Coaster Carts
+        const time = Date.now() / 4000; // Speed of the coaster
+        const cartsInTrain = 3;
+        
+        for (let i = 0; i < cartsInTrain; i++) {
+            // Cart progress cycles from 0 to 1.2 (to allow gap between trains)
+            const progress = (time - (i * 0.04)) % 1.2; 
+            
+            if (progress < 1.0) {
+                const cartRelX = progress * totalWidth;
+                const cartX = x + cartRelX;
+                const cartY = getTrackY(cartRelX);
+                
+                // Draw Cart Body
+                ctx.fillStyle = '#ef4444'; // Red coaster
+                ctx.fillRect(cartX - 4, cartY - 7, 8, 6);
+                
+                // Draw Little Passenger Heads
+                ctx.fillStyle = '#ffdbac';
+                ctx.fillRect(cartX - 2, cartY - 9, 2, 2);
+                ctx.fillRect(cartX + 1, cartY - 9, 2, 2);
+                
+                // Wheel highlight
+                ctx.fillStyle = '#000';
+                ctx.fillRect(cartX - 3, cartY - 2, 2, 2);
+                ctx.fillRect(cartX + 1, cartY - 2, 2, 2);
+            }
         }
     }
 
