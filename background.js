@@ -10,7 +10,8 @@ class Background {
         this.clouds = [];
         this.scenery = [];
         this.groundY = canvasHeight - 32;
-        this.skyColor = this.level === 3 ? '#000000' : (this.level === 2 ? '#1e1b4b' : '#5c94fc');
+        this.skyColor = this.level === 3 ? '#000000' : 
+        (this.level === 2 ? '#5c94fc' : '#5c94fc');
 
         this.init();
     }

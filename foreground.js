@@ -58,9 +58,10 @@ class Foreground {
         }
     }
 
-    setTheme() {
-        if (this.level === 2) {
-            this.groundColors.grass = '#0058f8';
+  setTheme() {
+        // Levels 1 and 2 now both use the green grass and brown dirt theme
+        if (this.level === 3) { 
+            this.groundColors.grass = '#0058f8'; // You can move the dark theme here or change it
             this.groundColors.dirt = '#000000';
         } else {
             this.groundColors.grass = '#48a048';
