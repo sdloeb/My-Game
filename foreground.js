@@ -404,39 +404,31 @@ class Foreground {
         let offsetY = 0;
         const isSpecial = isSecret || hasClock || isCheckpointCandidate;
 
-        if (isSpecial && platformObj && !platformObj.hasPulsed) {
-
-            // TRIGGER: Capture the time when the brick first appears on screen
-            if (!platformObj.pulseTriggered && x > 0 && x < (CANVAS_WIDTH - 16)) {
-                platformObj.pulseTriggered = true;
-                platformObj.pulseStartTime = Date.now();
-            }
-
-            if (platformObj.pulseTriggered) {
-                const elapsed = Date.now() - platformObj.pulseStartTime;
-
-                // --- NEW DELAY LOGIC ---
-                const delay = 600; // Brick waits 0.6 seconds after appearing before it moves
-
-                if (elapsed > delay) {
-                    const animationProgress = elapsed - delay; // Time spent actually animating
-
-                    if (animationProgress < 500) {
-                        // One smooth nudge up and down
-                        offsetY = Math.sin(animationProgress * (Math.PI / 500)) * 1.5;
-                    } else {
-                        // Stop forever after the 0.5s animation finishes
-                        platformObj.hasPulsed = true;
-                    }
-                }
-                // -----------------------
-            }
-        }
+        
 
         ctx.save();
         ctx.translate(0, offsetY);
         // Main Body
-        ctx.fillRect(x, y, 16, 16);
+        // 1. Draw Main Body
+ctx.fillRect(x, y, 16, 16);
+
+// --- REALISTIC JAGGERY CRACK ---
+        if (isSpecial) {
+            ctx.fillStyle = this.brickColors.shadow;
+            // The deep, jagged path of the crack (Dark color)
+            ctx.fillRect(x + 3, y + 2, 3, 1); // Horizontal start
+            ctx.fillRect(x + 5, y + 3, 1, 3); // Vertical drop
+            ctx.fillRect(x + 6, y + 5, 3, 1); // Horizontal zig
+            ctx.fillRect(x + 8, y + 6, 1, 4); // Long vertical zag
+            ctx.fillRect(x + 9, y + 9, 3, 1); // Final horizontal split
+            
+            ctx.fillStyle = this.brickColors.highlight;
+            // Highlight pixels on the crack's "lip" to give it 3D depth
+            ctx.fillRect(x + 3, y + 3, 2, 1); 
+            ctx.fillRect(x + 6, y + 6, 2, 1);
+            ctx.fillRect(x + 9, y + 10, 2, 1);
+        }
+
         // Highlights
         ctx.fillStyle = this.brickColors.highlight;
         ctx.fillRect(x, y, 16, 1);
