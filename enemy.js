@@ -173,95 +173,137 @@ drawSkeleton(ctx, limb) {
 
 
 drawZombie(ctx, limb) {
-        const bounce = Math.abs(Math.sin(this.walkCounter)) * 2; // Shambling head bob
+    const bounce = Math.abs(Math.sin(this.walkCounter)) * 2;
+    const skinColor = '#4d7c0f'; // Rotten olive green
+    const highlightSkin = '#a3e635'; // Sickly light green
+    const bloodColor = '#7f1d1d'; // Dark dried blood
+    const shirtColor = '#1e3a8a'; // Tattered blue shirt
+    const pantsColor = '#422006'; // Filthy brown pants
 
-        // 1. SHAMBLING ARMS (Drawn behind the body for depth)
-        ctx.fillStyle = '#14532d'; // Darker rotting green
-        if (!this.isSquatting) {
-            // Far arm (reaching forward)
-            ctx.fillRect(this.dir === 1 ? 12 : -6, 9 + (limb * 0.5), 10, 3); 
-        }
+    // 1. BACK ARM (Dangling/Broken)
+    ctx.fillStyle = skinColor;
+    if (!this.isSquatting) {
+        // This arm is shorter and hangs limply behind
+        ctx.fillRect(this.dir === 1 ? -2 : 14, 10 + (bounce * 0.5), 3, 6);
+        ctx.fillStyle = bloodColor;
+        ctx.fillRect(this.dir === 1 ? -2 : 14, 14 + (bounce * 0.5), 2, 1); // Blood on hand
+    }
 
-        // 2. Tattered Pants & Legs
-        // 2. Tattered Pants & Legs
-ctx.fillStyle = '#422006'; // Dark Brown
-if (this.isSquatting) {
-    // Shorter, wider legs for the squat
-    ctx.fillRect(2, 8, 5, 4); // Leg 1
-    ctx.fillRect(9, 8, 5, 4); // Leg 2
-} else {
-    ctx.fillRect(3, 16, 4, 8 + limb); // Leg 1
-    ctx.fillRect(9, 16, 4, 8 - limb); // Leg 2
-    // Pant tatter details
-    ctx.fillStyle = '#166534'; 
-    ctx.fillRect(3, 19 + limb, 2, 2); // Hole in knee
+    // 2. LEGS (Asymmetrical Shambling)
+    ctx.fillStyle = pantsColor;
+    if (this.isSquatting) {
+        ctx.fillRect(2, 8, 5, 4);
+        ctx.fillRect(9, 8, 5, 4);
+    } else {
+        // Leg 1: Tattered but whole
+        ctx.fillRect(3, 16, 4, 8 + limb);
+        
+        // Leg 2: Exposed bone at the knee
+        ctx.fillRect(9, 16, 4, 8 - limb);
+        ctx.fillStyle = '#f3f4f6'; // Exposed Bone (White)
+        ctx.fillRect(10, 19 - (limb * 0.5), 2, 2);
+        ctx.fillStyle = bloodColor;
+        ctx.fillRect(9, 18 - (limb * 0.5), 4, 1); // Blood around the wound
+    }
+
+    // 3. TORSO (Tattered Shirt)
+    ctx.fillStyle = shirtColor;
+    ctx.fillRect(3, 8 + (bounce * 0.5), 10, 9);
+    // Holes in shirt
+    ctx.fillStyle = skinColor;
+    ctx.fillRect(4, 11 + (bounce * 0.5), 2, 2); // Belly hole
+    ctx.fillRect(9, 13 + (bounce * 0.5), 2, 1); // Shoulder tear
+
+    // 4. HEAD (The "Death Stare")
+    ctx.fillStyle = skinColor;
+    ctx.fillRect(4, 0 + bounce, 8, 8); // Base head
+    ctx.fillStyle = highlightSkin;
+    ctx.fillRect(5, 0 + bounce, 3, 2); // Forehead highlight
+    
+    // Sunken Face
+    ctx.fillStyle = '#000000'; 
+    ctx.fillRect(4, 3 + bounce, 8, 2); // Eye sockets
+    ctx.fillStyle = '#fefce8'; // Pale yellow/cloudy pupils
+    ctx.fillRect(this.dir === 1 ? 9 : 5, 3 + bounce, 1, 1);
+    
+    // Slack Jaw with blood
+    ctx.fillStyle = '#052e16'; // Inside mouth
+    ctx.fillRect(5, 6 + bounce, 6, 2);
+    ctx.fillStyle = bloodColor;
+    ctx.fillRect(6, 7 + bounce, 2, 2); // Blood dripping from mouth
+
+    // 5. FRONT ARM (Reaching/Grasping)
+    if (!this.isSquatting) {
+        ctx.fillStyle = skinColor;
+        // Reaching out towards the player
+        ctx.fillRect(this.dir === 1 ? 10 : -2, 9 + (bounce * 0.5), 8, 3);
+        ctx.fillStyle = highlightSkin;
+        ctx.fillRect(this.dir === 1 ? 15 : -2, 9 + (bounce * 0.5), 2, 1); // Finger highlight
+    }
 }
 
-        // 3. Torn Blue Shirt (Body)
-        ctx.fillStyle = '#1e3a8a'; 
-        ctx.fillRect(3, 8 + (bounce * 0.5), 10, 9);
-        // Shirt "Tatter" pixels (Adds texture to the edges)
-        ctx.fillRect(2, 11, 1, 3);
-        ctx.fillRect(13, 14, 1, 2);
 
-        // 4. Exposed Ribs/Chest
-        ctx.fillStyle = '#166534'; // Skin
-        ctx.fillRect(5, 10 + (bounce * 0.5), 3, 4); // Large tear in shirt
-        ctx.fillStyle = '#d1d5db'; // Bone/exposed rib pixel
-        ctx.fillRect(6, 11 + (bounce * 0.5), 2, 1);
-
-        // 5. Head with "Shamble-Bob"
-        ctx.fillStyle = '#166534'; // Skin
-        ctx.fillRect(4, 0 + bounce, 8, 8); // Base head
-        ctx.fillStyle = '#22c55e'; // Forehead highlight
-        ctx.fillRect(5, 0 + bounce, 6, 2);
-        
-        // 6. Facial Details
-        ctx.fillStyle = '#000000'; // Sunken eye sockets
-        ctx.fillRect(4, 3 + bounce, 8, 2);
-        ctx.fillStyle = '#ef4444'; // Red pupils
-        ctx.fillRect(this.dir === 1 ? 9 : 5, 3 + bounce, 1, 1);
-        ctx.fillStyle = '#052e16'; // Open Slack Jaw
-        ctx.fillRect(6, 6 + bounce, 4, 2);
-
-        // 7. Front Arm (Reaching)
-        if (!this.isSquatting) {
-            ctx.fillStyle = '#166534';
-            ctx.fillRect(this.dir === 1 ? 10 : -2, 11 + (bounce * 0.5), 8, 3);
-        }
-    }
-
-
-
+//SPIDER
     drawSpider(ctx, limb) {
-        ctx.fillStyle = '#18181b'; // Dark body
-        // Body
-        ctx.fillRect(4, 2, 12, 10);
-        
-        // Eyes (8 tiny red dots)
-        ctx.fillStyle = '#ef4444';
-        const eyeX = this.dir === 1 ? 12 : 4;
-        ctx.fillRect(eyeX, 4, 1, 1);
-        ctx.fillRect(eyeX + 2, 4, 1, 1);
-        ctx.fillRect(eyeX, 6, 1, 1);
-        ctx.fillRect(eyeX + 2, 6, 1, 1);
+    const headBob = Math.sin(this.walkCounter) * 1.5;
+    const bodyColor = '#18181b'; // Dark charcoal
+    const highlightColor = '#3f3f46'; // Lighter slate for depth
 
-        // Legs (4 on each side)
-        ctx.strokeStyle = '#18181b';
-        ctx.lineWidth = 1;
-        for (let i = 0; i < 4; i++) {
-            // Left legs
-            ctx.beginPath();
-            ctx.moveTo(6, 8);
-            ctx.lineTo(0, 12 + (i === 0 ? limb : -limb));
-            ctx.stroke();
-            // Right legs
-            ctx.beginPath();
-            ctx.moveTo(14, 8);
-            ctx.lineTo(20, 12 + (i === 0 ? -limb : limb));
-            ctx.stroke();
-        }
+    // 1. ABDOMEN (The large back section)
+    ctx.fillStyle = bodyColor;
+    ctx.beginPath();
+    ctx.ellipse(12, 7 + headBob, 7, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Add a small highlight on the abdomen
+    ctx.fillStyle = highlightColor;
+    ctx.fillRect(10, 4 + headBob, 3, 2);
+
+    // 2. CEPHALOTHORAX (The head/front section)
+    ctx.fillStyle = bodyColor;
+    ctx.beginPath();
+    ctx.arc(6, 8 + headBob, 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 3. EYES (Clustered spider eyes)
+    ctx.fillStyle = '#ef4444'; // Piercing Red
+    const eyeX = this.dir === 1 ? 7 : 3;
+    // Main eyes
+    ctx.fillRect(eyeX, 6 + headBob, 2, 2);
+    // Secondary smaller eyes
+    ctx.fillRect(eyeX + (this.dir === 1 ? -2 : 2), 5 + headBob, 1, 1);
+    ctx.fillRect(eyeX + (this.dir === 1 ? -1 : 1), 8 + headBob, 1, 1);
+
+    // 4. SEGMENTED LEGS (With joints)
+    ctx.strokeStyle = bodyColor;
+    ctx.lineWidth = 2;
+    
+    for (let i = 0; i < 4; i++) {
+        const spacing = i * 3;
+        
+        // --- Left Legs ---
+        ctx.beginPath();
+        ctx.moveTo(8, 7 + headBob); // Start at body
+        // Joint (Elbow)
+        const lxJoint = 2 - (i * 1);
+        const lyJoint = 2 + spacing + (i === 0 ? limb : -limb);
+        ctx.lineTo(lxJoint, lyJoint);
+        // Tip (Foot)
+        ctx.lineTo(lxJoint - 4, 12);
+        ctx.stroke();
+
+        // --- Right Legs ---
+        ctx.beginPath();
+        ctx.moveTo(12, 7 + headBob); // Start at body
+        // Joint (Elbow)
+        const rxJoint = 16 + (i * 1);
+        const ryJoint = 2 + spacing + (i === 0 ? -limb : limb);
+        ctx.lineTo(rxJoint, ryJoint);
+        // Tip (Foot)
+        ctx.lineTo(rxJoint + 4, 12);
+        ctx.stroke();
     }
+}
 }
 
 class Boss {
