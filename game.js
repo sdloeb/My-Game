@@ -264,10 +264,18 @@ function update() {
             let hitBubble = false;
             for (let j = activeBubbles.length - 1; j >= 0; j--) {
                 let b = activeBubbles[j];
-                // Check distance between projectile and bubble center
-                let dist = Math.sqrt(Math.pow(p.x - b.x, 2) + Math.pow(p.y - b.y, 2));
 
-                if (!p.isEnemyBullet && dist < b.radius) {
+                // 1. Distance from the dart's center/tail
+                let distCenter = Math.sqrt(Math.pow(p.x - b.x, 2) + Math.pow(p.y - b.y, 2));
+
+                // 2. Calculate the position of the dart's TIP (about 10 pixels ahead of its origin)
+                let angle = Math.atan2(p.vy, p.vx);
+                let tipX = p.x + Math.cos(angle) * 10;
+                let tipY = p.y + Math.sin(angle) * 10;
+                let distTip = Math.sqrt(Math.pow(tipX - b.x, 2) + Math.pow(tipY - b.y, 2));
+
+                // Check if EITHER the center OR the tip is inside the bubble's radius
+                if (!p.isEnemyBullet && (distCenter < b.radius || distTip < b.radius)) {
                     createBubblePopEffect(b.x, b.y);
                     // 1. Pop the bubble and remove projectile
                     activeBubbles.splice(j, 1);
