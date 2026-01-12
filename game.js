@@ -259,6 +259,38 @@ function update() {
             p.x += p.vx;
         }
 
+        // --- START OF ADDED BUBBLE COLLISION (LEVEL 1-2) ---
+        if (fg.level === 2) {
+            let hitBubble = false;
+            for (let j = activeBubbles.length - 1; j >= 0; j--) {
+                let b = activeBubbles[j];
+                // Check distance between projectile and bubble center
+                let dist = Math.sqrt(Math.pow(p.x - b.x, 2) + Math.pow(p.y - b.y, 2));
+
+                if (!p.isEnemyBullet && dist < b.radius) {
+                    createBubblePopEffect(b.x, b.y);
+                    // 1. Pop the bubble and remove projectile
+                    activeBubbles.splice(j, 1);
+                    projectiles.splice(i, 1);
+
+                    // 2. Increment Troll counter and provide visual flash
+                    fg.troll.bubblesPopped++;
+                    fg.troll.flashTimer = 10;
+
+                    // 3. Handle Boss Death at 3 pops
+                    if (fg.troll.bubblesPopped >= 3) {
+                        fg.troll.hit = true;
+                        createShatterEffect(fg.troll.x + 16, fg.troll.y - 20); // Center of troll
+                        fg.dropKey(); // Triggers the key to fall just like Level 1-1
+                    }
+                    hitBubble = true;
+                    break;
+                }
+            }
+            if (hitBubble) continue; // Skip other collisions for this projectile
+        }
+
+
         // 2. REACTION BIRD COLLISION & HEALTH
         if (fg.bird && !fg.bird.hit && !p.isEnemyBullet) {
             const pLeft = p.isArrow ? p.x - 8 : p.x;
@@ -527,6 +559,19 @@ function createShatterEffect(x, y) {
     }
 }
 
+function createBubblePopEffect(x, y) {
+    for (let i = 0; i < 8; i++) {
+        particles.push({
+            x: x,
+            y: y,
+            vx: (Math.random() - 0.5) * 5,
+            vy: (Math.random() - 0.5) * 5,
+            life: 15 + Math.random() * 10,
+            color: 'rgba(255, 255, 255, 0.8)' // Semi-transparent white
+        });
+    }
+}
+
 
 function createOilSplash(x, y) {
     for (let i = 0; i < 3; i++) {
@@ -651,8 +696,6 @@ function loadLevel(num, keepTimer = false) {
         levelDisp.innerText = `Level 1-${num}${collectedStars[num] ? " ⭐" : ""}`;
     }
 
-
-    fg.resetTimer();
 }
 
 function spawnEnemies() {

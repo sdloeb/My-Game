@@ -23,7 +23,8 @@ class Foreground {
         this.hasKey = false;
         this.portalLocked = true;
         this.bow = { x: this.portalX - 175, y: this.groundY - 20, collected: false }; //bow location
-        this.troll = { x: this.portalX + 40, y: this.groundY, width: 32, height: 40, health: 5, hit: false, flashTimer: 0, bubbleTimer: 0 };
+
+        this.troll = { x: this.portalX + 40, y: this.groundY, width: 32, height: 40, health: 5, hit: false, flashTimer: 0, bubbleTimer: 0, bubblesPopped: 0 };
 
         this.portal = {
             x: this.portalX,
@@ -349,7 +350,7 @@ class Foreground {
             if (Math.sqrt(dx * dx + dy * dy) < 20) {
                 this.bow.collected = true;
                 player.hasBow = true;
-                player.bullets = 6;
+                player.bullets = 20;
                 player.updateUI();
             }
         }
