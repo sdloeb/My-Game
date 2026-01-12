@@ -10,8 +10,8 @@ class Background {
         this.clouds = [];
         this.scenery = [];
         this.groundY = canvasHeight - 32;
-        this.skyColor = this.level === 3 ? '#000000' : 
-        (this.level === 2 ? '#5c94fc' : '#5c94fc');
+        this.skyColor = this.level === 3 ? '#000000' :
+            (this.level === 2 ? '#5c94fc' : '#5c94fc');
 
         this.init();
     }
@@ -66,74 +66,116 @@ class Background {
 
     generateCityTheme() {
         let bx = 0;
-        while (bx < 5000) {
+        // 1. CHOOSE YOUR STOP POINT
+        // This is the point in the Foreground where you want the buildings to end.
+        const foregroundStopPoint = 2900;
+
+        // 2. CALCULATE LIMIT BASED ON PARALLAX
+        // City buildings (Level 1) use 0.5 parallax.
+        const buildingLimit = foregroundStopPoint * 0.5;
+
+        // 3. GENERATE BUILDINGS
+        while (bx < buildingLimit) {
             const isSkyscraper = Math.random() > 0.4;
             const bWidth = isSkyscraper ? 30 + Math.random() * 20 : 20 + Math.random() * 15;
             const bHeight = isSkyscraper ? 80 + Math.random() * 60 : 20 + Math.random() * 30;
+
             this.scenery.push({
-                type: 'building', x: bx, y: this.groundY - bHeight, w: bWidth, h: bHeight,
-                color: isSkyscraper ? '#4b5563' : '#7c2d12', windows: isSkyscraper
+                type: 'building',
+                x: bx,
+                y: this.groundY - bHeight,
+                w: bWidth,
+                h: bHeight,
+                color: isSkyscraper ? '#4b5563' : '#7c2d12',
+                windows: isSkyscraper
             });
+
+            // Spacing between buildings
             bx += bWidth + (10 + Math.random() * 50);
         }
     }
 
-   generateCarnivalTheme() {
+
+    generateCarnivalTheme() {
         this.scenery = [];
         let cx = 100;
         const pool = ['tent', 'wheel', 'stand', 'rollercoaster', 'stall', 'carousel', 'swingride', 'elephant', 'popcorn'];
 
-        let itemsToPlace = [];
-        pool.forEach(type => {
-            itemsToPlace.push(type);
-            itemsToPlace.push(type);
-        });
+        // 1. CHOOSE YOUR STOP POINT
+        // This is the point in the "Foreground" (where the player walks) 
+        // where you want the background to be completely empty.
+        const foregroundStopPoint = 2900;
 
-        itemsToPlace.sort(() => Math.random() - 0.5);
+        // 2. GENERATE BUILDINGS/TENTS (0.8 Parallax)
+        // We multiply the stop point by 0.8 so the background ends exactly 
+        // when the player reaches that distance.
+        const buildingLimit = foregroundStopPoint * 0.8;
 
-        itemsToPlace.forEach(type => {
+        while (cx < buildingLimit) {
+            const type = pool[Math.floor(Math.random() * pool.length)];
             this.scenery.push({
                 type: type,
                 x: cx,
                 y: this.groundY,
                 color: Math.random() > 0.5 ? '#ef4444' : '#ffffff'
             });
-
-            // Tighter spacing (115px) ensures all 18 items fit visually before the bow area
             cx += 110 + Math.random() * 15;
-        });
+        }
 
-        // Limit children to the first 1200 pixels of background space
-        // At 0.4 parallax, this ensures they are gone by the time you reach the bow
+        // 3. GENERATE CHILDREN (0.4 Parallax)
+        // Children stay on screen longer, so they need a different limit 
+        // to stop at the same time as the buildings.
+        const childLimit = foregroundStopPoint * 0.4;
+
         for (let i = 0; i < 30; i++) {
             this.scenery.push({
-                type: 'child', 
-                x: Math.random() * 1200, 
+                type: 'child',
+                x: Math.random() * childLimit,
                 y: this.groundY,
-                speed: 0.3 + Math.random() * 0.4, 
+                speed: 0.3 + Math.random() * 0.4,
                 dir: Math.random() > 0.5 ? 1 : -1,
-                size: 3 + Math.random() * 2 // Roughly 50% smaller
+                size: 3 + Math.random() * 2
             });
         }
     }
 
     generateSpaceTheme() {
+        this.scenery = []; // Clear any existing scenery
+
+        // 1. CHOOSE YOUR STOP POINT
+        // This is the point in the Foreground where the background should be empty.
+        const foregroundStopPoint = 2900;
+
+        // 2. CALCULATE LIMIT BASED ON PARALLAX
+        // Space scenery (Level 3) uses 0.1 parallax.
+        const sceneryLimit = foregroundStopPoint * 0.1;
+
+        // 3. GENERATE STARS
         for (let i = 0; i < 150; i++) {
             this.scenery.push({
-                type: 'star', x: Math.random() * 5000, y: Math.random() * this.canvasHeight,
-                size: Math.random() * 2, twinkle: Math.random() > 0.8
+                type: 'star',
+                x: Math.random() * sceneryLimit,
+                y: Math.random() * this.canvasHeight,
+                size: Math.random() * 2,
+                twinkle: Math.random() > 0.8
             });
         }
+
+        // 4. GENERATE PLANETS
         const planets = ['jupiter', 'saturn', 'moon', 'blackhole'];
         let px = 200;
-        while (px < 5000) {
+        while (px < sceneryLimit) {
             this.scenery.push({
                 type: planets[Math.floor(Math.random() * planets.length)],
-                x: px, y: 40 + Math.random() * 100, size: 20 + Math.random() * 30
+                x: px,
+                y: 40 + Math.random() * 100,
+                size: 20 + Math.random() * 30
             });
+            // Random spacing between planets
             px += 600 + Math.random() * 800;
         }
     }
+
 
     draw(ctx, cameraX) {
         // 1. Draw Sky
@@ -151,10 +193,10 @@ class Background {
         });
 
         // 3. Draw "Far" Scenery Layer (Children walk behind buildings)
-   this.scenery.forEach(s => {
-            if (s.type !== 'child') return; 
+        this.scenery.forEach(s => {
+            if (s.type !== 'child') return;
 
-            const drawX = s.x - (cameraX * 0.4); 
+            const drawX = s.x - (cameraX * 0.4);
             if (drawX + 50 < 0 || drawX > this.canvasWidth) return;
 
             this.drawChild(ctx, drawX, s);
@@ -164,7 +206,7 @@ class Background {
         this.scenery.forEach(s => {
             if (s.type === 'child') return; // Skip children, we already drew them
 
-           const parallax = (this.level === 3) ? 0.1 : (this.level === 2 ? 0.8 : 0.5);
+            const parallax = (this.level === 3) ? 0.1 : (this.level === 2 ? 0.8 : 0.5);
             const drawX = s.x - (cameraX * parallax);
 
             if (drawX + 300 < 0 || drawX > this.canvasWidth) return;
@@ -184,7 +226,7 @@ class Background {
             else if (['jupiter', 'saturn', 'moon'].includes(s.type)) this.drawPlanet(ctx, drawX, s);
             else if (s.type === 'blackhole') this.drawBlackHole(ctx, drawX, s);
 
-           
+
         });
     }
 
@@ -215,7 +257,7 @@ class Background {
 
 
 
-   drawCarousel(ctx, x, s) {
+    drawCarousel(ctx, x, s) {
         const bottomY = s.y;
         const centerX = x + 30;
         const carouselWidth = 60;
@@ -239,7 +281,7 @@ class Background {
             const rotX = Math.cos(time + phase) * 22;
             // Vertical "Bobbing" effect using Sine
             const bobY = Math.sin(time * 2 + phase) * 5;
-            
+
             const horseX = centerX + rotX;
             const horseY = bottomY - 25 + bobY;
 
@@ -253,8 +295,8 @@ class Background {
 
             // Draw the Horse (Only if it's "in front" of or beside the center)
             // This simple depth check makes it look like it's going around
-            ctx.fillStyle = i % 2 === 0 ? '#ffffff' : '#fde047'; 
-            
+            ctx.fillStyle = i % 2 === 0 ? '#ffffff' : '#fde047';
+
             // Body
             ctx.fillRect(horseX - 5, horseY, 10, 5);
             // Head & Neck
@@ -285,16 +327,16 @@ class Background {
         ctx.fillRect(x - 10, bottomY - 45, carouselWidth + 20, 4);
     }
 
-   drawSwingRide(ctx, x, s) {
+    drawSwingRide(ctx, x, s) {
         const bottomY = s.y;
         const poleX = x + 25;
         const poleHeight = 70;
         const topY = bottomY - poleHeight;
-        
+
         // 1. THE CENTRAL POLE
         ctx.fillStyle = '#475569'; // Slate grey
         ctx.fillRect(poleX - 4, topY, 8, poleHeight);
-        
+
         // Add some detail to the pole (stripes)
         ctx.fillStyle = '#64748b';
         ctx.fillRect(poleX - 4, topY + 10, 8, 4);
@@ -308,7 +350,7 @@ class Background {
         ctx.lineTo(poleX, topY - 15);
         ctx.lineTo(poleX + 25, topY);
         ctx.fill();
-        
+
         // Yellow trim on the cap
         ctx.fillStyle = '#fde047';
         ctx.fillRect(poleX - 25, topY - 2, 50, 4);
@@ -316,7 +358,7 @@ class Background {
         // 3. THE SWINGING SEATS
         const swingRange = 25; // How far they swing out
         const time = Date.now() / 800;
-        
+
         // Draw 3 seats at different depths/angles
         const seatOffsets = [-1, 0, 1];
         seatOffsets.forEach(offset => {
@@ -336,7 +378,7 @@ class Background {
             // Draw the Seat
             ctx.fillStyle = '#1e3a8a'; // Blue seat
             ctx.fillRect(seatX - 4, seatY, 8, 3);
-            
+
             // Draw a tiny Passenger Head
             ctx.fillStyle = '#ffdbac';
             ctx.fillRect(seatX - 2, seatY - 4, 4, 4);
@@ -347,88 +389,88 @@ class Background {
         ctx.fillRect(poleX - 12, bottomY - 5, 24, 5);
     }
 
-  drawChild(ctx, x, s) {
+    drawChild(ctx, x, s) {
         const bob = Math.sin(Date.now() / 150) * 2;
         ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-        
+
         // Use s.size to determine the height/width
         const height = s.size * 1.5;
         const width = s.size * 0.75;
-        
+
         ctx.fillRect(x, s.y - height + bob, width, height); // Body
-        ctx.beginPath(); 
-        ctx.arc(x + width / 2, s.y - height - (width / 2) + bob, width / 2, 0, Math.PI * 2); 
+        ctx.beginPath();
+        ctx.arc(x + width / 2, s.y - height - (width / 2) + bob, width / 2, 0, Math.PI * 2);
         ctx.fill(); // Head
     }
 
-drawBuilding(ctx, x, b) {
-    const shadowColor = 'rgba(0, 0, 0, 0.2)';
-    const highlightColor = 'rgba(255, 255, 255, 0.1)';
-    
-    // 1. MAIN STRUCTURE
-    ctx.fillStyle = b.color;
-    ctx.fillRect(x, b.y, b.w, b.h);
+    drawBuilding(ctx, x, b) {
+        const shadowColor = 'rgba(0, 0, 0, 0.2)';
+        const highlightColor = 'rgba(255, 255, 255, 0.1)';
 
-    // 2. DEPTH & SHADING
-    ctx.fillStyle = shadowColor;
-    ctx.fillRect(x + b.w - 4, b.y, 4, b.h);
-    
-    ctx.fillStyle = highlightColor;
-    ctx.fillRect(x, b.y, b.w, 2);
+        // 1. MAIN STRUCTURE
+        ctx.fillStyle = b.color;
+        ctx.fillRect(x, b.y, b.w, b.h);
 
-    // 3. WINDOWS
-    if (b.windows) {
-        for (let wy = b.y + 10; wy < b.y + b.h - 10; wy += 15) {
-            for (let wx = x + 5; wx < x + b.w - 8; wx += 10) {
-                ctx.fillStyle = '#111827'; 
-                ctx.fillRect(wx - 1, wy - 1, 5, 6);
-                
-                // FIXED: Use the static world coordinate (b.x) and relative offset (wx - x) 
-                // to calculate the lit state instead of the moving screen coordinate (x).
-                const relativeX = wx - x;
-                const isLit = (Math.sin(relativeX * wy + b.x) > 0); 
-                
-                ctx.fillStyle = isLit ? '#fde047' : '#374151'; 
-                ctx.fillRect(wx, wy, 3, 4);
-                
-                if (isLit) {
-                    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-                    ctx.fillRect(wx, wy, 1, 1);
+        // 2. DEPTH & SHADING
+        ctx.fillStyle = shadowColor;
+        ctx.fillRect(x + b.w - 4, b.y, 4, b.h);
+
+        ctx.fillStyle = highlightColor;
+        ctx.fillRect(x, b.y, b.w, 2);
+
+        // 3. WINDOWS
+        if (b.windows) {
+            for (let wy = b.y + 10; wy < b.y + b.h - 10; wy += 15) {
+                for (let wx = x + 5; wx < x + b.w - 8; wx += 10) {
+                    ctx.fillStyle = '#111827';
+                    ctx.fillRect(wx - 1, wy - 1, 5, 6);
+
+                    // FIXED: Use the static world coordinate (b.x) and relative offset (wx - x) 
+                    // to calculate the lit state instead of the moving screen coordinate (x).
+                    const relativeX = wx - x;
+                    const isLit = (Math.sin(relativeX * wy + b.x) > 0);
+
+                    ctx.fillStyle = isLit ? '#fde047' : '#374151';
+                    ctx.fillRect(wx, wy, 3, 4);
+
+                    if (isLit) {
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+                        ctx.fillRect(wx, wy, 1, 1);
+                    }
                 }
             }
         }
+
+        // 4. ROOF DETAILS
+        ctx.fillStyle = b.color;
+        ctx.fillRect(x - 2, b.y, b.w + 4, 3);
+
+        if (b.w > 25) {
+            ctx.fillStyle = '#9ca3af';
+            ctx.fillRect(x + 5, b.y - 6, 12, 6);
+            ctx.fillStyle = '#4b5563';
+            ctx.fillRect(x + 6, b.y - 4, 3, 3);
+
+            ctx.fillStyle = '#1f2937';
+            ctx.fillRect(x + b.w - 10, b.y - 15, 1, 15);
+            ctx.fillRect(x + b.w - 12, b.y - 12, 5, 1);
+        }
+
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        ctx.fillRect(x, b.y + b.h - 2, b.w, 2);
     }
-
-    // 4. ROOF DETAILS
-    ctx.fillStyle = b.color;
-    ctx.fillRect(x - 2, b.y, b.w + 4, 3); 
-
-    if (b.w > 25) {
-        ctx.fillStyle = '#9ca3af'; 
-        ctx.fillRect(x + 5, b.y - 6, 12, 6);
-        ctx.fillStyle = '#4b5563';
-        ctx.fillRect(x + 6, b.y - 4, 3, 3); 
-        
-        ctx.fillStyle = '#1f2937';
-        ctx.fillRect(x + b.w - 10, b.y - 15, 1, 15); 
-        ctx.fillRect(x + b.w - 12, b.y - 12, 5, 1);  
-    }
-
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-    ctx.fillRect(x, b.y + b.h - 2, b.w, 2);
-}
 
     drawTent(ctx, x, s) {
         const bottomY = s.y;
         const tentWidth = 80;
         const tentHeight = 60;
         const centerX = x + tentWidth / 2;
-        
+
         // 1. DRAW MAIN BODY (Red and White Stripes)
         // Base Background
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(x, bottomY - 40, tentWidth, 40);
-        
+
         // Red Stripes
         ctx.fillStyle = '#ef4444';
         for (let i = 0; i < tentWidth; i += 20) {
@@ -475,7 +517,7 @@ drawBuilding(ctx, x, b) {
         ctx.moveTo(centerX, bottomY - tentHeight);
         ctx.lineTo(centerX, bottomY - tentHeight - 15);
         ctx.stroke();
-        
+
         // Flag Fabric (Waving effect)
         const wave = Math.sin(Date.now() / 300) * 3;
         ctx.fillStyle = '#fde047';
@@ -496,7 +538,7 @@ drawBuilding(ctx, x, b) {
         // 1. MAIN WOODEN BASE
         ctx.fillStyle = woodColor;
         ctx.fillRect(x, bottomY - standHeight, standWidth, standHeight);
-        
+
         // Add "Plank" lines for texture
         ctx.fillStyle = shadowColor;
         ctx.fillRect(x, bottomY - 24, standWidth, 1);
@@ -561,14 +603,14 @@ drawBuilding(ctx, x, b) {
     drawRollercoaster(ctx, x, s) {
         const bottomY = s.y;
         const totalWidth = 220;
-        
+
         // 1. Path Calculation: A consistent function for track, supports, and carts
         const getTrackY = (relX) => {
             if (relX < 0 || relX > totalWidth) return bottomY;
             let h = 0;
             if (relX < 130) {
                 // First Hill (taller)
-                h = Math.sin((relX / 130) * Math.PI) * 150; 
+                h = Math.sin((relX / 130) * Math.PI) * 150;
             } else {
                 // Second Hill (shorter)
                 h = Math.sin(((relX - 130) / (totalWidth - 130)) * Math.PI) * 70;
@@ -586,7 +628,7 @@ drawBuilding(ctx, x, b) {
             ctx.moveTo(x + sx, bottomY);
             ctx.lineTo(x + sx, trackY);
             ctx.stroke();
-            
+
             // Diagonal bracing
             if (sx < totalWidth) {
                 ctx.beginPath();
@@ -609,25 +651,25 @@ drawBuilding(ctx, x, b) {
         // 4. Draw Moving Coaster Carts
         const time = Date.now() / 4000; // Speed of the coaster
         const cartsInTrain = 3;
-        
+
         for (let i = 0; i < cartsInTrain; i++) {
             // Cart progress cycles from 0 to 1.2 (to allow gap between trains)
-            const progress = (time - (i * 0.04)) % 1.2; 
-            
+            const progress = (time - (i * 0.04)) % 1.2;
+
             if (progress < 1.0) {
                 const cartRelX = progress * totalWidth;
                 const cartX = x + cartRelX;
                 const cartY = getTrackY(cartRelX);
-                
+
                 // Draw Cart Body
                 ctx.fillStyle = '#ef4444'; // Red coaster
                 ctx.fillRect(cartX - 4, cartY - 7, 8, 6);
-                
+
                 // Draw Little Passenger Heads
                 ctx.fillStyle = '#ffdbac';
                 ctx.fillRect(cartX - 2, cartY - 9, 2, 2);
                 ctx.fillRect(cartX + 1, cartY - 9, 2, 2);
-                
+
                 // Wheel highlight
                 ctx.fillStyle = '#000';
                 ctx.fillRect(cartX - 3, cartY - 2, 2, 2);
@@ -644,9 +686,9 @@ drawBuilding(ctx, x, b) {
 
         ctx.save();
         ctx.translate(x, bottomY);
-        
+
         // --- SCALE ADDED HERE: Makes the whole drawing 25% smaller ---
-        ctx.scale(0.75, 0.75); 
+        ctx.scale(0.75, 0.75);
 
         // 1. LEGS (Draw back legs first for depth)
         ctx.fillStyle = darkGrey;
@@ -664,7 +706,7 @@ drawBuilding(ctx, x, b) {
         // 3. MAIN BODY
         ctx.fillStyle = bodyColor;
         ctx.fillRect(0, -28, 35, 20);
-        ctx.fillRect(4, -31, 27, 3); 
+        ctx.fillRect(4, -31, 27, 3);
         ctx.fillRect(-2, -25, 2, 14);
 
         // 4. FRONT LEGS (With toe highlights)
@@ -738,5 +780,5 @@ drawBuilding(ctx, x, b) {
         ctx.strokeStyle = '#6366f1'; ctx.beginPath(); ctx.arc(x, s.y, s.size + 2, 0, Math.PI * 2); ctx.stroke();
     }
 
-    
+
 }
