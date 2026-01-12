@@ -140,18 +140,15 @@ class Background {
     }
 
     generateSpaceTheme() {
-        this.scenery = []; // Clear any existing scenery
+        this.scenery = []; // Clear existing scenery
 
-        // 1. CHOOSE YOUR STOP POINT
-        // This is the point in the Foreground where the background should be empty.
-        const foregroundStopPoint = 2900;
+        // 1. CALCULATE LIMIT FOR FULL COVERAGE
+        // The player walks to 3200. At 0.1 parallax, the background camera moves 320px.
+        // We add 300px (approx canvas width) to ensure items are on the right side at the end.
+        const sceneryLimit = 650;
 
-        // 2. CALCULATE LIMIT BASED ON PARALLAX
-        // Space scenery (Level 3) uses 0.1 parallax.
-        const sceneryLimit = foregroundStopPoint * 0.1;
-
-        // 3. GENERATE STARS
-        for (let i = 0; i < 150; i++) {
+        // 2. GENERATE STARS (Spread across the entire background window)
+        for (let i = 0; i < 200; i++) {
             this.scenery.push({
                 type: 'star',
                 x: Math.random() * sceneryLimit,
@@ -161,18 +158,26 @@ class Background {
             });
         }
 
-        // 4. GENERATE PLANETS
+        // 3. GENERATE UNIQUE PLANETS
         const planets = ['jupiter', 'saturn', 'moon', 'blackhole'];
-        let px = 200;
-        while (px < sceneryLimit) {
+        planets.sort(() => Math.random() - 0.5); // Shuffle for unique order
+
+        let px = 60; // Start first planet shortly after level start
+        let planetIndex = 0;
+
+        // Spread the 4 unique planets across the 650px background window
+        while (px < sceneryLimit && planetIndex < planets.length) {
             this.scenery.push({
-                type: planets[Math.floor(Math.random() * planets.length)],
+                type: planets[planetIndex],
                 x: px,
                 y: 40 + Math.random() * 100,
-                size: 20 + Math.random() * 30
+                size: 15 + Math.random() * 15
             });
-            // Random spacing between planets
-            px += 600 + Math.random() * 800;
+
+            // Spacing is roughly 140px in background coords
+            // This spreads 4 planets evenly over the player's ~3200px walk
+            px += 120 + Math.random() * 50;
+            planetIndex++;
         }
     }
 
@@ -185,7 +190,7 @@ class Background {
         // 2. Draw Clouds (Slowest parallax)
         ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
         this.clouds.forEach(c => {
-            const drawX = (c.x - (cameraX * 0.2)) % 1000;
+            const drawX = (c.x - (cameraX * 0.2)) % 5000;
             // Only draw if within or near the screen bounds (256px wide)
             if (drawX > -c.w && drawX < this.canvasWidth) {
                 this.drawCloud(ctx, drawX, c.y, c.w, c.h);
@@ -770,8 +775,34 @@ class Background {
     }
 
     drawPlanet(ctx, x, s) {
-        ctx.fillStyle = s.type === 'jupiter' ? '#eab308' : (s.type === 'saturn' ? '#fde68a' : '#cbd5e1');
-        ctx.beginPath(); ctx.arc(x, s.y, s.size, 0, Math.PI * 2); ctx.fill();
+        const pColor = s.type === 'jupiter' ? '#eab308' : (s.type === 'saturn' ? '#fde68a' : '#cbd5e1');
+
+        // 1. Draw the Planet Body
+        ctx.fillStyle = pColor;
+        ctx.beginPath();
+        ctx.arc(x, s.y, s.size, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 2. Add Specific Details
+        if (s.type === 'saturn') {
+            // Draw Saturn's Rings
+            ctx.strokeStyle = '#e2e8f0';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            // An ellipse tilted slightly for the ring effect
+            ctx.ellipse(x, s.y, s.size * 2.2, s.size * 0.5, Math.PI / 6, 0, Math.PI * 2);
+            ctx.stroke();
+        } else if (s.type === 'jupiter') {
+            // Draw Jupiter's Stripes
+            ctx.fillStyle = 'rgba(0,0,0,0.2)';
+            ctx.fillRect(x - s.size, s.y - (s.size * 0.4), s.size * 2, 3);
+            ctx.fillRect(x - s.size, s.y + (s.size * 0.2), s.size * 2, 2);
+        } else if (s.type === 'moon') {
+            // Draw Moon Craters
+            ctx.fillStyle = 'rgba(0,0,0,0.1)';
+            ctx.beginPath(); ctx.arc(x - (s.size * 0.3), s.y - (s.size * 0.2), s.size * 0.2, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(x + (s.size * 0.4), s.y + (s.size * 0.3), s.size * 0.15, 0, Math.PI * 2); ctx.fill();
+        }
     }
 
     drawBlackHole(ctx, x, s) {
