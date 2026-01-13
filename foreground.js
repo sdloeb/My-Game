@@ -63,8 +63,8 @@ class Foreground {
     setTheme() {
         // Levels 1 and 2 now both use the green grass and brown dirt theme
         if (this.level === 3) {
-            this.groundColors.grass = '#0058f8'; // You can move the dark theme here or change it
-            this.groundColors.dirt = '#000000';
+            this.groundColors.grass = '#d1d5db'; // Light grey surface (lunar dust)
+            this.groundColors.dirt = '#4b5563';  // Darker grey underground (lunar rock)
         } else {
             this.groundColors.grass = '#48a048';
             this.groundColors.dirt = '#885010';
@@ -520,6 +520,38 @@ class Foreground {
         ctx.fillRect(0, this.groundY, CANVAS_WIDTH, 4);
         ctx.fillStyle = this.groundColors.dirt;
         ctx.fillRect(0, this.groundY + 4, CANVAS_WIDTH, 32);
+
+
+        // --- ADDED: LUNAR CRATERS (Level 1-3 Only) ---
+        if (this.level === 3) {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.15)'; // Slightly darker than the dirt
+            // Draw a repeating pattern of craters across the level
+            for (let cx = 0; cx < this.levelWidth; cx += 100) {
+                const screenX = cx - cameraX;
+
+                // Only draw if the crater is actually visible on the screen
+                if (screenX > -40 && screenX < CANVAS_WIDTH + 40) {
+                    // 1. Large Main Crater
+                    ctx.beginPath();
+                    ctx.arc(screenX, this.groundY + 18, 10, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // 2. Smaller secondary crater for variety
+                    ctx.beginPath();
+                    ctx.arc(screenX + 40, this.groundY + 26, 5, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // 3. Subtle highlight for 3D depth
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+                    ctx.beginPath();
+                    ctx.arc(screenX - 2, this.groundY + 16, 4, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.15)'; // Reset color for next loop
+                }
+            }
+        }
+
+
 
         if (this.checkpointTextTimer > 0) {
             ctx.fillStyle = "#ffffff";
