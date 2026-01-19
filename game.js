@@ -431,8 +431,16 @@ function draw() {
     bg.draw(ctx, cameraX);
     // Draw the player early if in sand so ground tiles cover their edges
     if (player.inQuicksand) player.draw(ctx, cameraX);
+
+
+    // 2. NEW: Draw ONLY the Anaconda (Bosses) behind the ground
+    enemies.filter(en => en.isBoss).forEach(en => en.draw(ctx, cameraX));
+
+    // 3. Draw the Foreground (Ground and platforms)
     fg.draw(ctx, cameraX);
-    enemies.forEach(en => en.draw(ctx, cameraX));
+
+    // 4. NEW: Draw standard enemies (Skeletons, Zombies, Spiders) on top of the ground
+    enemies.filter(en => !en.isBoss).forEach(en => en.draw(ctx, cameraX));
 
     particles.forEach(p => {
         ctx.fillStyle = p.color;

@@ -318,154 +318,187 @@ class Enemy {
 
 class Boss {
     constructor(x, y) {
-        this.x = x;
         this.originX = x;
-        this.groundY = y + 140; // Calibrate to the actual ground level
-        this.y = this.groundY;  // Start hidden
+        // In game.js, y is passed as fg.groundY - 140, so this restores ground level
+        this.groundY = y + 140;
+        this.x = x;
+        this.y = this.groundY + 50;
         this.width = 40;
         this.height = 80;
         this.health = 5;
         this.isBoss = true;
         this.shakeTimer = 0;
 
-        // --- Glow Worm States ---
-        // states: 'hidden', 'emerging', 'active', 'hiding'
+        // --- States: 'hidden', 'emerging', 'turning', 'diving' ---
         this.state = 'hidden';
         this.stateTimer = 60;
-        this.targetY = this.groundY - this.height;
+
+        // --- Path Following (Segment History) ---
+        this.history = [];
+        this.historyLimit = 100; // Enough frames to cover the whole snake
+        this.numSegments = 10;
+        this.spacing = 6; // Number of frames between each segment
+
+        // --- U-Turn Config ---
+        this.turnRadius = 40;
+        this.turnCenterX = 0;
+        this.turnCenterY = 0;
+        this.turnAngle = 0;
 
         this.shootTimer = 40;
-        this.dir = -1;
     }
 
     update(projectiles, player) {
         if (this.shakeTimer > 0) this.shakeTimer--;
 
+        // Track path history
+        this.history.push({ x: this.x, y: this.y });
+        if (this.history.length > this.historyLimit) this.history.shift();
+
         switch (this.state) {
             case 'hidden':
                 this.stateTimer--;
                 if (this.stateTimer <= 0) {
-                    // Pick a new random spot near the portal area
-                    this.x = this.originX + (Math.random() * 200 - 150);
+                    // --- WIDER RANDOM SPAWN AREA ---
+                    // Gate is at ~3045. Portal is at 3200.
+                    // We now start at least 25 pixels past the gate (3070).
+                    // The range allows it to start anywhere up to 3120.
+                    // (This ensures the 80px wide U-turn fits before the portal at 3200).
+
+                    const minSpawnX = this.originX - 10; // Approx 3070
+                    const spawnRange = 50;               // Spreads it out further
+
+                    this.x = minSpawnX + (Math.random() * spawnRange);
+
+                    this.y = this.groundY + 20;
                     this.state = 'emerging';
+                    this.history = []; // Reset path for the new run
                 }
                 break;
 
             case 'emerging':
-                this.y -= 2; // Rise from ground
-                if (this.y <= this.targetY) {
-                    this.y = this.targetY;
-                    this.state = 'active';
-                    this.stateTimer = 180; // Stay up for 3 seconds
+                this.y -= 2.5; // Rise vertically
+                // 3/4 way up the screen (Canvas is 224 high, 3/4 is ~56 from top)
+                if (this.y <= 60) {
+                    this.state = 'turning';
+                    this.turnCenterX = this.x + this.turnRadius;
+                    this.turnCenterY = this.y;
+                    this.turnAngle = Math.PI; // Start at the left of the U-turn
                 }
                 break;
 
-            case 'active':
-                this.stateTimer--;
-                this.shootTimer--;
+            case 'turning':
+                // Move in a semi-circle to the right
+                this.turnAngle -= 0.05;
+                this.x = this.turnCenterX + Math.cos(this.turnAngle) * this.turnRadius;
+                this.y = this.turnCenterY + Math.sin(this.turnAngle) * this.turnRadius;
 
-                if (this.shootTimer <= 0) {
-                    this.shoot(projectiles, player);
-                    this.shootTimer = 50;
-                }
-
-                if (this.stateTimer <= 0) {
-                    this.state = 'hiding';
+                if (this.turnAngle <= 0) {
+                    this.state = 'diving';
                 }
                 break;
 
-            case 'hiding':
-                this.y += 3; // Retreat quickly
-                if (this.y >= this.groundY) {
-                    this.y = this.groundY;
+            case 'diving':
+                this.y += 3; // Dive back into the ground
+                // Check if the tail (the oldest position in history) has submerged
+                const tailPos = this.history[0];
+                if (tailPos && tailPos.y > this.groundY + 20) {
                     this.state = 'hidden';
-                    this.stateTimer = 90; // Stay hidden for 1.5 seconds
+                    this.stateTimer = 100;
+                    this.history = [];
                 }
                 break;
+        }
+
+        // Shooting logic (only while above ground)
+        if (this.state !== 'hidden' && this.y < this.groundY) {
+            this.shootTimer--;
+            if (this.shootTimer <= 0) {
+                this.shoot(projectiles, player);
+                this.shootTimer = 70;
+            }
         }
     }
 
     shoot(projectiles, player) {
-        // Spit glowing bile at the player's position
         const dx = player.x - this.x;
-        const vx = dx * 0.02; // Simple tracking: speed based on distance
-
+        const vx = dx * 0.02;
         projectiles.push({
-            x: this.x + 20,
-            y: this.y + 10,
-            spawnX: this.x,
-            vx: vx,
-            vy: -3, // Slight upward arc
-            isEnemyBullet: true,
-            isGrenade: true,
-            fromBoss: true,
-            color: '#bef264' // Glowing Lime Green
+            x: this.x + 20, y: this.y + 10,
+            spawnX: this.x, vx: vx, vy: -2,
+            isEnemyBullet: true, isGrenade: true, fromBoss: true,
+            color: '#bef264'
         });
     }
 
     takeDamage() {
-        // Only vulnerable when not hidden
-        if (this.state === 'hidden') return false;
-
+        // Only vulnerable if head is above ground
+        if (this.state === 'hidden' || this.y > this.groundY) return false;
         this.health--;
         this.shakeTimer = 15;
-
-        // If hit, retreat early
-        if (this.state === 'active') {
-            this.state = 'hiding';
-        }
-
+        // Retreat early if hit
+        if (this.state === 'emerging' || this.state === 'turning') this.state = 'diving';
         return this.health <= 0;
     }
 
     draw(ctx, cameraX) {
-        if (this.state === 'hidden') return;
+        if (this.state === 'hidden' && this.history.length === 0) return;
 
-        let shakeX = (this.shakeTimer > 0) ? (Math.random() - 0.5) * 10 : 0;
-        const screenX = this.x - cameraX + shakeX;
+        let shakeX = (this.shakeTimer > 0) ? (Math.random() - 0.5) * 12 : 0;
 
-        ctx.save();
-        ctx.translate(screenX, this.y);
+        // Draw segments from tail to head (so head is always on top)
+        for (let i = this.numSegments - 1; i >= 0; i--) {
+            const index = this.history.length - 1 - (i * this.spacing);
+            if (index < 0) continue;
 
-        // --- DRAW GLOW WORM BODY (Segments) ---
-        const segments = 5;
-        for (let i = 0; i < segments; i++) {
-            const size = this.width - (i * 5);
-            const segmentY = i * 15;
+            const pos = this.history[index];
+            const screenX = pos.x - cameraX + (i === 0 ? shakeX : 0);
 
-            // Pulsing Glow effect
-            const glow = Math.sin(Date.now() / 200 + i) * 20;
-            ctx.fillStyle = `rgb(${190 + glow}, ${242 + glow}, 100)`;
+            ctx.save();
+            ctx.translate(screenX, pos.y);
 
-            // Draw segment
-            ctx.beginPath();
-            ctx.ellipse(20, segmentY + 10, size / 2, 10, 0, 0, Math.PI * 2);
-            ctx.fill();
+            const size = this.width - (i * 2.5);
+            const glow = Math.abs(Math.sin(Date.now() / 300 + i)) * 40;
 
-            // Darker core
-            ctx.fillStyle = '#65a30d';
-            ctx.beginPath();
-            ctx.ellipse(20, segmentY + 10, size / 4, 5, 0, 0, Math.PI * 2);
-            ctx.fill();
+            if (i === 0) {
+                // --- SCARY ANACONDA HEAD ---
+                // Flickering Tongue
+                if (Math.sin(Date.now() / 100) > 0.7) {
+                    ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 2;
+                    ctx.beginPath(); ctx.moveTo(20, 0); ctx.lineTo(20, -12);
+                    ctx.moveTo(20, -12); ctx.lineTo(16, -18);
+                    ctx.moveTo(20, -12); ctx.lineTo(24, -18); ctx.stroke();
+                }
+
+                // Triangular Pit-Viper Head
+                ctx.fillStyle = '#14532d';
+                ctx.beginPath();
+                ctx.moveTo(0, 15); ctx.lineTo(20, -5); ctx.lineTo(40, 15); ctx.lineTo(20, 25);
+                ctx.closePath(); ctx.fill();
+                ctx.strokeStyle = '#4ade80'; ctx.lineWidth = 1; ctx.stroke();
+
+                // Slit Glowing Eyes
+                const eyePulse = 150 + Math.sin(Date.now() / 150) * 100;
+                ctx.fillStyle = `rgb(255, ${eyePulse}, 0)`;
+                ctx.beginPath(); ctx.ellipse(12, 8, 3, 5, 0.2, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.ellipse(28, 8, 3, 5, -0.2, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#000'; ctx.fillRect(11, 5, 2, 6); ctx.fillRect(27, 5, 2, 6);
+            } else {
+                // --- BODY SEGMENTS ---
+                ctx.fillStyle = '#064e3b';
+                ctx.beginPath();
+                ctx.ellipse(20, 12, size / 2, 11, 0, 0, Math.PI * 2);
+                ctx.fill();
+                // Scale Detail Highlights
+                ctx.fillStyle = `rgb(${101 + glow}, ${163 + glow}, 13)`;
+                ctx.fillRect(20 - (size / 4), 8, size / 2, 2);
+                ctx.fillRect(20 - (size / 6), 14, size / 3, 2);
+            }
+            ctx.restore();
         }
-
-        // --- HEAD & EYES ---
-        ctx.fillStyle = '#bef264';
-        ctx.beginPath();
-        ctx.arc(20, 5, 15, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Glowing Eyes
-        ctx.fillStyle = '#000';
-        ctx.fillRect(8, 2, 4, 4);
-        ctx.fillRect(28, 2, 4, 4);
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(9, 3, 1, 1);
-        ctx.fillRect(29, 3, 1, 1);
-
-        ctx.restore();
     }
 }
+
 
 
 
