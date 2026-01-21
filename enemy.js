@@ -323,8 +323,8 @@ class Boss {
         this.groundY = y + 140;
         this.x = x;
         this.y = this.groundY + 50;
-        this.width = 40;
-        this.height = 80;
+        this.width = 20;
+        this.height = 40;
         this.health = 5;
         this.isBoss = true;
         this.shakeTimer = 0;
@@ -365,10 +365,11 @@ class Boss {
                     // The range allows it to start anywhere up to 3120.
                     // (This ensures the 80px wide U-turn fits before the portal at 3200).
 
-                    const minSpawnX = this.originX - 10; // Approx 3070
-                    const spawnRange = 50;               // Spreads it out further
+                    const minSpawnX = this.originX - 40; // Approx 3070
+                    const spawnRange = 120;               // Spreads it out further
 
                     this.x = minSpawnX + (Math.random() * spawnRange);
+                    this.turnRadius = 30 + Math.random() * 20; // Randomizes how wide and high the snake jumps
 
                     this.y = this.groundY + 20;
                     this.state = 'emerging';
@@ -446,7 +447,7 @@ class Boss {
 
         let shakeX = (this.shakeTimer > 0) ? (Math.random() - 0.5) * 12 : 0;
 
-        // Draw segments from tail to head (so head is always on top)
+        // Replace the contents of the Boss.draw loop with this:
         for (let i = this.numSegments - 1; i >= 0; i--) {
             const index = this.history.length - 1 - (i * this.spacing);
             if (index < 0) continue;
@@ -457,48 +458,64 @@ class Boss {
             ctx.save();
             ctx.translate(screenX, pos.y);
 
-            const size = this.width - (i * 2.5);
+            // Reduced segment shrinking factor to keep tail visible at smaller width
+            const size = this.width - (i * 1.2);
             const glow = Math.abs(Math.sin(Date.now() / 300 + i)) * 40;
 
             if (i === 0) {
-                // --- SCARY ANACONDA HEAD ---
-                // Flickering Tongue
+                // --- SCARY ANACONDA HEAD (Half Size) ---
                 if (Math.sin(Date.now() / 100) > 0.7) {
-                    ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 2;
-                    ctx.beginPath(); ctx.moveTo(20, 0); ctx.lineTo(20, -12);
-                    ctx.moveTo(20, -12); ctx.lineTo(16, -18);
-                    ctx.moveTo(20, -12); ctx.lineTo(24, -18); ctx.stroke();
+                    ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 1;
+                    ctx.beginPath(); ctx.moveTo(10, 0); ctx.lineTo(10, -8);
+                    ctx.moveTo(10, -8); ctx.lineTo(8, -12);
+                    ctx.moveTo(10, -8); ctx.lineTo(12, -12); ctx.stroke();
                 }
 
-                // Triangular Pit-Viper Head
                 ctx.fillStyle = '#14532d';
                 ctx.beginPath();
-                ctx.moveTo(0, 15); ctx.lineTo(20, -5); ctx.lineTo(40, 15); ctx.lineTo(20, 25);
+                ctx.moveTo(0, 7); ctx.lineTo(10, -2); ctx.lineTo(20, 7); ctx.lineTo(10, 12);
                 ctx.closePath(); ctx.fill();
                 ctx.strokeStyle = '#4ade80'; ctx.lineWidth = 1; ctx.stroke();
 
-                // Slit Glowing Eyes
                 const eyePulse = 150 + Math.sin(Date.now() / 150) * 100;
                 ctx.fillStyle = `rgb(255, ${eyePulse}, 0)`;
-                ctx.beginPath(); ctx.ellipse(12, 8, 3, 5, 0.2, 0, Math.PI * 2); ctx.fill();
-                ctx.beginPath(); ctx.ellipse(28, 8, 3, 5, -0.2, 0, Math.PI * 2); ctx.fill();
-                ctx.fillStyle = '#000'; ctx.fillRect(11, 5, 2, 6); ctx.fillRect(27, 5, 2, 6);
+                ctx.beginPath(); ctx.ellipse(6, 4, 1.5, 2.5, 0.2, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.ellipse(14, 4, 1.5, 2.5, -0.2, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#000'; ctx.fillRect(5.5, 2.5, 1, 3); ctx.fillRect(13.5, 2.5, 1, 3);
+
+            } else if (i === this.numSegments - 1) {
+                // --- TAIL TARGET BALL (Half Size) ---
+                const pulse = Math.abs(Math.sin(Date.now() / 200));
+
+                ctx.fillStyle = `rgba(255, 0, 0, ${0.2 + (pulse * 0.4)})`;
+                ctx.beginPath();
+                ctx.arc(10, 6, 6 + (pulse * 3), 0, Math.PI * 2); // Half size glow
+                ctx.fill();
+
+                ctx.fillStyle = '#ef4444';
+                ctx.beginPath();
+                ctx.arc(10, 6, 4, 0, Math.PI * 2); // Half size ball
+                ctx.fill();
+
+                if (Date.now() % 500 < 250) {
+                    ctx.fillStyle = '#ffffff';
+                    ctx.beginPath();
+                    ctx.arc(10, 6, 1.5, 0, Math.PI * 2); // Half size blink
+                    ctx.fill();
+                }
+
             } else {
-                // --- BODY SEGMENTS ---
+                // --- BODY SEGMENTS (Half Size) ---
                 ctx.fillStyle = '#064e3b';
                 ctx.beginPath();
-                ctx.ellipse(20, 12, size / 2, 11, 0, 0, Math.PI * 2);
+                ctx.ellipse(10, 6, size / 2, 5.5, 0, 0, Math.PI * 2);
                 ctx.fill();
-                // Scale Detail Highlights
+
                 ctx.fillStyle = `rgb(${101 + glow}, ${163 + glow}, 13)`;
-                ctx.fillRect(20 - (size / 4), 8, size / 2, 2);
-                ctx.fillRect(20 - (size / 6), 14, size / 3, 2);
+                ctx.fillRect(10 - (size / 4), 4, size / 2, 1);
+                ctx.fillRect(10 - (size / 6), 7, size / 3, 1);
             }
             ctx.restore();
         }
     }
 }
-
-
-
-
