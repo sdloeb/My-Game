@@ -808,19 +808,17 @@ class Foreground {
                     ctx.fillStyle = '#475569';
                     ctx.fillRect(0, 0, 3, 2);
 
-                } else {
-                    // --- STAR (Level 3+) ---
-                    const pulse = 1 + Math.sin(Date.now() / 200) * 0.2;
-                    ctx.scale(pulse, pulse);
-                    ctx.fillStyle = '#ffff00';
+                } else if (this.level === 3) {
+                    // --- GRENADE ITEM (Level 3) ---
+                    ctx.fillStyle = '#365314'; // Army Green
                     ctx.beginPath();
-                    for (let i = 0; i < 10; i++) {
-                        const r = i % 2 === 0 ? 12 : 5;
-                        const angle = (Math.PI / 5) * i - Math.PI / 2;
-                        ctx.lineTo(Math.cos(angle) * r, Math.sin(angle) * r);
-                    }
-                    ctx.closePath();
+                    // We use (0,0) because of the translate(screenX, this.star.y) above
+                    ctx.ellipse(0, 0, 6, 8, 0, 0, Math.PI * 2);
                     ctx.fill();
+                    // Grenade pin/lever
+                    ctx.fillStyle = '#94a3b8';
+                    ctx.fillRect(-2, -10, 4, 3);
+                    ctx.fillRect(-4, -12, 8, 2);
                 }
                 ctx.restore();
             }
