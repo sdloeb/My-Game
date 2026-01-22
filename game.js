@@ -348,7 +348,9 @@ function update() {
                     player.inBubble = false;
                     player.bubbleTimer = 0;
                 } else {
-                    handlePlayerDeath(p.fromBoss ? 'boss' : 'enemy');
+                    // Pass 'enemy' so it always uses the checkpoint logic instead of restarting the level
+                    handlePlayerDeath('enemy');
+                    return; // Added safety return to prevent the freeze mentioned earlier
                 }
                 projectiles.splice(i, 1);
                 continue;

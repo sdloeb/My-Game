@@ -69,8 +69,8 @@ class Enemy {
                 }
             });
             // --- WORLD BOUNDARY CHECK ---
-            // Prevent enemies from walking past the portal (pixel 3000)
-            if (this.x + this.width > 3000 && this.dir === 1) {
+            // Prevent enemies from walking past the portal (pixel 2800)
+            if (this.x + this.width > 2800 && this.dir === 1) {
                 this.dir = -1;
             }
             // Optional: Prevent them from walking off the left side of the map
