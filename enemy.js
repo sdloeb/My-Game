@@ -367,7 +367,7 @@ class Boss {
                     // The range allows it to start anywhere up to 3120.
                     // (This ensures the 80px wide U-turn fits before the portal at 3200).
 
-                    const minSpawnX = this.originX - 40; // Approx 3070
+                    const minSpawnX = this.originX - 0; // Approx 3070
                     const spawnRange = 120;               // Spreads it out further
 
                     this.x = minSpawnX + (Math.random() * spawnRange);
@@ -382,7 +382,7 @@ class Boss {
             case 'emerging':
                 this.y -= 2.5; // Rise vertically
                 // 3/4 way up the screen (Canvas is 224 high, 3/4 is ~56 from top)
-                if (this.y <= 60) {
+                if (this.y <= 10) {
                     this.state = 'turning';
                     this.turnCenterX = this.x + this.turnRadius;
                     this.turnCenterY = this.y;
