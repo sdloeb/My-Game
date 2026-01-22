@@ -438,18 +438,20 @@ function draw() {
     ctx.fillStyle = '#5c94fc';
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
+    // 1. Draw Background
     bg.draw(ctx, cameraX);
-    // Draw the player early if in sand so ground tiles cover their edges
-    if (player.inQuicksand) player.draw(ctx, cameraX);
 
+    // 2. Draw the Portal (Now at the back of the "middle" layer)
+    fg.drawPortal(ctx, cameraX);
 
-    // 2. NEW: Draw ONLY the Anaconda (Bosses) behind the ground
+    // 3. Draw the Boss (In front of the portal, but not the ground yet)
     enemies.filter(en => en.isBoss).forEach(en => en.draw(ctx, cameraX));
 
-    // 3. Draw the Foreground (Ground and platforms)
+    // 4. Draw the Foreground (Ground, platforms, and items)
+    // Because this is drawn last, the ground will cover the snake's tail
     fg.draw(ctx, cameraX);
 
-    // 4. NEW: Draw standard enemies (Skeletons, Zombies, Spiders) on top of the ground
+    // 5. Draw standard enemies and particles on the very top
     enemies.filter(en => !en.isBoss).forEach(en => en.draw(ctx, cameraX));
 
     particles.forEach(p => {

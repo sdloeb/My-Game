@@ -1055,7 +1055,7 @@ class Foreground {
             ctx.fillRect(kx + 1, ky - 4, 2, 1);  // Shine on top of the ring
         }
 
-        this.drawPortal(ctx, cameraX);
+        //this.drawPortal(ctx, cameraX);
     }
 
     drawQuicksand(ctx, cameraX) {
