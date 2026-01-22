@@ -325,9 +325,10 @@ class Boss {
         this.y = this.groundY + 50;
         this.width = 20;
         this.height = 40;
-        this.health = 5;
+        this.health = 3;
         this.isBoss = true;
         this.shakeTimer = 0;
+        this.flashTimer = 0; // ADD THIS LINE
 
         // --- States: 'hidden', 'emerging', 'turning', 'diving' ---
         this.state = 'hidden';
@@ -350,6 +351,7 @@ class Boss {
 
     update(projectiles, player) {
         if (this.shakeTimer > 0) this.shakeTimer--;
+        if (this.flashTimer > 0) this.flashTimer--;
 
         // Track path history
         this.history.push({ x: this.x, y: this.y });
@@ -437,9 +439,17 @@ class Boss {
         if (this.state === 'hidden' || this.y > this.groundY) return false;
         this.health--;
         this.shakeTimer = 15;
+        this.flashTimer = 15;
         // Retreat early if hit
         if (this.state === 'emerging' || this.state === 'turning') this.state = 'diving';
         return this.health <= 0;
+    }
+
+    getTailPosition() {
+        // The tail is the last segment in the chain
+        const index = this.history.length - 1 - ((this.numSegments - 1) * this.spacing);
+        if (index < 0) return null;
+        return this.history[index];
     }
 
     draw(ctx, cameraX) {
@@ -483,27 +493,33 @@ class Boss {
                 ctx.beginPath(); ctx.ellipse(14, 4, 1.5, 2.5, -0.2, 0, Math.PI * 2); ctx.fill();
                 ctx.fillStyle = '#000'; ctx.fillRect(5.5, 2.5, 1, 3); ctx.fillRect(13.5, 2.5, 1, 3);
 
+                // Locate the tail drawing section inside draw(ctx, cameraX) (around line 391)
             } else if (i === this.numSegments - 1) {
-                // --- TAIL TARGET BALL (Half Size) ---
+                // --- TAIL TARGET BALL ---
                 const pulse = Math.abs(Math.sin(Date.now() / 200));
 
-                ctx.fillStyle = `rgba(255, 0, 0, ${0.2 + (pulse * 0.4)})`;
+                // Determine color based on flashTimer
+                const isFlashing = this.flashTimer > 0 && Math.floor(Date.now() / 50) % 2 === 0;
+                const ballColor = isFlashing ? '#ffffff' : '#ef4444';
+                const glowColor = isFlashing ? 'rgba(255, 255, 255, 0.6)' : `rgba(255, 0, 0, ${0.2 + (pulse * 0.4)})`;
+
+                ctx.fillStyle = glowColor;
                 ctx.beginPath();
-                ctx.arc(10, 6, 6 + (pulse * 3), 0, Math.PI * 2); // Half size glow
+                ctx.arc(10, 6, 6 + (pulse * 3), 0, Math.PI * 2);
                 ctx.fill();
 
-                ctx.fillStyle = '#ef4444';
+                ctx.fillStyle = ballColor; // USES THE FLASH COLOR
                 ctx.beginPath();
-                ctx.arc(10, 6, 4, 0, Math.PI * 2); // Half size ball
+                ctx.arc(10, 6, 4, 0, Math.PI * 2);
                 ctx.fill();
 
-                if (Date.now() % 500 < 250) {
+                // Only draw the inner blink if not flashing white
+                if (!isFlashing && Date.now() % 500 < 250) {
                     ctx.fillStyle = '#ffffff';
                     ctx.beginPath();
-                    ctx.arc(10, 6, 1.5, 0, Math.PI * 2); // Half size blink
+                    ctx.arc(10, 6, 1.5, 0, Math.PI * 2);
                     ctx.fill();
                 }
-
             } else {
                 // --- BODY SEGMENTS (Half Size) ---
                 ctx.fillStyle = '#064e3b';
