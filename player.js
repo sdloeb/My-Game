@@ -694,14 +694,34 @@ class Player {
                 ctx.fillStyle = '#ef4444';
                 ctx.fillRect(4, -2, 6, 2);
             } else if (currentLevelNum === 3) {
-                // --- GRENADE LAUNCHER (Level 1-3) ---
-                ctx.fillStyle = '#365314'; // Army Green
-                ctx.fillRect(0, -5, 18, 10); // Heavy Barrel
-                ctx.fillStyle = '#1a2e05'; // Shadow
-                ctx.fillRect(2, -5, 4, 10);
-                ctx.fillRect(12, -5, 2, 10);
-                ctx.fillStyle = '#365314';
-                ctx.fillRect(0, 2, 5, 6); // Grip
+                // --- RE-DRAWN GRENADE LAUNCHER (Level 1-3) ---
+                const colorMain = '#365314';   // Army Green
+                const colorShadow = '#1a2e05'; // Dark Green Shadow
+                const colorMetal = '#4b5563';  // Gunmetal Grey
+
+                // 1. Main Receiver / Body
+                ctx.fillStyle = colorMain;
+                ctx.fillRect(0, -4, 12, 8);
+
+                // 2. The Drum (The round part that holds grenades)
+                ctx.fillStyle = colorShadow;
+                ctx.fillRect(2, -2, 7, 8);
+                ctx.fillStyle = colorMain;
+                ctx.fillRect(3, -1, 5, 6);
+
+                // 3. Sleeker Barrel
+                ctx.fillStyle = colorMetal;
+                ctx.fillRect(12, -3, 10, 4); // Longer, thinner barrel
+                // Front Sight
+                ctx.fillRect(19, -5, 2, 2);
+
+                // 4. Rear Stock
+                ctx.fillStyle = colorShadow;
+                ctx.fillRect(-4, -2, 4, 4);
+
+                // 5. Grip
+                ctx.fillStyle = colorMain;
+                ctx.fillRect(2, 4, 4, 5);
             } else {
                 // --- BOW (Level 1-1) ---
                 ctx.strokeStyle = '#fde047';

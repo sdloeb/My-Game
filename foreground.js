@@ -698,14 +698,24 @@ class Foreground {
                     ctx.fillStyle = '#ef4444';
                     ctx.fillRect(bx + 4, this.bow.y - 2, 6, 2);
                 } else if (this.level === 3) {
-                    // --- GRENADE LAUNCHER (Level 3) ---
+                    // --- RE-DRAWN GRENADE LAUNCHER PICKUP (Level 3) ---
+                    const gx = bx - 5;
+                    const gy = this.bow.y;
+
+                    // Body & Drum
                     ctx.fillStyle = '#365314'; // Army Green
-                    ctx.fillRect(bx - 5, this.bow.y - 4, 20, 8); // Thick Barrel
-                    ctx.fillStyle = '#1a2e05'; // Darker green detail
-                    ctx.fillRect(bx + 2, this.bow.y - 4, 3, 8);
-                    ctx.fillRect(bx + 12, this.bow.y - 4, 3, 8);
+                    ctx.fillRect(gx, gy - 4, 12, 8);
+                    ctx.fillStyle = '#1a2e05'; // Shadow
+                    ctx.fillRect(gx + 2, gy - 2, 6, 6);
+
+                    // Metal Barrel & Sight
+                    ctx.fillStyle = '#4b5563'; // Gunmetal Grey
+                    ctx.fillRect(gx + 12, gy - 3, 12, 4);
+                    ctx.fillRect(gx + 21, gy - 5, 2, 2);
+
+                    // Grip
                     ctx.fillStyle = '#365314';
-                    ctx.fillRect(bx - 2, this.bow.y + 4, 5, 6); // Handle
+                    ctx.fillRect(gx + 2, gy + 4, 4, 5);
                 } else {
                     // --- BOW (Level 1) ---
                     ctx.strokeStyle = '#ffffff';
