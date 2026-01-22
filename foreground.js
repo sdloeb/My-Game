@@ -503,7 +503,7 @@ class Foreground {
         ctx.beginPath();
         ctx.strokeStyle = '#8800ff';
         ctx.lineWidth = 2;
-        for (let i = 0; i < 60; i++) {
+        for (let i = 0; i < 65; i++) { // Increased to 65 to reach the full 32px radius
             const angle = 0.2 * i + this.portal.rotation;
             const r = i * 0.5;
             const x = Math.cos(angle) * r;
