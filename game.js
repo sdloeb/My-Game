@@ -486,39 +486,36 @@ function draw() {
         if (p.isArrow) {
             ctx.save();
             ctx.translate(p.x - cameraX, p.y);
-            // This ensures the dart/arrow points in the direction it is moving
             ctx.rotate(Math.atan2(p.vy, p.vx));
 
             if (fg.level === 2) {
                 // --- FLYING DART (Level 1-2) ---
-                // 1. Metal Body
                 ctx.fillStyle = '#94a3b8';
                 ctx.fillRect(-4, -1, 10, 2);
-
-                // 2. Sharp Tip
                 ctx.fillStyle = '#f8fafc';
                 ctx.beginPath();
                 ctx.moveTo(6, -2); ctx.lineTo(10, 0); ctx.lineTo(6, 2);
                 ctx.fill();
-
-                // 3. Red Fins (at the back)
                 ctx.fillStyle = '#ef4444';
                 ctx.beginPath();
                 ctx.moveTo(-4, 0); ctx.lineTo(-9, -4); ctx.lineTo(-9, 4);
                 ctx.fill();
+            } else if (fg.level === 3) {
+                // --- FLYING GRENADE (Level 1-3) ---
+                ctx.fillStyle = '#365314'; // Army Green
+                ctx.beginPath();
+                ctx.arc(0, 0, 4, 0, Math.PI * 2); // Round grenade body
+                ctx.fill();
+                ctx.fillStyle = '#94a3b8'; // Metal pin
+                ctx.fillRect(-2, -5, 2, 2);
             } else {
                 // --- FLYING ARROW (Level 1-1) ---
-                // 1. Wood Shaft
                 ctx.fillStyle = '#7c2d12';
                 ctx.fillRect(-8, -1, 12, 2);
-
-                // 2. Arrowhead
                 ctx.fillStyle = '#d1d5db';
                 ctx.beginPath();
                 ctx.moveTo(4, -3); ctx.lineTo(10, 0); ctx.lineTo(4, 3);
                 ctx.fill();
-
-                // 3. Tiny Red Feathers
                 ctx.fillStyle = '#ef4444';
                 ctx.fillRect(-10, -2, 3, 1);
                 ctx.fillRect(-10, 1, 3, 1);

@@ -212,8 +212,10 @@ class Player {
     updateUI() {
         const bulletDisplay = document.getElementById('bullet-display');
         if (bulletDisplay) {
-            // Change the label based on whether we have the bow or not
-            const label = this.hasBow ? "ARROWS" : "BULLETS";
+            let label = "BULLETS";
+            if (this.hasBow) {
+                label = currentLevelNum === 3 ? "GRENADES" : "ARROWS";
+            }
             bulletDisplay.innerText = `${label}: ${this.bullets}`;
         }
     }
@@ -686,33 +688,28 @@ class Player {
 
             if (currentLevelNum === 2) {
                 // --- DART GUN (Level 1-2) ---
-                ctx.fillStyle = '#475569'; // Gun Metal Grey
-
-                // Barrel
+                ctx.fillStyle = '#475569';
                 ctx.fillRect(0, -3, 14, 6);
-
-                // Handle/Grip (Pointing down slightly)
                 ctx.fillRect(0, 1, 4, 7);
-
-                // Red Accent Stripe
                 ctx.fillStyle = '#ef4444';
                 ctx.fillRect(4, -2, 6, 2);
-
-                // Small Trigger Guard
-                ctx.strokeStyle = '#334155';
-                ctx.lineWidth = 1;
-                ctx.strokeRect(1, 1, 4, 3);
-
+            } else if (currentLevelNum === 3) {
+                // --- GRENADE LAUNCHER (Level 1-3) ---
+                ctx.fillStyle = '#365314'; // Army Green
+                ctx.fillRect(0, -5, 18, 10); // Heavy Barrel
+                ctx.fillStyle = '#1a2e05'; // Shadow
+                ctx.fillRect(2, -5, 4, 10);
+                ctx.fillRect(12, -5, 2, 10);
+                ctx.fillStyle = '#365314';
+                ctx.fillRect(0, 2, 5, 6); // Grip
             } else {
                 // --- BOW (Level 1-1) ---
-                // 1. Bow Frame (Yellow)
                 ctx.strokeStyle = '#fde047';
                 ctx.lineWidth = 2;
                 ctx.beginPath();
                 ctx.arc(0, 0, 8, -Math.PI / 2, Math.PI / 2);
                 ctx.stroke();
 
-                // 2. Bow String (White)
                 ctx.strokeStyle = '#ffffff';
                 ctx.lineWidth = 1;
                 ctx.beginPath();

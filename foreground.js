@@ -686,23 +686,28 @@ class Foreground {
                 this.drawBrick(ctx, screenX, p.y, p.isSecret, p.hasClock, p.isCheckpointCandidate, p);
         });
 
-        //DRAW BOW LEVEL 1-1
-        // Locate this section in the draw(ctx, cameraX) method of foreground.js
         // DRAW WEAPON PICKUP (Bow/Dart Gun)
         if (!this.bow.collected) {
             const bx = this.bow.x - cameraX;
             if (bx > -20 && bx < (CANVAS_WIDTH + 20)) {
                 if (this.level === 2) {
                     // --- DART GUN (Level 2) ---
-                    ctx.fillStyle = '#475569'; // Gun Metal
-                    // We use -3 to center the barrel where the Bow grip was
-                    ctx.fillRect(bx, this.bow.y - 3, 14, 6); // Barrel
-                    ctx.fillRect(bx, this.bow.y + 1, 4, 8);  // Handle
-                    ctx.fillStyle = '#ef4444'; // Red stripe detail
+                    ctx.fillStyle = '#475569';
+                    ctx.fillRect(bx, this.bow.y - 3, 14, 6);
+                    ctx.fillRect(bx, this.bow.y + 1, 4, 8);
+                    ctx.fillStyle = '#ef4444';
                     ctx.fillRect(bx + 4, this.bow.y - 2, 6, 2);
+                } else if (this.level === 3) {
+                    // --- GRENADE LAUNCHER (Level 3) ---
+                    ctx.fillStyle = '#365314'; // Army Green
+                    ctx.fillRect(bx - 5, this.bow.y - 4, 20, 8); // Thick Barrel
+                    ctx.fillStyle = '#1a2e05'; // Darker green detail
+                    ctx.fillRect(bx + 2, this.bow.y - 4, 3, 8);
+                    ctx.fillRect(bx + 12, this.bow.y - 4, 3, 8);
+                    ctx.fillStyle = '#365314';
+                    ctx.fillRect(bx - 2, this.bow.y + 4, 5, 6); // Handle
                 } else {
                     // --- BOW (Level 1) ---
-                    // 1. Draw the Bow String (Pure White)
                     ctx.strokeStyle = '#ffffff';
                     ctx.lineWidth = 1;
                     ctx.beginPath();
@@ -710,20 +715,19 @@ class Foreground {
                     ctx.lineTo(bx - 4, this.bow.y + 10);
                     ctx.stroke();
 
-                    // 2. Draw the Bow Frame
                     ctx.fillStyle = '#fde047';
                     ctx.fillRect(bx - 4, this.bow.y - 10, 5, 3);
                     ctx.fillRect(bx - 1, this.bow.y - 8, 4, 3);
-                    ctx.fillRect(bx + 1, this.bow.y - 5, 4, 10); // Grip
+                    ctx.fillRect(bx + 1, this.bow.y - 5, 4, 10);
                     ctx.fillRect(bx - 1, this.bow.y + 5, 4, 3);
                     ctx.fillRect(bx - 4, this.bow.y + 7, 5, 3);
 
-                    // 3. Shimmer on the grip
                     ctx.fillStyle = '#ffffff';
                     ctx.fillRect(bx + 2, this.bow.y - 2, 2, 2);
                 }
             }
-        } // <--- This was the missing brace!
+        }
+
 
         // --- IRON PORTCULLIS (GATE) ---
         if (!this.key.dropped) {
