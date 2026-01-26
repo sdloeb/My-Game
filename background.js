@@ -412,73 +412,56 @@ class Background {
     // ... rest of Background module above ...
 
     drawBuilding(ctx, x, b) {
-        // 1. Draw Main Body (Keep this as is)
         ctx.fillStyle = b.color;
         ctx.fillRect(x, b.y, b.w, b.h);
 
-        // 2. DEPTH & SHADING (Keep this as is)
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
-        ctx.fillRect(x + b.w - 4, b.y, 4, b.h);
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-        ctx.fillRect(x, b.y, b.w, 2);
-
-        // 3. UPDATED WINDOWS LOGIC
         if (b.windows) {
-            let signalIdx = 0; // Tracks which dark window gets which signal
+            let winIdx = 0;
             for (let wy = b.y + 10; wy < b.y + b.h - 10; wy += 15) {
                 for (let wx = x + 5; wx < x + b.w - 8; wx += 10) {
-                    // Draw the black frame first
-                    ctx.fillStyle = '#111827';
+                    ctx.fillStyle = '#111827'; // Frame
                     ctx.fillRect(wx - 1, wy - 1, 5, 6);
 
-                    // A. Calculate if the window is normally yellow based on world X
+                    // 1. Calculate if this window is normally lit yellow
                     const isNormallyLit = (Math.sin((wx - x) * wy + b.x) > 0);
 
+                    // 2. Find if this specific window index is assigned to an active signal
                     let blinkActive = false;
+                    const sig = b.signals ? b.signals.find(s => s.winIdx === winIdx) : null;
 
-                    // B. SIGNAL LOGIC: Only apply signals to windows that are NOT already yellow
-                    if (!isNormallyLit && b.signals && b.signals[signalIdx]) {
-                        const sig = b.signals[signalIdx];
+                    if (sig) {
                         const blinkDuration = sig.count * 40;
-
-                        // Check if the signal is in the "count" phase and in the "on" part of the pulse
-                        if (sig.timer < blinkDuration && (sig.timer % 40 < 20)) {
+                        if (sig.timer < (sig.count * 40) && (sig.timer % 40 < 20)) {
                             blinkActive = true;
                         }
-
-                        // Increment signalIdx so the NEXT signal goes to the NEXT dark window
-                        signalIdx++;
                     }
 
-                    // C. FINAL DRAWING
+                    // 3. Final Drawing logic
                     if (blinkActive) {
-                        // Draw white blinking glow
                         ctx.save();
-                        ctx.fillStyle = '#ffffff';
+                        ctx.fillStyle = '#fde047';
                         ctx.shadowBlur = 10;
                         ctx.shadowColor = '#ffffff';
                         ctx.fillRect(wx, wy, 3, 4);
                         ctx.restore();
                     } else if (isNormallyLit) {
-                        // Draw standard yellow light
                         ctx.fillStyle = '#fde047';
                         ctx.fillRect(wx, wy, 3, 4);
                     } else {
-                        // Draw dark grey (off) window
-                        ctx.fillStyle = '#374151';
+                        ctx.fillStyle = '#374151'; // Dark
                         ctx.fillRect(wx, wy, 3, 4);
                     }
 
-                    // Add the tiny white highlight to any lit window
                     if (isNormallyLit || blinkActive) {
                         ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
                         ctx.fillRect(wx, wy, 1, 1);
                     }
+                    winIdx++;
                 }
             }
         }
 
-        // 4. ROOF DETAILS (Keep this as is)
+        // --- Building Details (Unchanged) ---
         ctx.fillStyle = b.color;
         ctx.fillRect(x - 2, b.y, b.w + 4, 3);
         if (b.w > 25) {
@@ -494,80 +477,76 @@ class Background {
         ctx.fillRect(x, b.y + b.h - 2, b.w, 2);
     }
 
-    updateSignals(cameraX, structures, platforms) {
+    updateSignals(cameraX, structures) {
         if (this.level !== 1) return;
 
         structures.forEach(s => {
-            // 1. Calculate the active SCREEN position of the bricks (1.0x speed)
             const structureScreenCenter = (s.x - cameraX) + (s.width / 2);
-
-            // 2. Trigger signal as the bricks enter the viewable area
-            // We use a wider trigger window so we don't miss it while moving fast
-            const isVisible = structureScreenCenter > 20 && structureScreenCenter < this.canvasWidth - 20;
+            // Trigger when centered on screen
+            const isVisible = structureScreenCenter > 40 && structureScreenCenter < this.canvasWidth - 40;
 
             if (isVisible && s.secretCount > 0 && !s.isSignaled) {
-                // 3. Find buildings that are VISIBLY on screen and have windows
+                // Determine the vertical Y range of the bricks
+                const sMinY = Math.min(...s.platforms.map(p => p.y));
+                const sMaxY = Math.max(...s.platforms.map(p => p.y + 16));
+
+                // Find candidate buildings currently on screen
                 const candidates = this.scenery
                     .filter(obj => {
                         const bSX = obj.x - (cameraX * 0.5);
-                        return obj.type === 'building' && obj.windows &&
-                            bSX > -obj.w && bSX < this.canvasWidth;
+                        return obj.type === 'building' && obj.windows && bSX > -obj.w && bSX < this.canvasWidth;
                     })
                     .map(obj => {
-                        const bScreenX = obj.x - (cameraX * 0.5);
-                        const bScreenCenter = bScreenX + (obj.w / 2);
-                        return {
-                            building: obj,
-                            dist: Math.abs(bScreenCenter - structureScreenCenter),
-                            screenX: bScreenX
-                        };
+                        const bSX = obj.x - (cameraX * 0.5);
+                        return { building: obj, dist: Math.abs((bSX + obj.w / 2) - structureScreenCenter) };
                     })
                     .sort((a, b) => a.dist - b.dist);
 
-                let selectedB = null;
-
-                // 4. VISIBILITY CHECK: Pick the nearest building NOT blocked by a brick
+                let assigned = false;
                 for (let cand of candidates) {
                     const b = cand.building;
-                    const nextWinIdx = b.signals.length;
+                    let foundWinIdx = -1;
+                    let currentIdx = 0;
 
-                    // We only check if the entire building area is blocked. 
-                    // This is more forgiving than checking every single window pixel.
-                    const isBlocked = platforms.some(p => {
-                        const pSX = p.x - cameraX;
-                        const bWinL = cand.screenX + 5;
-                        const bWinR = cand.screenX + b.w - 8;
-                        // Vertical window range
-                        const bWinT = b.y + 10;
-                        const bWinB = b.y + b.h - 10;
+                    // Search for a dark window outside the structure's Y range
+                    for (let wy = b.y + 10; wy < b.y + b.h - 10; wy += 15) {
+                        for (let wx = 5; wx < b.w - 8; wx += 10) {
+                            // Check if this window is normally yellow
+                            const isNormallyLit = (Math.sin(wx * wy + b.x) > 0);
+                            // Check if window Y is outside brick Y range
+                            const isSafeY = (wy < sMinY || wy > sMaxY);
+                            // Check if window is already assigned to another signal
+                            const isAvailable = !b.signals.some(sig => sig.winIdx === currentIdx);
 
-                        return (pSX < bWinR && pSX + 16 > bWinL &&
-                            p.y < bWinB && p.y + 16 > bWinT);
-                    });
+                            if (!isNormallyLit && isSafeY && isAvailable) {
+                                foundWinIdx = currentIdx;
+                                break;
+                            }
+                            currentIdx++;
+                        }
+                        if (foundWinIdx !== -1) break;
+                    }
 
-                    if (!isBlocked) {
-                        selectedB = b;
+                    if (foundWinIdx !== -1) {
+                        b.signals.push({ count: s.secretCount, timer: 0, winIdx: foundWinIdx });
+                        s.isSignaled = true;
+                        assigned = true;
                         break;
                     }
-                }
-
-                if (selectedB) {
-                    selectedB.signals.push({ count: s.secretCount, timer: 0 });
-                    s.isSignaled = true;
                 }
             }
         });
 
-        // 5. REPEAT LOGIC: Loop the timers with a 5-second delay (300 frames)
         this.scenery.forEach(obj => {
             if (obj.signals) {
                 obj.signals.forEach(sig => {
                     sig.timer++;
-                    const blinkDuration = sig.count * 40;
-                    const sequenceEnd = blinkDuration + 60 + 300; // Count + Pause + 5s
+
+                    // Use a fixed 300 frames (5 seconds at 60fps) for the entire loop
+                    const sequenceEnd = 300;
 
                     if (sig.timer >= sequenceEnd) {
-                        sig.timer = 0; // Restart sequence
+                        sig.timer = 0; // Restarts the loop every 5 seconds exactly
                     }
                 });
             }
