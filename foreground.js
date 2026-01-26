@@ -154,15 +154,18 @@ class Foreground {
 
     init() {
         let x = 200;
-        const groundOccupiedX = [];
-        // The screen is 256px wide. We stop everything before the last 256px.
+        this.structures = []; // Grouping bricks for the background signal
+        const groundOccupiedX = []; // Needed for hazard placement later
         const lastScreenStart = this.portalX - CANVAS_WIDTH;
 
+        // 1. Generate the world structures
         while (x < lastScreenStart - 40) {
             const structureType = Math.floor(Math.random() * 4);
             let structureWidth = 0;
+            let startPlatformIndex = this.platforms.length;
+
             switch (structureType) {
-                case 0:
+                case 0: // Float
                     const floatWidth = 3 + Math.floor(Math.random() * 4);
                     const floatHeight = 60 + Math.floor(Math.random() * 60);
                     for (let col = 0; col < floatWidth; col++) {
@@ -170,7 +173,7 @@ class Foreground {
                     }
                     structureWidth = floatWidth * this.tileSize;
                     break;
-                case 1:
+                case 1: // Steps
                     const steps = 3 + Math.floor(Math.random() * 3);
                     for (let i = 0; i < steps; i++) {
                         for (let j = 0; j <= i; j++) {
@@ -181,7 +184,7 @@ class Foreground {
                     structureWidth = (steps * 2) * this.tileSize;
                     groundOccupiedX.push({ start: x, end: x + structureWidth });
                     break;
-                case 2:
+                case 2: // Tower
                     const towerHeight = 3 + Math.floor(Math.random() * 5);
                     for (let row = 0; row < towerHeight; row++) {
                         this.platforms.push({ x: x, y: this.groundY - ((row + 1) * this.tileSize), w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
@@ -190,7 +193,7 @@ class Foreground {
                     structureWidth = 2 * this.tileSize;
                     groundOccupiedX.push({ start: x, end: x + structureWidth });
                     break;
-                case 3:
+                case 3: // Long Width
                     const longWidth = 6 + Math.floor(Math.random() * 8);
                     for (let col = 0; col < longWidth; col++) {
                         this.platforms.push({ x: x + (col * 16), y: this.groundY - (this.tileSize * 2), w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
@@ -198,100 +201,78 @@ class Foreground {
                     structureWidth = longWidth * this.tileSize;
                     break;
             }
+
+            this.structures.push({
+                x: x,
+                width: structureWidth,
+                platforms: this.platforms.slice(startPlatformIndex),
+                secretCount: 0,
+                isSignaled: false
+            });
+
             const gap = 80 + Math.random() * 180;
-            if (gap > 120 && Math.random() > 0.4 && (x + structureWidth + gap) < lastScreenStart) {
-                this.elevators.push({ x: x + structureWidth + (gap / 2) - 16, y: Math.random() * (this.groundY - 60) + 30, w: 32, h: 8, speed: 0.6 + Math.random() * 0.8, direction: Math.random() > 0.5 ? 1 : -1, topLimit: 20, bottomLimit: this.groundY - 12 });
-            }
             x += structureWidth + gap;
         }
 
-        const clockCandidates = this.platforms.filter(p => {
-            // Check if there's any brick directly above this one
-            const isUnderneath = this.platforms.some(other => other.x === p.x && other.y < p.y);
-            return p.x > CANVAS_WIDTH && p.x < 2048 && !isUnderneath;
-        });
+        // 2. Assign Clock Secrets
+        const clockCandidates = this.platforms.filter(p => !this.platforms.some(other => other.x === p.x && other.y < p.y) && p.x > CANVAS_WIDTH && p.x < 2048);
         for (let i = 0; i < 3; i++) {
             if (clockCandidates.length > 0) {
                 const idx = Math.floor(Math.random() * clockCandidates.length);
-                const target = clockCandidates[idx]; // We define 'target' to make it easier
-                target.hasClock = true;
-                target.hits = 3;
-                target.hasPulsed = false;
-                target.visibleStartTime = null;
-                target.pulseTriggered = false;
+                clockCandidates[idx].hasClock = true;
+                clockCandidates[idx].hits = 3;
                 clockCandidates.splice(idx, 1);
             }
         }
 
-        const flyingCandidates = this.platforms.filter(p => {
-            const isUnderneath = this.platforms.some(other => other.x === p.x && other.y < p.y);
-            return !p.hasClock && p.x > 500 && !isUnderneath;
+        // 3. Assign Checkpoint Secrets across 3 zones
+        const checkpointZones = [{ min: 0, max: 975 }, { min: 1000, max: 1975 }, { min: 2000, max: 3000 }];
+        checkpointZones.forEach(zone => {
+            const zoneCandidates = this.platforms.filter(p => !p.hasClock && !p.isSecret && p.x >= zone.min && p.x <= zone.max && !this.platforms.some(other => other.x === p.x && other.y < p.y));
+            if (zoneCandidates.length > 0) {
+                const idx = Math.floor(Math.random() * zoneCandidates.length);
+                zoneCandidates[idx].isCheckpointCandidate = true;
+                zoneCandidates[idx].hits = 3;
+            }
         });
+
+        // 4. Calculate Secret Count for Building Signals
+        this.structures.forEach(s => {
+            s.secretCount = s.platforms.filter(p => p.hasClock || p.isCheckpointCandidate).length;
+        });
+
+        // 5. Assign Flying Secret Bricks
+        const flyingCandidates = this.platforms.filter(p => !p.hasClock && !p.isCheckpointCandidate && p.x > 500 && !this.platforms.some(other => other.x === p.x && other.y < p.y));
         for (let i = 0; i < 3; i++) {
             if (flyingCandidates.length > 0) {
                 const idx = Math.floor(Math.random() * flyingCandidates.length);
                 const target = flyingCandidates[idx];
                 target.isSecret = true;
-                target.hasPulsed = false;
-                target.visibleStartTime = null;
-                target.pulseTriggered = false;
                 target.state = 'idle';
                 target.timer = 45;
                 flyingCandidates.splice(idx, 1);
             }
         }
 
-        // --- SPREAD OUT CHECKPOINTS ACROSS 3 ZONES ---
-        const checkpointZones = [
-            { min: 0, max: 975 },
-            { min: 1000, max: 1975 },
-            { min: 2000, max: 3000 }
-        ];
-
-        checkpointZones.forEach(zone => {
-            // Find all bricks within THIS specific zone
-            const zoneCandidates = this.platforms.filter(p => {
-                // Check if there's any brick directly above this one
-                const isUnderneath = this.platforms.some(other => other.x === p.x && other.y < p.y);
-                return !p.hasClock && !p.isSecret && p.x >= zone.min && p.x <= zone.max && !isUnderneath;
-            });
-
-            if (zoneCandidates.length > 0) {
-                const idx = Math.floor(Math.random() * zoneCandidates.length);
-                const target = zoneCandidates[idx];
-
-                target.isCheckpointCandidate = true;
-                target.hits = 3;
-                target.hasPulsed = false;
-                target.visibleStartTime = null;
-                target.pulseTriggered = false;
-            }
-        });
-
+        // 6. Set Level Star
         const starX = 768 + Math.random() * 1500;
         let starHighestY = this.groundY;
         this.platforms.forEach(p => { if (starX > p.x && starX < p.x + 16 && p.y < starHighestY) starHighestY = p.y; });
         this.star = { x: starX, y: starHighestY - 45 };
 
-        // Stop hazards before the last screen
+        // 7. Generate Hazards
         for (let hx = 300; hx < lastScreenStart; hx += 150) {
             if (Math.random() > 0.4) {
                 const hWidth = 30 + Math.random() * 48;
                 const rand = Math.random();
-                let hType;
-                if (rand < 0.15) hType = 'oil';
-                else if (rand < 0.35) hType = 'ice';
-                else hType = 'quicksand';
+                let hType = rand < 0.15 ? 'oil' : (rand < 0.35 ? 'ice' : 'quicksand');
 
-
-                // Check if any platform above this hazard range is too low (less than 36px clearance)
                 const hasLowBricks = this.platforms.some(p => {
-                    const horizontalOverlap = (hx < p.x + 16 && hx + hWidth > p.x);
-                    const verticalGap = this.groundY - (p.y + 16);
-                    return horizontalOverlap && verticalGap < 36;
+                    const horiz = (hx < p.x + 16 && hx + hWidth > p.x);
+                    const vert = this.groundY - (p.y + 16);
+                    return horiz && vert < 36;
                 });
 
-                // Final check to make sure the width of the hazard doesn't enter the zone
                 const overlaps = groundOccupiedX.some(range => (hx < range.end && hx + hWidth > range.start));
                 if (!overlaps && !hasLowBricks && (hx + hWidth < lastScreenStart)) {
                     this.groundHazards.push({ x: hx, w: hWidth, type: hType });
@@ -299,6 +280,7 @@ class Foreground {
             }
         }
 
+        // 8. Generate Coins
         let coinX = 350;
         while (coinX < this.portalX - 150) {
             let coinHighestY = this.groundY;
@@ -306,7 +288,8 @@ class Foreground {
             this.coins.push({ x: coinX, y: coinHighestY - 25 });
             coinX += 150 + (Math.random() * 150);
         }
-    }
+    } // Function finally ends here
+
 
     setupInput() {
         window.addEventListener('keydown', () => {

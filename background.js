@@ -87,7 +87,8 @@ class Background {
                 w: bWidth,
                 h: bHeight,
                 color: isSkyscraper ? '#4b5563' : '#7c2d12',
-                windows: isSkyscraper
+                windows: isSkyscraper,
+                signals: []
             });
 
             // Spacing between buildings
@@ -408,408 +409,146 @@ class Background {
         ctx.fill(); // Head
     }
 
-    drawBuilding(ctx, x, b) {
-        const shadowColor = 'rgba(0, 0, 0, 0.2)';
-        const highlightColor = 'rgba(255, 255, 255, 0.1)';
+    // ... rest of Background module above ...
 
-        // 1. MAIN STRUCTURE
+    drawBuilding(ctx, x, b) {
         ctx.fillStyle = b.color;
         ctx.fillRect(x, b.y, b.w, b.h);
 
-        // 2. DEPTH & SHADING
-        ctx.fillStyle = shadowColor;
-        ctx.fillRect(x + b.w - 4, b.y, 4, b.h);
-
-        ctx.fillStyle = highlightColor;
-        ctx.fillRect(x, b.y, b.w, 2);
-
-        // 3. WINDOWS
         if (b.windows) {
+            let winIdx = 0;
             for (let wy = b.y + 10; wy < b.y + b.h - 10; wy += 15) {
                 for (let wx = x + 5; wx < x + b.w - 8; wx += 10) {
                     ctx.fillStyle = '#111827';
                     ctx.fillRect(wx - 1, wy - 1, 5, 6);
 
-                    // FIXED: Use the static world coordinate (b.x) and relative offset (wx - x) 
-                    // to calculate the lit state instead of the moving screen coordinate (x).
-                    const relativeX = wx - x;
-                    const isLit = (Math.sin(relativeX * wy + b.x) > 0);
+                    let blinkActive = false;
+                    if (b.signals && b.signals[winIdx]) {
+                        const sig = b.signals[winIdx];
+                        const blinkDuration = sig.count * 40;
+                        // Blink logic: Only TRUE during the count phase and the 'on' cycle
+                        if (sig.timer < blinkDuration && (sig.timer % 40 < 20)) {
+                            blinkActive = true;
+                        }
+                    }
 
-                    ctx.fillStyle = isLit ? '#fde047' : '#374151';
-                    ctx.fillRect(wx, wy, 3, 4);
+                    const isLit = blinkActive || (Math.sin((wx - x) * wy + b.x) > 0);
 
-                    if (isLit) {
+                    if (blinkActive) {
+                        // --- SIGNAL GLOW EFFECT ---
+                        ctx.save();
+                        ctx.fillStyle = '#ffffff';
+                        ctx.shadowBlur = 10;
+                        ctx.shadowColor = '#ffffff';
+                        ctx.fillRect(wx, wy, 3, 4);
+                        ctx.restore();
+                    } else {
+                        ctx.fillStyle = isLit ? '#fde047' : '#374151';
+                        ctx.fillRect(wx, wy, 3, 4);
+                    }
+
+                    if (isLit || blinkActive) {
                         ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
                         ctx.fillRect(wx, wy, 1, 1);
                     }
+                    winIdx++;
                 }
             }
         }
 
-        // 4. ROOF DETAILS
+        // Roof details (unchanged)
         ctx.fillStyle = b.color;
         ctx.fillRect(x - 2, b.y, b.w + 4, 3);
-
         if (b.w > 25) {
             ctx.fillStyle = '#9ca3af';
             ctx.fillRect(x + 5, b.y - 6, 12, 6);
             ctx.fillStyle = '#4b5563';
             ctx.fillRect(x + 6, b.y - 4, 3, 3);
-
             ctx.fillStyle = '#1f2937';
             ctx.fillRect(x + b.w - 10, b.y - 15, 1, 15);
             ctx.fillRect(x + b.w - 12, b.y - 12, 5, 1);
         }
-
         ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
         ctx.fillRect(x, b.y + b.h - 2, b.w, 2);
     }
 
-    drawTent(ctx, x, s) {
-        const bottomY = s.y;
-        const tentWidth = 80;
-        const tentHeight = 60;
-        const centerX = x + tentWidth / 2;
+    updateSignals(cameraX, structures, platforms) {
+        if (this.level !== 1) return;
 
-        // 1. DRAW MAIN BODY (Red and White Stripes)
-        // Base Background
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(x, bottomY - 40, tentWidth, 40);
+        structures.forEach(s => {
+            // 1. Calculate the active SCREEN position of the bricks (1.0x speed)
+            const structureScreenCenter = (s.x - cameraX) + (s.width / 2);
 
-        // Red Stripes
-        ctx.fillStyle = '#ef4444';
-        for (let i = 0; i < tentWidth; i += 20) {
-            ctx.fillRect(x + i, bottomY - 40, 10, 40);
-        }
+            // 2. Trigger signal as the bricks enter the viewable area
+            // We use a wider trigger window so we don't miss it while moving fast
+            const isVisible = structureScreenCenter > 20 && structureScreenCenter < this.canvasWidth - 20;
 
-        // 2. DRAW THE ROOF (The "Big Top" Peak)
-        ctx.fillStyle = '#ef4444';
-        ctx.beginPath();
-        ctx.moveTo(x - 5, bottomY - 40);
-        ctx.lineTo(centerX, bottomY - tentHeight);
-        ctx.lineTo(x + tentWidth + 5, bottomY - 40);
-        ctx.fill();
+            if (isVisible && s.secretCount > 0 && !s.isSignaled) {
+                // 3. Find buildings that are VISIBLY on screen and have windows
+                const candidates = this.scenery
+                    .filter(obj => {
+                        const bSX = obj.x - (cameraX * 0.5);
+                        return obj.type === 'building' && obj.windows &&
+                            bSX > -obj.w && bSX < this.canvasWidth;
+                    })
+                    .map(obj => {
+                        const bScreenX = obj.x - (cameraX * 0.5);
+                        const bScreenCenter = bScreenX + (obj.w / 2);
+                        return {
+                            building: obj,
+                            dist: Math.abs(bScreenCenter - structureScreenCenter),
+                            screenX: bScreenX
+                        };
+                    })
+                    .sort((a, b) => a.dist - b.dist);
 
-        // Roof Stripes (Darker red for depth)
-        ctx.fillStyle = '#b91c1c';
-        ctx.beginPath();
-        ctx.moveTo(centerX, bottomY - tentHeight);
-        ctx.lineTo(centerX - 15, bottomY - 40);
-        ctx.lineTo(centerX + 15, bottomY - 40);
-        ctx.fill();
+                let selectedB = null;
 
-        // 3. SCALLOPED EDGES (The decorative trim)
-        ctx.fillStyle = '#fde047'; // Yellow trim
-        for (let i = -5; i <= tentWidth + 5; i += 10) {
-            ctx.beginPath();
-            ctx.arc(x + i, bottomY - 40, 5, 0, Math.PI);
-            ctx.fill();
-        }
+                // 4. VISIBILITY CHECK: Pick the nearest building NOT blocked by a brick
+                for (let cand of candidates) {
+                    const b = cand.building;
+                    const nextWinIdx = b.signals.length;
 
-        // 4. THE ENTRANCE
-        ctx.fillStyle = '#1e1b4b'; // Dark blue interior
-        ctx.beginPath();
-        ctx.moveTo(centerX - 10, bottomY);
-        ctx.lineTo(centerX, bottomY - 25);
-        ctx.lineTo(centerX + 10, bottomY);
-        ctx.fill();
+                    // We only check if the entire building area is blocked. 
+                    // This is more forgiving than checking every single window pixel.
+                    const isBlocked = platforms.some(p => {
+                        const pSX = p.x - cameraX;
+                        const bWinL = cand.screenX + 5;
+                        const bWinR = cand.screenX + b.w - 8;
+                        // Vertical window range
+                        const bWinT = b.y + 10;
+                        const bWinB = b.y + b.h - 10;
 
-        // 5. THE FLAG
-        // Pole
-        ctx.strokeStyle = '#94a3b8';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(centerX, bottomY - tentHeight);
-        ctx.lineTo(centerX, bottomY - tentHeight - 15);
-        ctx.stroke();
+                        return (pSX < bWinR && pSX + 16 > bWinL &&
+                            p.y < bWinB && p.y + 16 > bWinT);
+                    });
 
-        // Flag Fabric (Waving effect)
-        const wave = Math.sin(Date.now() / 300) * 3;
-        ctx.fillStyle = '#fde047';
-        ctx.beginPath();
-        ctx.moveTo(centerX, bottomY - tentHeight - 15);
-        ctx.lineTo(centerX + 12, bottomY - tentHeight - 10 + wave);
-        ctx.lineTo(centerX, bottomY - tentHeight - 5);
-        ctx.fill();
-    }
+                    if (!isBlocked) {
+                        selectedB = b;
+                        break;
+                    }
+                }
 
-    drawFoodStand(ctx, x, s) {
-        const bottomY = s.y;
-        const standWidth = 50;
-        const standHeight = 35;
-        const woodColor = '#7c2d12';
-        const shadowColor = '#451a03';
-
-        // 1. MAIN WOODEN BASE
-        ctx.fillStyle = woodColor;
-        ctx.fillRect(x, bottomY - standHeight, standWidth, standHeight);
-
-        // Add "Plank" lines for texture
-        ctx.fillStyle = shadowColor;
-        ctx.fillRect(x, bottomY - 24, standWidth, 1);
-        ctx.fillRect(x, bottomY - 12, standWidth, 1);
-
-        // 2. COUNTERTOP
-        ctx.fillStyle = '#94a3b8'; // Slate grey counter
-        ctx.fillRect(x - 2, bottomY - 28, standWidth + 4, 3);
-
-        // 3. MENU BOARD (On the side)
-        ctx.fillStyle = '#111827'; // Black chalkboard
-        ctx.fillRect(x + 5, bottomY - 22, 12, 15);
-        ctx.fillStyle = '#ffffff'; // White "chalk" lines
-        ctx.fillRect(x + 7, bottomY - 19, 8, 1);
-        ctx.fillRect(x + 7, bottomY - 16, 6, 1);
-        ctx.fillRect(x + 7, bottomY - 13, 7, 1);
-
-        // 4. STRIPED AWNING
-        // Awning Supports
-        ctx.strokeStyle = '#d1d5db';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(x + 2, bottomY - standHeight);
-        ctx.lineTo(x + 2, bottomY - 50);
-        ctx.moveTo(x + standWidth - 2, bottomY - standHeight);
-        ctx.lineTo(x + standWidth - 2, bottomY - 50);
-        ctx.stroke();
-
-        // Main Awning Body (Yellow and White Stripes)
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(x - 5, bottomY - 55, standWidth + 10, 8);
-        ctx.fillStyle = '#fbbf24'; // Golden yellow
-        for (let i = -5; i < standWidth + 10; i += 12) {
-            ctx.fillRect(x + i, bottomY - 55, 6, 8);
-        }
-
-        // 5. SIGNAGE
-        ctx.fillStyle = '#ef4444'; // Red sign board
-        ctx.fillRect(x + 20, bottomY - 52, 25, 10);
-        ctx.fillStyle = '#ffffff'; // Simple pixel "text"
-        ctx.fillRect(x + 23, bottomY - 48, 19, 2);
-
-        // 6. GROUND SHADOW
-        ctx.fillStyle = 'rgba(0,0,0,0.3)';
-        ctx.fillRect(x - 2, bottomY, standWidth + 4, 2);
-    }
-
-    drawGameStall(ctx, x, s) {
-        const bottomY = s.y;
-        // Frame
-        ctx.fillStyle = '#451a03';
-        ctx.fillRect(x, bottomY - 35, 45, 35);
-        // Interior Light
-        ctx.fillStyle = '#fde047';
-        ctx.fillRect(x + 5, bottomY - 30, 35, 20);
-        // Decorative Pillars
-        ctx.fillStyle = '#7c2d12';
-        ctx.fillRect(x, bottomY - 35, 5, 35);
-        ctx.fillRect(x + 40, bottomY - 35, 5, 35);
-    }
-
-    drawRollercoaster(ctx, x, s) {
-        const bottomY = s.y;
-        const totalWidth = 220;
-
-        // 1. Path Calculation: A consistent function for track, supports, and carts
-        const getTrackY = (relX) => {
-            if (relX < 0 || relX > totalWidth) return bottomY;
-            let h = 0;
-            if (relX < 130) {
-                // First Hill (taller)
-                h = Math.sin((relX / 130) * Math.PI) * 150;
-            } else {
-                // Second Hill (shorter)
-                h = Math.sin(((relX - 130) / (totalWidth - 130)) * Math.PI) * 70;
+                if (selectedB) {
+                    selectedB.signals.push({ count: s.secretCount, timer: 0 });
+                    s.isSignaled = true;
+                }
             }
-            return bottomY - h;
-        };
+        });
 
-        // 2. Draw Support Lattice
-        ctx.strokeStyle = '#475569';
-        ctx.lineWidth = 1;
-        for (let sx = 0; sx <= totalWidth; sx += 20) {
-            const trackY = getTrackY(sx);
-            // Vertical beam
-            ctx.beginPath();
-            ctx.moveTo(x + sx, bottomY);
-            ctx.lineTo(x + sx, trackY);
-            ctx.stroke();
+        // 5. REPEAT LOGIC: Loop the timers with a 5-second delay (300 frames)
+        this.scenery.forEach(obj => {
+            if (obj.signals) {
+                obj.signals.forEach(sig => {
+                    sig.timer++;
+                    const blinkDuration = sig.count * 40;
+                    const sequenceEnd = blinkDuration + 60 + 300; // Count + Pause + 5s
 
-            // Diagonal bracing
-            if (sx < totalWidth) {
-                ctx.beginPath();
-                ctx.moveTo(x + sx, bottomY);
-                ctx.lineTo(x + sx + 20, getTrackY(sx + 20));
-                ctx.stroke();
+                    if (sig.timer >= sequenceEnd) {
+                        sig.timer = 0; // Restart sequence
+                    }
+                });
             }
-        }
-
-        // 3. Draw Main Rails
-        ctx.strokeStyle = '#334155';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.moveTo(x, bottomY);
-        for (let i = 0; i <= totalWidth; i += 5) {
-            ctx.lineTo(x + i, getTrackY(i));
-        }
-        ctx.stroke();
-
-        // 4. Draw Moving Coaster Carts
-        const time = Date.now() / 4000; // Speed of the coaster
-        const cartsInTrain = 3;
-
-        for (let i = 0; i < cartsInTrain; i++) {
-            // Cart progress cycles from 0 to 1.2 (to allow gap between trains)
-            const progress = (time - (i * 0.04)) % 1.2;
-
-            if (progress < 1.0) {
-                const cartRelX = progress * totalWidth;
-                const cartX = x + cartRelX;
-                const cartY = getTrackY(cartRelX);
-
-                // Draw Cart Body
-                ctx.fillStyle = '#ef4444'; // Red coaster
-                ctx.fillRect(cartX - 4, cartY - 7, 8, 6);
-
-                // Draw Little Passenger Heads
-                ctx.fillStyle = '#ffdbac';
-                ctx.fillRect(cartX - 2, cartY - 9, 2, 2);
-                ctx.fillRect(cartX + 1, cartY - 9, 2, 2);
-
-                // Wheel highlight
-                ctx.fillStyle = '#000';
-                ctx.fillRect(cartX - 3, cartY - 2, 2, 2);
-                ctx.fillRect(cartX + 1, cartY - 2, 2, 2);
-            }
-        }
+        });
     }
-
-    drawElephant(ctx, x, s) {
-        const bottomY = s.y;
-        const bodyColor = '#64748b'; // Slate Grey
-        const darkGrey = '#475569';
-        const lightGrey = '#94a3b8';
-
-        ctx.save();
-        ctx.translate(x, bottomY);
-
-        // --- SCALE ADDED HERE: Makes the whole drawing 25% smaller ---
-        ctx.scale(0.75, 0.75);
-
-        // 1. LEGS (Draw back legs first for depth)
-        ctx.fillStyle = darkGrey;
-        ctx.fillRect(8, -10, 6, 10);  // Back-left
-        ctx.fillRect(25, -10, 6, 10); // Back-right
-
-        // 2. TAIL (Behind the body)
-        ctx.strokeStyle = darkGrey;
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(35, -20);
-        ctx.lineTo(40, -8);
-        ctx.stroke();
-
-        // 3. MAIN BODY
-        ctx.fillStyle = bodyColor;
-        ctx.fillRect(0, -28, 35, 20);
-        ctx.fillRect(4, -31, 27, 3);
-        ctx.fillRect(-2, -25, 2, 14);
-
-        // 4. FRONT LEGS (With toe highlights)
-        ctx.fillStyle = bodyColor;
-        ctx.fillRect(2, -10, 7, 10);  // Front-left
-        ctx.fillRect(20, -10, 7, 10); // Front-right
-        ctx.fillStyle = lightGrey;
-        ctx.fillRect(2, -2, 3, 2);
-        ctx.fillRect(20, -2, 3, 2);
-
-        // 5. THE HEAD
-        ctx.fillStyle = bodyColor;
-        ctx.fillRect(-14, -32, 16, 15);
-        ctx.fillStyle = '#000000';
-        ctx.fillRect(-10, -26, 2, 2);
-
-        // 6. THE TRUNK (Detailed curve)
-        ctx.fillStyle = bodyColor;
-        ctx.fillRect(-18, -25, 6, 10); // Upper
-        ctx.fillRect(-22, -16, 6, 10); // Middle
-        ctx.fillRect(-24, -8, 4, 4);   // Tip
-
-        // 7. TUSK (White)
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(-16, -19, 4, 2);
-        ctx.fillRect(-18, -17, 2, 2);
-
-        // 8. THE EAR (Large and layered)
-        ctx.fillStyle = darkGrey;
-        ctx.fillRect(-5, -34, 14, 20); // Shadow/Back
-        ctx.fillStyle = bodyColor;
-        ctx.fillRect(-3, -32, 12, 16); // Main flap
-        ctx.fillStyle = lightGrey;
-        ctx.fillRect(-3, -32, 10, 2);  // Top highlight
-
-        ctx.restore();
-    }
-
-    drawPopcorn(ctx, x, s) {
-        const bottomY = s.y;
-        // Cart Body
-        ctx.fillStyle = '#ef4444';
-        ctx.fillRect(x, bottomY - 20, 15, 15);
-        // Popcorn Top (Yellow fluff)
-        ctx.fillStyle = '#fef08a';
-        ctx.beginPath();
-        ctx.arc(x + 4, bottomY - 20, 4, 0, Math.PI * 2);
-        ctx.arc(x + 8, bottomY - 22, 4, 0, Math.PI * 2);
-        ctx.arc(x + 12, bottomY - 20, 4, 0, Math.PI * 2);
-        ctx.fill();
-        // Wheels
-        ctx.fillStyle = '#000';
-        ctx.beginPath(); ctx.arc(x + 3, bottomY - 3, 3, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(x + 12, bottomY - 3, 3, 0, Math.PI * 2); ctx.fill();
-    }
-
-    drawStar(ctx, x, s) {
-        let opacity = s.twinkle ? (0.3 + Math.abs(Math.sin(Date.now() / 500)) * 0.7) : 1;
-        ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
-        ctx.fillRect(x, s.y, s.size, s.size);
-    }
-
-    drawPlanet(ctx, x, s) {
-        const pColor = s.type === 'jupiter' ? '#eab308' : (s.type === 'saturn' ? '#fde68a' : '#cbd5e1');
-
-        // 1. Draw the Planet Body
-        ctx.fillStyle = pColor;
-        ctx.beginPath();
-        ctx.arc(x, s.y, s.size, 0, Math.PI * 2);
-        ctx.fill();
-
-        // 2. Add Specific Details
-        if (s.type === 'saturn') {
-            // Draw Saturn's Rings
-            ctx.strokeStyle = '#e2e8f0';
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            // An ellipse tilted slightly for the ring effect
-            ctx.ellipse(x, s.y, s.size * 2.2, s.size * 0.5, Math.PI / 6, 0, Math.PI * 2);
-            ctx.stroke();
-        } else if (s.type === 'jupiter') {
-            // Draw Jupiter's Stripes
-            ctx.fillStyle = 'rgba(0,0,0,0.2)';
-            ctx.fillRect(x - s.size, s.y - (s.size * 0.4), s.size * 2, 3);
-            ctx.fillRect(x - s.size, s.y + (s.size * 0.2), s.size * 2, 2);
-        } else if (s.type === 'moon') {
-            // Draw Moon Craters
-            ctx.fillStyle = 'rgba(0,0,0,0.1)';
-            ctx.beginPath(); ctx.arc(x - (s.size * 0.3), s.y - (s.size * 0.2), s.size * 0.2, 0, Math.PI * 2); ctx.fill();
-            ctx.beginPath(); ctx.arc(x + (s.size * 0.4), s.y + (s.size * 0.3), s.size * 0.15, 0, Math.PI * 2); ctx.fill();
-        }
-    }
-
-    drawBlackHole(ctx, x, s) {
-        ctx.fillStyle = '#000';
-        ctx.beginPath(); ctx.arc(x, s.y, s.size, 0, Math.PI * 2); ctx.fill();
-        ctx.strokeStyle = '#6366f1'; ctx.beginPath(); ctx.arc(x, s.y, s.size + 2, 0, Math.PI * 2); ctx.stroke();
-    }
-
-
 }

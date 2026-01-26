@@ -45,7 +45,7 @@ function init() {
     player = new Player(CANVAS_HEIGHT);
 
     // Use loadLevel to ensure all global states are synced from start
-    loadLevel(3);
+    loadLevel(1);
 
     // Listen for oil events
     window.addEventListener('oilSplash', (e) => {
@@ -441,6 +441,12 @@ function update() {
 
     updateParticles();
     fg.update(player);
+
+    // ADD THIS: Update building signals in Level 1
+    if (fg.level === 1) {
+        // Pass fg.platforms as a third argument
+        bg.updateSignals(cameraX, fg.structures, fg.platforms);
+    }
 
     for (let i = activeBubbles.length - 1; i >= 0; i--) {
         let b = activeBubbles[i];
