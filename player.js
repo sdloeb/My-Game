@@ -228,7 +228,7 @@ class Player {
             this.onGround = false; // Disable limb swinging while stuck
 
             // 1. SINKING: Constant slow downward pull
-            this.y += 0.30;
+            this.y += 0.35;
 
             // 2. STRUGGLING: Tapping Up/Jump moves you up slightly
             if (this.keys.up) {
