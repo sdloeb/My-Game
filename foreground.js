@@ -273,12 +273,12 @@ class Foreground {
 
         // Stop hazards before the last screen
         for (let hx = 300; hx < lastScreenStart; hx += 150) {
-            if (Math.random() > 0.4) {
+            if (Math.random() > 0.5) {
                 const hWidth = 24 + Math.random() * 48;
                 const rand = Math.random();
                 let hType;
-                if (rand < 0.33) hType = 'oil';
-                else if (rand < 0.66) hType = 'ice';
+                if (rand < 0.20) hType = 'oil';
+                else if (rand < 0.40) hType = 'ice';
                 else hType = 'quicksand';
 
 

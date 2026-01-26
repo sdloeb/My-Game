@@ -578,7 +578,7 @@ function draw() {
     });
 
     // Only draw the player here if they are NOT in quicksand
-    if (!player.inQuicksand) player.draw(ctx, cameraX);
+    player.draw(ctx, cameraX);
     fg.drawQuicksand(ctx, cameraX);
 
     // 1. Calculate fade

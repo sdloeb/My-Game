@@ -225,67 +225,34 @@ class Player {
 
         if (this.inQuicksand) {
             this.quicksandTimer++;
+            this.onGround = false; // Disable limb swinging while stuck
 
-            // 1. Sinking Logic: Sink every 0.1 seconds (roughly 6 frames at 60fps)
-            if (this.quicksandTimer >= 6) {
-                this.y += 1; // Pull down
-                this.quicksandTimer = 0;
+            // 1. SINKING: Constant slow downward pull
+            this.y += 0.20;
+
+            // 2. STRUGGLING: Tapping Up/Jump moves you up slightly
+            if (this.keys.up) {
+                this.y -= 2.5;         // The power of a single struggle "tap"
+                this.keys.up = false; // Force the player to tap again
             }
 
-
-            if (this.inQuicksand) {
-                this.quicksandTimer++;
-
-                // 1. Define the Threshold (80% out / 20% submerged)
-                const surfaceY = groundY - this.height + (this.height * 0.2);
-
-                // 2. Automatic Escape: Trigger jump as soon as player is high enough
-                if (this.y <= surfaceY) {
-                    this.inQuicksand = false;
-                    this.velocityY = this.jumpForce * 0.8; // Stronger jump out
-                    this.velocityX = 2.5;                  // Launch to the right
-                    this.facingRight = true;
-                    return;
-                }
-
-                // 3. Sinking Logic: Sink every 6 frames
-                if (this.quicksandTimer >= 6) {
-                    this.y += 2; // Pull down
-                    this.quicksandTimer = 0;
-                }
-
-                // 4. Fighting Back: Move up significantly per tap
-                if (this.keys.up) {
-                    this.y -= 7;         // Increased tapping power
-                    this.keys.up = false; // Force the player to tap again
-                }
-
-                // 5. Surface Limit: Prevents player from tapping all the way into the sky
-                if (this.y < surfaceY) this.y = surfaceY;
-
-                // 6. Death Check: Head must go 20px below ground to die
-                if (this.y > groundY + 20) {
-                    this.inQuicksand = false;
-                    handlePlayerDeath('quicksand');
-                }
-
-                return; // Skip standard physics while in quicksand
+            // 3. ESCAPE CONDITION: Trigger the vault out once the body is mostly visible
+            // height is 24, so groundY - 20 means only 4 pixels are submerged
+            const escapeThreshold = groundY - 20;
+            if (this.y <= escapeThreshold) {
+                this.inQuicksand = false;
+                this.velocityY = this.jumpForce * 0.75; // Vault out effect
+                this.velocityX = this.facingRight ? 1.5 : -1.5;
+                return;
             }
 
-
-
-
-            // Keep player from going above the 1/4 surface line while sinking
-            const surfaceLimit = groundY - this.height + (this.height * 0.5);
-            if (this.y < surfaceLimit) this.y = surfaceLimit;
-
-            // 4. Death Check: If head (this.y) goes below ground level
-            if (this.y > groundY + 30) {
+            // 4. DEATH CHECK: If the top of the head goes too deep below the surface
+            if (this.y > groundY + 12) {
                 this.inQuicksand = false;
                 handlePlayerDeath('quicksand');
             }
 
-            return; // Skip all other movement/gravity logic while in quicksand
+            return; // Skip standard physics while in quicksand
         }
 
 
@@ -476,9 +443,10 @@ class Player {
                             this.inQuicksand = true;
                             this.velocityX = 0;
                             this.velocityY = 0;
-                            this.y = groundY - this.height + (this.height * 0.7);
+                            this.y = groundY - 6;
                             this.quicksandTimer = 0;
                         }
+
                         // EXISTING: Standard stun logic for Oil and Ice
                         else if (h.type === 'oil' || h.type === 'ice') {
                             this.isStunned = true;
