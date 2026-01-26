@@ -75,9 +75,26 @@ function init() {
         });
     });
 
-    // Handle brick-breaking logic
+    // Handle brick-breaking logic (Head Bonks)
     window.addEventListener('brickHit', (e) => {
         const plat = e.detail.platform;
+
+        // 1. SAFETY: Initialize hits if missing (default to 2)
+        if (plat.hits === undefined) plat.hits = 2;
+
+        // 2. COOLDOWN: Prevent the brick from taking 2 hits in one jump (100ms window)
+        const now = Date.now();
+        if (plat.lastHitTime && now - plat.lastHitTime < 100) return;
+        plat.lastHitTime = now;
+
+        // 3. CRACK LOGIC: If it has hits left, crack it and stop
+        if (!plat.isSecret && plat.hits > 1) {
+            plat.hits--;
+            createShatterEffect(plat.x + 8, plat.y + 8); // Dust puff
+            return;
+        }
+
+        // 4. DESTRUCTION LOGIC: (The "Pop" on the 2nd hit)
         if (plat.isCheckpointCandidate) {
             fg.activeFlag = { x: plat.x, y: plat.y - 40, collected: false };
         }
@@ -373,13 +390,32 @@ function update() {
                         fg.activeFlag = { x: plat.x, y: plat.y - 40, collected: false };
                     }
 
+                    // UPDATED: Bullet Hit Logic with Cooldown and 2-hit destruction
                     if (!plat.isSecret) {
-                        if (plat.hasClock) {
-                            fg.clock = { x: plat.x, y: plat.y, collected: false };
-                            fg.platforms.forEach(other => { other.hasClock = false; });
+                        const now = Date.now();
+                        // Initialize hits if missing
+                        if (plat.hits === undefined) plat.hits = 2;
+
+                        // Check cooldown to prevent double-decrement from high-speed bullets
+                        if (!plat.lastHitTime || now - plat.lastHitTime >= 100) {
+                            plat.lastHitTime = now;
+
+                            if (plat.hits > 1) {
+                                plat.hits--;
+                                createShatterEffect(p.x, p.y);
+                            } else {
+                                // Final Hit Destruction
+                                if (plat.isCheckpointCandidate) {
+                                    fg.activeFlag = { x: plat.x, y: plat.y - 40, collected: false };
+                                }
+                                if (plat.hasClock) {
+                                    fg.clock = { x: plat.x, y: plat.y, collected: false };
+                                    fg.platforms.forEach(other => { other.hasClock = false; });
+                                }
+                                createShatterEffect(plat.x + 8, plat.y + 8);
+                                fg.platforms.splice(j, 1);
+                            }
                         }
-                        createShatterEffect(plat.x + 8, plat.y + 8);
-                        fg.platforms.splice(j, 1);
                     }
                     break;
                 }

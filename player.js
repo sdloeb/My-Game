@@ -564,17 +564,14 @@ class Player {
                         if (this.velocityY === 0) this.y = Math.floor(this.y);
 
                     }
+
                     // BONKING HEAD (Breaking Brick)
                     else if (minOverlap === overlapBottom && this.velocityY < 0) {
-                        // Force squat off if we bonk to prevent getting stuck
-                        if (this.isSquatting) {
-                            this.isSquatting = false;
-                            this.height = this.normalHeight;
-                        }
                         this.y = p.y + pH;
-                        this.velocityY = 1; // Small bounce down
+                        this.velocityY = 2; // Small bounce down
                         window.dispatchEvent(new CustomEvent('brickHit', { detail: { platform: p } }));
                     }
+
                     // HITTING SIDES (Walls)
                     else {
                         if (minOverlap === overlapLeft) {

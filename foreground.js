@@ -166,7 +166,7 @@ class Foreground {
                     const floatWidth = 3 + Math.floor(Math.random() * 4);
                     const floatHeight = 60 + Math.floor(Math.random() * 60);
                     for (let col = 0; col < floatWidth; col++) {
-                        this.platforms.push({ x: x + (col * 16), y: this.groundY - floatHeight, w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false });
+                        this.platforms.push({ x: x + (col * 16), y: this.groundY - floatHeight, w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
                     }
                     structureWidth = floatWidth * this.tileSize;
                     break;
@@ -174,8 +174,8 @@ class Foreground {
                     const steps = 3 + Math.floor(Math.random() * 3);
                     for (let i = 0; i < steps; i++) {
                         for (let j = 0; j <= i; j++) {
-                            this.platforms.push({ x: x + (i * this.tileSize), y: this.groundY - ((j + 1) * this.tileSize), w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false });
-                            this.platforms.push({ x: x + ((steps * 2 - i - 1) * this.tileSize), y: this.groundY - ((j + 1) * this.tileSize), w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false });
+                            this.platforms.push({ x: x + (i * this.tileSize), y: this.groundY - ((j + 1) * this.tileSize), w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
+                            this.platforms.push({ x: x + ((steps * 2 - i - 1) * this.tileSize), y: this.groundY - ((j + 1) * this.tileSize), w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
                         }
                     }
                     structureWidth = (steps * 2) * this.tileSize;
@@ -184,8 +184,8 @@ class Foreground {
                 case 2:
                     const towerHeight = 3 + Math.floor(Math.random() * 5);
                     for (let row = 0; row < towerHeight; row++) {
-                        this.platforms.push({ x: x, y: this.groundY - ((row + 1) * this.tileSize), w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false });
-                        this.platforms.push({ x: x + 16, y: this.groundY - ((row + 1) * this.tileSize), w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false });
+                        this.platforms.push({ x: x, y: this.groundY - ((row + 1) * this.tileSize), w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
+                        this.platforms.push({ x: x + 16, y: this.groundY - ((row + 1) * this.tileSize), w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
                     }
                     structureWidth = 2 * this.tileSize;
                     groundOccupiedX.push({ start: x, end: x + structureWidth });
@@ -193,7 +193,7 @@ class Foreground {
                 case 3:
                     const longWidth = 6 + Math.floor(Math.random() * 8);
                     for (let col = 0; col < longWidth; col++) {
-                        this.platforms.push({ x: x + (col * 16), y: this.groundY - (this.tileSize * 2), w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false });
+                        this.platforms.push({ x: x + (col * 16), y: this.groundY - (this.tileSize * 2), w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
                     }
                     structureWidth = longWidth * this.tileSize;
                     break;
@@ -488,6 +488,43 @@ class Foreground {
         ctx.fillStyle = this.brickColors.shadow;
         ctx.fillRect(x + 1, y + 15, 15, 1);
         ctx.fillRect(x + 15, y + 1, 1, 15);
+
+
+        // Redrawn Crack Pattern: Jagged and branching across 50% of the brick
+        if (platformObj.hits === 1 && !isSecret) {
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.6)'; // Slightly darker for better visibility
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+
+            // Main crack branching from the top-left area
+            ctx.moveTo(x + 3, y + 2);
+            ctx.lineTo(x + 6, y + 5);
+            ctx.lineTo(x + 5, y + 9);
+            ctx.lineTo(x + 8, y + 11);
+
+            // Horizontal branch near the top
+            ctx.moveTo(x + 6, y + 5);
+            ctx.lineTo(x + 10, y + 4);
+            ctx.lineTo(x + 13, y + 6);
+
+            // Secondary crack system from the bottom-right
+            ctx.moveTo(x + 14, y + 14);
+            ctx.lineTo(x + 11, y + 11);
+            ctx.lineTo(x + 12, y + 7);
+
+            // Branch reaching toward the bottom-left
+            ctx.moveTo(x + 11, y + 11);
+            ctx.lineTo(x + 7, y + 13);
+            ctx.lineTo(x + 3, y + 14);
+
+            ctx.stroke();
+
+            // Add a tiny "chip" detail for extra texture
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+            ctx.fillRect(x + 7, y + 10, 2, 2);
+        }
+
+
         ctx.restore();
     }
 
