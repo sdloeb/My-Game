@@ -412,51 +412,73 @@ class Background {
     // ... rest of Background module above ...
 
     drawBuilding(ctx, x, b) {
+        // 1. Draw Main Body (Keep this as is)
         ctx.fillStyle = b.color;
         ctx.fillRect(x, b.y, b.w, b.h);
 
+        // 2. DEPTH & SHADING (Keep this as is)
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+        ctx.fillRect(x + b.w - 4, b.y, 4, b.h);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+        ctx.fillRect(x, b.y, b.w, 2);
+
+        // 3. UPDATED WINDOWS LOGIC
         if (b.windows) {
-            let winIdx = 0;
+            let signalIdx = 0; // Tracks which dark window gets which signal
             for (let wy = b.y + 10; wy < b.y + b.h - 10; wy += 15) {
                 for (let wx = x + 5; wx < x + b.w - 8; wx += 10) {
+                    // Draw the black frame first
                     ctx.fillStyle = '#111827';
                     ctx.fillRect(wx - 1, wy - 1, 5, 6);
 
+                    // A. Calculate if the window is normally yellow based on world X
+                    const isNormallyLit = (Math.sin((wx - x) * wy + b.x) > 0);
+
                     let blinkActive = false;
-                    if (b.signals && b.signals[winIdx]) {
-                        const sig = b.signals[winIdx];
+
+                    // B. SIGNAL LOGIC: Only apply signals to windows that are NOT already yellow
+                    if (!isNormallyLit && b.signals && b.signals[signalIdx]) {
+                        const sig = b.signals[signalIdx];
                         const blinkDuration = sig.count * 40;
-                        // Blink logic: Only TRUE during the count phase and the 'on' cycle
+
+                        // Check if the signal is in the "count" phase and in the "on" part of the pulse
                         if (sig.timer < blinkDuration && (sig.timer % 40 < 20)) {
                             blinkActive = true;
                         }
+
+                        // Increment signalIdx so the NEXT signal goes to the NEXT dark window
+                        signalIdx++;
                     }
 
-                    const isLit = blinkActive || (Math.sin((wx - x) * wy + b.x) > 0);
-
+                    // C. FINAL DRAWING
                     if (blinkActive) {
-                        // --- SIGNAL GLOW EFFECT ---
+                        // Draw white blinking glow
                         ctx.save();
                         ctx.fillStyle = '#ffffff';
                         ctx.shadowBlur = 10;
                         ctx.shadowColor = '#ffffff';
                         ctx.fillRect(wx, wy, 3, 4);
                         ctx.restore();
+                    } else if (isNormallyLit) {
+                        // Draw standard yellow light
+                        ctx.fillStyle = '#fde047';
+                        ctx.fillRect(wx, wy, 3, 4);
                     } else {
-                        ctx.fillStyle = isLit ? '#fde047' : '#374151';
+                        // Draw dark grey (off) window
+                        ctx.fillStyle = '#374151';
                         ctx.fillRect(wx, wy, 3, 4);
                     }
 
-                    if (isLit || blinkActive) {
+                    // Add the tiny white highlight to any lit window
+                    if (isNormallyLit || blinkActive) {
                         ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
                         ctx.fillRect(wx, wy, 1, 1);
                     }
-                    winIdx++;
                 }
             }
         }
 
-        // Roof details (unchanged)
+        // 4. ROOF DETAILS (Keep this as is)
         ctx.fillStyle = b.color;
         ctx.fillRect(x - 2, b.y, b.w + 4, 3);
         if (b.w > 25) {
