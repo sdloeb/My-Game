@@ -215,6 +215,7 @@ class Foreground {
                 const idx = Math.floor(Math.random() * clockCandidates.length);
                 const target = clockCandidates[idx]; // We define 'target' to make it easier
                 target.hasClock = true;
+                target.hits = 3;
                 target.hasPulsed = false;
                 target.visibleStartTime = null;
                 target.pulseTriggered = false;
@@ -260,6 +261,7 @@ class Foreground {
                 const target = zoneCandidates[idx];
 
                 target.isCheckpointCandidate = true;
+                target.hits = 3;
                 target.hasPulsed = false;
                 target.visibleStartTime = null;
                 target.pulseTriggered = false;
@@ -439,92 +441,90 @@ class Foreground {
 
     drawBrick(ctx, x, y, isSecret, hasClock, isCheckpointCandidate, platformObj) {
         ctx.fillStyle = this.brickColors.main;
-        let offsetY = 0;
+        // Only the flying secret brick should twinkle now
         const isSpecial = isSecret || hasClock || isCheckpointCandidate;
 
-
-
         ctx.save();
-        ctx.translate(0, offsetY);
-        // Main Body
         // 1. Draw Main Body
         ctx.fillRect(x, y, 16, 16);
 
-        // --- WHITE LIGHT SHINE EFFECT ---
+        // --- WHITE LIGHT SHINE EFFECT (Only for Flying Bricks) ---
         if (isSpecial) {
-            const cycleTime = 5000; // 5 seconds in milliseconds
-            const shineDuration = 50; // How long the shine takes to cross the brick
+            const cycleTime = 5000;
+            const shineDuration = 50;
             const currentTime = Date.now() % cycleTime;
 
             if (currentTime < shineDuration) {
                 const progress = currentTime / shineDuration;
-
                 ctx.save();
-                // Create a clipping region so the light stays inside the brick
                 ctx.beginPath();
                 ctx.rect(x, y, 16, 16);
                 ctx.clip();
-
-                // Draw a diagonal white beam that moves from left to right
                 ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
                 ctx.lineWidth = 4;
                 ctx.beginPath();
-
-                // The beam starts off-left (-10) and moves to off-right (+26)
                 const shineX = x - 10 + (progress * 36);
                 ctx.moveTo(shineX, y);
                 ctx.lineTo(shineX + 8, y + 16);
                 ctx.stroke();
-
                 ctx.restore();
             }
         }
 
-        // Highlights
+        // 2. Highlights & Shadows
         ctx.fillStyle = this.brickColors.highlight;
         ctx.fillRect(x, y, 16, 1);
         ctx.fillRect(x, y, 1, 16);
-        // Shadows
         ctx.fillStyle = this.brickColors.shadow;
         ctx.fillRect(x + 1, y + 15, 15, 1);
         ctx.fillRect(x + 15, y + 1, 1, 15);
 
+        // 3. MULTI-STAGE CRACK DRAWING
+        if (!isSecret) {
+            const is3Hit = hasClock || isCheckpointCandidate;
+            let crackType = 'none';
 
-        // Redrawn Crack Pattern: Jagged and branching across 50% of the brick
-        if (platformObj.hits === 1 && !isSecret) {
-            ctx.strokeStyle = 'rgba(0, 0, 0, 0.6)'; // Slightly darker for better visibility
-            ctx.lineWidth = 1;
-            ctx.beginPath();
+            // Logic: 1 hit left on 3-hit brick = HEAVY. Otherwise, 1-2 hits left = LIGHT.
+            if (platformObj.hits === 1) {
+                crackType = is3Hit ? 'heavy' : 'light';
+            } else if (platformObj.hits === 2 && is3Hit) {
+                crackType = 'light';
+            }
 
-            // Main crack branching from the top-left area
-            ctx.moveTo(x + 3, y + 2);
-            ctx.lineTo(x + 6, y + 5);
-            ctx.lineTo(x + 5, y + 9);
-            ctx.lineTo(x + 8, y + 11);
+            if (crackType !== 'none') {
+                ctx.strokeStyle = crackType === 'heavy' ? 'rgba(0, 0, 0, 0.8)' : 'rgba(0, 0, 0, 0.6)';
+                ctx.lineWidth = crackType === 'heavy' ? 1.5 : 1;
+                ctx.beginPath();
 
-            // Horizontal branch near the top
-            ctx.moveTo(x + 6, y + 5);
-            ctx.lineTo(x + 10, y + 4);
-            ctx.lineTo(x + 13, y + 6);
+                // --- LIGHT CRACK PATTERN ---
+                ctx.moveTo(x + 3, y + 2); ctx.lineTo(x + 6, y + 5);
+                ctx.lineTo(x + 5, y + 9); ctx.lineTo(x + 8, y + 11);
+                ctx.moveTo(x + 6, y + 5); ctx.lineTo(x + 10, y + 4);
+                ctx.lineTo(x + 13, y + 6);
+                ctx.moveTo(x + 14, y + 14); ctx.lineTo(x + 11, y + 11);
+                ctx.lineTo(x + 12, y + 7);
+                ctx.moveTo(x + 11, y + 11); ctx.lineTo(x + 7, y + 13);
+                ctx.lineTo(x + 3, y + 14);
 
-            // Secondary crack system from the bottom-right
-            ctx.moveTo(x + 14, y + 14);
-            ctx.lineTo(x + 11, y + 11);
-            ctx.lineTo(x + 12, y + 7);
+                // --- HEAVY CRACK ADDITIONS (75% Cracked) ---
+                if (crackType === 'heavy') {
+                    // Add more jagged horizontal and vertical branches
+                    ctx.moveTo(x + 2, y + 8); ctx.lineTo(x + 4, y + 7);
+                    ctx.lineTo(x + 6, y + 10);
+                    ctx.moveTo(x + 10, y + 15); ctx.lineTo(x + 13, y + 12);
+                    ctx.lineTo(x + 15, y + 14);
+                    ctx.stroke();
 
-            // Branch reaching toward the bottom-left
-            ctx.moveTo(x + 11, y + 11);
-            ctx.lineTo(x + 7, y + 13);
-            ctx.lineTo(x + 3, y + 14);
-
-            ctx.stroke();
-
-            // Add a tiny "chip" detail for extra texture
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-            ctx.fillRect(x + 7, y + 10, 2, 2);
+                    // Add "shatter" chips/missing chunks
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+                    ctx.fillRect(x + 7, y + 10, 2, 2);
+                    ctx.fillRect(x + 3, y + 4, 1, 1);
+                    ctx.fillRect(x + 12, y + 3, 2, 1);
+                } else {
+                    ctx.stroke();
+                }
+            }
         }
-
-
         ctx.restore();
     }
 
