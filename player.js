@@ -227,6 +227,21 @@ class Player {
             this.quicksandTimer++;
             this.onGround = false; // Disable limb swinging while stuck
 
+            // --- ADDED: Horizontal Suction ---
+            // Find the specific quicksand patch the player is currently in
+            const hazard = (groundHazards || []).find(hz => hz.type === 'quicksand' && this.x + this.width > hz.x && this.x < hz.x + hz.w);
+            if (hazard) {
+                // Calculate unit boundaries including the gun extension (4px)
+                const unitLeft = this.facingRight ? this.x : this.x - 4;
+                const unitRight = this.facingRight ? this.x + 20 : this.x + 16;
+
+                if (unitLeft < hazard.x) {
+                    this.x += 0.5; // Slide right into sand
+                } else if (unitRight > hazard.x + hazard.w) {
+                    this.x -= 0.5; // Slide left into sand
+                }
+            }
+
             // 1. SINKING: Constant slow downward pull
             this.y += 0.35;
 
@@ -436,11 +451,12 @@ class Player {
                 const playerCenter = this.x + (this.width / 2);
 
                 groundHazards.forEach(h => {
-                    // NEW: Add a 6-pixel inset for quicksand to prevent "edge hanging"
-                    // This means the player's center must be 6 pixels into the sand to fall in.
-                    const inset = (h.type === 'quicksand') ? 6 : 0;
+                    // Falls in earlier for quicksand (4px overlap), center-point for others
+                    const isTriggered = h.type === 'quicksand'
+                        ? (this.x + this.width - 4 > h.x && this.x + 4 < h.x + h.w)
+                        : (playerCenter > h.x && playerCenter < h.x + h.w);
 
-                    if (playerCenter > h.x + inset && playerCenter < (h.x + h.w) - inset) {
+                    if (isTriggered) {
 
                         // UPDATED: Only enter quicksand if we are NOT jumping (velocityY >= 0)
                         if (h.type === 'quicksand' && !this.inQuicksand && this.velocityY >= 0) {
