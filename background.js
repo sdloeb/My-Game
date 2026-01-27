@@ -100,7 +100,7 @@ class Background {
     generateCarnivalTheme() {
         this.scenery = [];
         let cx = 100;
-        const pool = ['tent', 'wheel', 'stand', 'rollercoaster', 'stall', 'carousel', 'swingride', 'elephant', 'popcorn'];
+        const pool = ['tent', 'wheel', 'stand', 'rollercoaster', 'stall', 'carousel', 'swingride', 'elephant', 'juggler'];
 
         // 1. CHOOSE YOUR STOP POINT
         // This is the point in the "Foreground" (where the player walks) 
@@ -238,7 +238,7 @@ class Background {
             else if (s.type === 'carousel') this.drawCarousel(ctx, drawX, s);
             else if (s.type === 'swingride') this.drawSwingRide(ctx, drawX, s);
             else if (s.type === 'elephant') this.drawElephant(ctx, drawX, s);
-            else if (s.type === 'popcorn') this.drawPopcorn(ctx, drawX, s);
+            else if (s.type === 'juggler') this.drawJuggler(ctx, drawX, s);
             else if (s.type === 'star') this.drawStar(ctx, drawX, s);
             else if (['jupiter', 'saturn', 'moon'].includes(s.type)) this.drawPlanet(ctx, drawX, s);
             else if (s.type === 'blackhole') this.drawBlackHole(ctx, drawX, s);
@@ -869,11 +869,49 @@ class Background {
         ctx.stroke();
     }
 
-    drawPopcorn(ctx, x, s) {
-        ctx.fillStyle = '#ef4444';
-        ctx.fillRect(x, s.y - 15, 10, 15);
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(x + 2, s.y - 18, 6, 6);
+    drawJuggler(ctx, x, s) {
+        const bottomY = s.y;
+        const bodyX = x + 10;
+        const time = Date.now() / 400; // Controls juggling speed
+
+        // 1. DRAW THE JUGGLER
+        ctx.fillStyle = '#312e81'; // Dark blue outfit
+        // Legs
+        ctx.fillRect(bodyX - 3, bottomY - 8, 3, 8);
+        ctx.fillRect(bodyX + 2, bottomY - 8, 3, 8);
+        // Torso
+        ctx.fillRect(bodyX - 4, bottomY - 20, 10, 12);
+        // Head
+        ctx.fillStyle = '#ffdbac';
+        ctx.fillRect(bodyX - 1, bottomY - 26, 6, 6);
+        // Arms (Reaching out)
+        ctx.fillStyle = '#ffdbac';
+        const armWave = Math.sin(time * 2) * 4;
+        ctx.fillRect(bodyX - 8, bottomY - 18 + armWave, 4, 3); // Left hand
+        ctx.fillRect(bodyX + 8, bottomY - 18 - armWave, 4, 3); // Right hand
+
+        // 2. JUGGLING PINS (Animated)
+        ctx.fillStyle = '#ffffff'; // White pins
+        for (let i = 0; i < 3; i++) {
+            // Staggered loop for each pin
+            const t = (time + (i * (Math.PI * 2 / 3))) % (Math.PI * 2);
+
+            // Parabolic path for the pins
+            const pinX = bodyX + Math.cos(t) * 15;
+            const pinY = (bottomY - 35) + Math.sin(t) * 12;
+
+            ctx.save();
+            ctx.translate(pinX, pinY);
+            ctx.rotate(t * 2); // Pins spin as they fly
+
+            // Draw Pin Shape
+            ctx.fillRect(-1, -3, 2, 6); // Handle
+            ctx.beginPath();
+            ctx.arc(0, -3, 2, 0, Math.PI * 2); // Top bulb
+            ctx.fill();
+
+            ctx.restore();
+        }
     }
 
     drawStar(ctx, x, s) {
