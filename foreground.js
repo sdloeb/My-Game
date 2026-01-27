@@ -254,6 +254,11 @@ class Foreground {
             }
         }
 
+        // 4. UPDATED: Calculate Secret Count (Now includes isSecret and runs after assignment)
+        this.structures.forEach(s => {
+            s.secretCount = s.platforms.filter(p => p.hasClock || p.isCheckpointCandidate || p.isSecret).length;
+        });
+
         // 6. Set Level Star
         const starX = 768 + Math.random() * 1500;
         let starHighestY = this.groundY;

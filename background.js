@@ -481,16 +481,18 @@ class Background {
         if (this.level !== 1) return;
 
         structures.forEach(s => {
-            const structureScreenCenter = (s.x - cameraX) + (s.width / 2);
-            // Trigger when centered on screen
-            const isVisible = structureScreenCenter > 40 && structureScreenCenter < this.canvasWidth - 40;
+            // 1. IMPROVED VISIBILITY: Trigger when the structure is mostly on screen (10px buffer)
+            const structureScreenLeft = s.x - cameraX;
+            const structureScreenRight = (s.x + s.width) - cameraX;
+            const isVisibleOnScreen = structureScreenLeft >= -10 && structureScreenRight <= this.canvasWidth + 10;
 
-            if (isVisible && s.secretCount > 0 && !s.isSignaled) {
-                // Determine the vertical Y range of the bricks
+            if (isVisibleOnScreen && s.secretCount > 0 && !s.isSignaled) {
+                const structureScreenCenter = structureScreenLeft + (s.width / 2);
+
                 const sMinY = Math.min(...s.platforms.map(p => p.y));
                 const sMaxY = Math.max(...s.platforms.map(p => p.y + 16));
 
-                // Find candidate buildings currently on screen
+                // 2. WIDER SEARCH: Look at all buildings currently visible to find a Safe Y
                 const candidates = this.scenery
                     .filter(obj => {
                         const bSX = obj.x - (cameraX * 0.5);
@@ -502,20 +504,18 @@ class Background {
                     })
                     .sort((a, b) => a.dist - b.dist);
 
-                let assigned = false;
                 for (let cand of candidates) {
                     const b = cand.building;
                     let foundWinIdx = -1;
                     let currentIdx = 0;
 
-                    // Search for a dark window outside the structure's Y range
                     for (let wy = b.y + 10; wy < b.y + b.h - 10; wy += 15) {
                         for (let wx = 5; wx < b.w - 8; wx += 10) {
-                            // Check if this window is normally yellow
                             const isNormallyLit = (Math.sin(wx * wy + b.x) > 0);
-                            // Check if window Y is outside brick Y range
-                            const isSafeY = (wy < sMinY || wy > sMaxY);
-                            // Check if window is already assigned to another signal
+
+                            // Safe Y: Ensures the window is vertically above or below the brick cluster
+                            const isSafeY = (wy + 4 < sMinY || wy > sMaxY);
+
                             const isAvailable = !b.signals.some(sig => sig.winIdx === currentIdx);
 
                             if (!isNormallyLit && isSafeY && isAvailable) {
@@ -530,8 +530,7 @@ class Background {
                     if (foundWinIdx !== -1) {
                         b.signals.push({ count: s.secretCount, timer: 0, winIdx: foundWinIdx });
                         s.isSignaled = true;
-                        assigned = true;
-                        break;
+                        break; // Stop searching once a building is assigned
                     }
                 }
             }
