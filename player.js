@@ -232,7 +232,7 @@ class Player {
 
             // 2. STRUGGLING: Tapping Up/Jump moves you up slightly
             if (this.keys.up) {
-                this.y -= 3.5;         // The power of a single struggle "tap"
+                this.y -= 4.0;         // The power of a single struggle "tap"
                 this.keys.up = false; // Force the player to tap again
             }
 
@@ -436,7 +436,11 @@ class Player {
                 const playerCenter = this.x + (this.width / 2);
 
                 groundHazards.forEach(h => {
-                    if (playerCenter > h.x && playerCenter < h.x + h.w) {
+                    // NEW: Add a 6-pixel inset for quicksand to prevent "edge hanging"
+                    // This means the player's center must be 6 pixels into the sand to fall in.
+                    const inset = (h.type === 'quicksand') ? 6 : 0;
+
+                    if (playerCenter > h.x + inset && playerCenter < (h.x + h.w) - inset) {
 
                         // UPDATED: Only enter quicksand if we are NOT jumping (velocityY >= 0)
                         if (h.type === 'quicksand' && !this.inQuicksand && this.velocityY >= 0) {
