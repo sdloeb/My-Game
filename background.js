@@ -112,14 +112,25 @@ class Background {
         // when the player reaches that distance.
         const buildingLimit = foregroundStopPoint * 0.8;
 
+        let lastType = null; // Track the previous type to prevent duplicates
+
         while (cx < buildingLimit) {
-            const type = pool[Math.floor(Math.random() * pool.length)];
+            // 1. Create a filtered pool that excludes the last placed type
+            const filteredPool = pool.filter(type => type !== lastType);
+
+            // 2. Pick a random type from the remaining options
+            const type = filteredPool[Math.floor(Math.random() * filteredPool.length)];
+
             this.scenery.push({
                 type: type,
                 x: cx,
                 y: this.groundY,
                 color: Math.random() > 0.5 ? '#ef4444' : '#ffffff'
             });
+
+            // 3. Update lastType for the next iteration
+            lastType = type;
+
             cx += 110 + Math.random() * 15;
         }
 
@@ -617,12 +628,111 @@ class Background {
     }
 
     drawRollercoaster(ctx, x, s) {
-        ctx.strokeStyle = '#94a3b8';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(x, s.y);
-        ctx.bezierCurveTo(x + 50, s.y - 100, x + 100, s.y + 50, x + 150, s.y - 50);
-        ctx.stroke();
+        const groundY = s.y;
+        const loopR = 25; // Radius of the circular loop
+        const loopCX = x + 85; // Center X of the loop
+        const loopCY = groundY - 60; // Center Y of the loop (raised so loop is above ground)
+
+        // Path helper function: maps t (0 to 1) to an (x, y) coordinate
+        const getPos = (t) => {
+            if (t < 0.3) {
+                // Segment 1: Approach Path (0.0 - 0.3)
+                const tLocal = t / 0.3;
+                const p0 = { x: x, y: groundY };
+                const p1 = { x: x + 40, y: groundY - 10 };
+                const p2 = { x: x + 60, y: groundY - 20 };
+                const p3 = { x: loopCX, y: loopCY + loopR }; // Bottom of the loop
+                return {
+                    x: (1 - tLocal) ** 3 * p0.x + 3 * (1 - tLocal) ** 2 * tLocal * p1.x + 3 * (1 - tLocal) * tLocal ** 2 * p2.x + tLocal ** 3 * p3.x,
+                    y: (1 - tLocal) ** 3 * p0.y + 3 * (1 - tLocal) ** 2 * tLocal * p1.y + 3 * (1 - tLocal) * tLocal ** 2 * p2.y + tLocal ** 3 * p3.y
+                };
+            } else if (t < 0.7) {
+                // Segment 2: The Full Circle Loop (0.3 - 0.7)
+                const tLocal = (t - 0.3) / 0.4;
+                // Starts at bottom (Math.PI/2), goes 360 degrees
+                const angle = (Math.PI / 2) + (tLocal * Math.PI * 2);
+                return {
+                    x: loopCX + Math.cos(angle) * loopR,
+                    y: loopCY + Math.sin(angle) * loopR
+                };
+            } else {
+                // Segment 3: Exit Path (0.7 - 1.0)
+                const tLocal = (t - 0.7) / 0.3;
+                const p0 = { x: loopCX, y: loopCY + loopR }; // Bottom of the loop
+                const p1 = { x: x + 110, y: groundY - 20 };
+                const p2 = { x: x + 140, y: groundY - 60 };
+                const p3 = { x: x + 175, y: groundY - 45 };
+                return {
+                    x: (1 - tLocal) ** 3 * p0.x + 3 * (1 - tLocal) ** 2 * tLocal * p1.x + 3 * (1 - tLocal) * tLocal ** 2 * p2.x + tLocal ** 3 * p3.x,
+                    y: (1 - tLocal) ** 3 * p0.y + 3 * (1 - tLocal) ** 2 * tLocal * p1.y + 3 * (1 - tLocal) * tLocal ** 2 * p2.y + tLocal ** 3 * p3.y
+                };
+            }
+        };
+
+        // 1. DRAW SCAFFOLDING SUPPORTS
+        ctx.strokeStyle = '#475569';
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= 24; i++) {
+            const t = i / 24;
+            const pos = getPos(t);
+            // Draw main vertical support beam
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+            ctx.lineTo(pos.x, groundY);
+            ctx.stroke();
+            // Draw cross-braces for realism
+            for (let sy = pos.y + 8; sy < groundY; sy += 12) {
+                ctx.beginPath();
+                ctx.moveTo(pos.x - 2, sy); ctx.lineTo(pos.x + 2, sy);
+                ctx.stroke();
+            }
+        }
+
+        // 2. DRAW THE DUAL TRACK RAILS
+        const drawTrack = (offsetY, width, color) => {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = width;
+            ctx.beginPath();
+            let start = getPos(0);
+            ctx.moveTo(start.x, start.y + offsetY);
+            for (let i = 1; i <= 80; i++) {
+                let p = getPos(i / 80);
+                ctx.lineTo(p.x, p.y + offsetY);
+            }
+            ctx.stroke();
+        };
+        drawTrack(0, 3, '#94a3b8'); // Main Rail
+        drawTrack(2, 1, '#64748b'); // Detail Inner Rail
+
+        // 3. ANIMATED CARS (3-car train with rotation)
+        const loopTime = (Date.now() / 3500) % 1.2; // Loops every 3.5 seconds
+        if (loopTime <= 1.0) {
+            for (let i = 0; i < 3; i++) {
+                const t = Math.max(0, loopTime - (i * 0.04));
+                const pos = getPos(t);
+
+                ctx.save();
+                ctx.translate(pos.x, pos.y);
+
+                // Calculate tangent angle for rotation
+                const nextT = Math.min(1, t + 0.01);
+                const posNext = getPos(nextT);
+                const angle = Math.atan2(posNext.y - pos.y, posNext.x - pos.x);
+                ctx.rotate(angle);
+
+                // Car Body
+                ctx.fillStyle = i === 0 ? '#ef4444' : '#fde047';
+                ctx.fillRect(-4, -6, 8, 5);
+                // Tiny Passenger Heads
+                ctx.fillStyle = '#ffdbac';
+                ctx.fillRect(-2, -8, 2, 2); ctx.fillRect(1, -8, 2, 2);
+                // Wheels
+                ctx.fillStyle = '#1e2937';
+                ctx.fillRect(-4, -1, 3, 2); ctx.fillRect(1, -1, 3, 2);
+
+                ctx.restore();
+            }
+        }
     }
 
     drawGameStall(ctx, x, s) {
