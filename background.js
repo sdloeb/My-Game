@@ -551,4 +551,92 @@ class Background {
             }
         });
     }
+
+    // --- MISSING DRAWING METHODS FOR LEVELS 2 & 3 ---
+
+    drawTent(ctx, x, s) {
+        const bottomY = s.y;
+        ctx.fillStyle = s.color;
+        ctx.beginPath();
+        ctx.moveTo(x, bottomY);
+        ctx.lineTo(x + 25, bottomY - 40);
+        ctx.lineTo(x + 50, bottomY);
+        ctx.fill();
+        ctx.fillStyle = s.color === '#ffffff' ? '#ef4444' : '#ffffff';
+        ctx.fillRect(x + 20, bottomY - 15, 10, 15);
+    }
+
+    drawFoodStand(ctx, x, s) {
+        const bottomY = s.y;
+        ctx.fillStyle = '#7c2d12';
+        ctx.fillRect(x, bottomY - 20, 30, 20);
+        ctx.fillStyle = '#ef4444';
+        ctx.fillRect(x - 5, bottomY - 25, 40, 5);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(x + 5, bottomY - 15, 20, 10);
+    }
+
+    drawRollercoaster(ctx, x, s) {
+        ctx.strokeStyle = '#94a3b8';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x, s.y);
+        ctx.bezierCurveTo(x + 50, s.y - 100, x + 100, s.y + 50, x + 150, s.y - 50);
+        ctx.stroke();
+    }
+
+    drawGameStall(ctx, x, s) {
+        ctx.fillStyle = '#1e3a8a';
+        ctx.fillRect(x, s.y - 30, 40, 30);
+        ctx.fillStyle = '#fde047';
+        ctx.fillRect(x + 5, s.y - 25, 30, 15);
+    }
+
+    drawElephant(ctx, x, s) {
+        ctx.fillStyle = '#94a3b8';
+        ctx.fillRect(x, s.y - 20, 25, 15);
+        ctx.fillRect(x - 5, s.y - 18, 8, 8);
+        ctx.fillRect(x - 8, s.y - 12, 5, 2);
+    }
+
+    drawPopcorn(ctx, x, s) {
+        ctx.fillStyle = '#ef4444';
+        ctx.fillRect(x, s.y - 15, 10, 15);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(x + 2, s.y - 18, 6, 6);
+    }
+
+    drawStar(ctx, x, s) {
+        const opacity = s.twinkle ? (0.3 + Math.abs(Math.sin(Date.now() / 500)) * 0.7) : 1;
+        ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+        ctx.fillRect(x, s.y, s.size, s.size);
+    }
+
+    drawPlanet(ctx, x, s) {
+        ctx.fillStyle = s.type === 'jupiter' ? '#fb923c' : (s.type === 'saturn' ? '#fde047' : '#94a3b8');
+        ctx.beginPath();
+        ctx.arc(x, s.y, s.size, 0, Math.PI * 2);
+        ctx.fill();
+        if (s.type === 'saturn') {
+            ctx.strokeStyle = '#eab308';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.ellipse(x, s.y, s.size * 2, s.size * 0.5, 0.2, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+    }
+
+    drawBlackHole(ctx, x, s) {
+        const time = Date.now() / 1000;
+        ctx.fillStyle = '#000000';
+        ctx.beginPath();
+        ctx.arc(x, s.y, s.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#f97316';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(x, s.y, s.size + 5 + Math.sin(time) * 3, 0, Math.PI * 2);
+        ctx.stroke();
+    }
+
 }
