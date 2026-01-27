@@ -686,10 +686,77 @@ class Background {
     }
 
     drawElephant(ctx, x, s) {
-        ctx.fillStyle = '#94a3b8';
-        ctx.fillRect(x, s.y - 20, 25, 15);
-        ctx.fillRect(x - 5, s.y - 18, 8, 8);
-        ctx.fillRect(x - 8, s.y - 12, 5, 2);
+        const bottomY = s.y;
+        const mainGrey = '#94a3b8';
+        const darkGrey = '#64748b';
+        ctx.fillStyle = mainGrey;
+
+        // 1. LEGS (Thicker with toe details)
+        ctx.fillRect(x, bottomY - 10, 7, 10);      // Back leg 1
+        ctx.fillRect(x + 8, bottomY - 8, 6, 8);    // Back leg 2
+        ctx.fillRect(x + 22, bottomY - 10, 7, 10); // Front leg 1
+        ctx.fillRect(x + 30, bottomY - 8, 6, 8);   // Front leg 2
+
+        // Add "Toes" and Knee wrinkles
+        ctx.fillStyle = darkGrey;
+        ctx.fillRect(x, bottomY - 2, 7, 1);       // Back foot shadow
+        ctx.fillRect(x + 22, bottomY - 2, 7, 1);  // Front foot shadow
+        ctx.fillRect(x + 22, bottomY - 6, 7, 1);  // Front knee wrinkle
+
+        // 2. BODY (Slightly larger and more rounded)
+        ctx.fillStyle = mainGrey;
+        ctx.beginPath();
+        ctx.ellipse(x + 18, bottomY - 22, 24, 18, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 3. HEAD
+        ctx.beginPath();
+        ctx.arc(x + 40, bottomY - 30, 12, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 4. THE EAR (Refined "Flapped" shape)
+        ctx.fillStyle = darkGrey;
+        ctx.beginPath();
+        ctx.moveTo(x + 35, bottomY - 38);
+        ctx.bezierCurveTo(x + 25, bottomY - 40, x + 25, bottomY - 15, x + 38, bottomY - 18);
+        ctx.fill();
+
+        // 5. THE TRUNK (With wrinkle texture)
+        ctx.strokeStyle = mainGrey;
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.moveTo(x + 48, bottomY - 30);
+        ctx.quadraticCurveTo(x + 58, bottomY - 30, x + 58, bottomY - 10);
+        ctx.quadraticCurveTo(x + 58, bottomY - 2, x + 52, bottomY - 4);
+        ctx.stroke();
+
+        // Darker lines for trunk wrinkles
+        ctx.strokeStyle = darkGrey;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(x + 54, bottomY - 25); ctx.lineTo(x + 58, bottomY - 25);
+        ctx.moveTo(x + 55, bottomY - 18); ctx.lineTo(x + 59, bottomY - 18);
+        ctx.stroke();
+
+        // 6. IVORY TUSK
+        ctx.fillStyle = '#fefce8'; // Off-white ivory
+        ctx.beginPath();
+        ctx.moveTo(x + 48, bottomY - 26);
+        ctx.lineTo(x + 54, bottomY - 22);
+        ctx.lineTo(x + 46, bottomY - 22);
+        ctx.fill();
+
+        // 7. EYE
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(x + 44, bottomY - 34, 2, 2);
+
+        // 8. TAIL
+        ctx.strokeStyle = darkGrey;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(x - 4, bottomY - 25);
+        ctx.lineTo(x - 8, bottomY - 12);
+        ctx.stroke();
     }
 
     drawPopcorn(ctx, x, s) {
