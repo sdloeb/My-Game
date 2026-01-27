@@ -568,12 +568,52 @@ class Background {
 
     drawFoodStand(ctx, x, s) {
         const bottomY = s.y;
-        ctx.fillStyle = '#7c2d12';
-        ctx.fillRect(x, bottomY - 20, 30, 20);
-        ctx.fillStyle = '#ef4444';
-        ctx.fillRect(x - 5, bottomY - 25, 40, 5);
+
+        // 1. MAIN STRUCTURE (Wooden base)
+        ctx.fillStyle = '#8b4513'; // Saddle Brown
+        ctx.fillRect(x, bottomY - 30, 40, 30);
+
+        // 2. COUNTER TOP (Slightly wider than the base)
+        ctx.fillStyle = '#5d2e0a'; // Darker wood brown
+        ctx.fillRect(x - 2, bottomY - 18, 44, 3);
+
+        // 3. SERVICE WINDOW (Dark interior)
+        ctx.fillStyle = '#2d1a0a';
+        ctx.fillRect(x + 4, bottomY - 28, 32, 10);
+
+        // 4. STRIPED AWNING
+        const awningY = bottomY - 35;
+        // White base for awning
         ctx.fillStyle = '#ffffff';
-        ctx.fillRect(x + 5, bottomY - 15, 20, 10);
+        ctx.fillRect(x - 4, awningY, 48, 8);
+
+        // Red Stripes
+        ctx.fillStyle = '#ef4444';
+        for (let i = 0; i < 6; i++) {
+            ctx.fillRect(x - 4 + (i * 8), awningY, 4, 8);
+        }
+
+        // Awning fringe (The small decorative points at the bottom)
+        for (let i = 0; i < 12; i++) {
+            ctx.beginPath();
+            ctx.moveTo(x - 4 + (i * 4), awningY + 8);
+            ctx.lineTo(x - 2 + (i * 4), awningY + 11);
+            ctx.lineTo(x + (i * 4), awningY + 8);
+            ctx.fill();
+        }
+
+        // 5. OVERHEAD SIGN
+        // White sign board
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(x + 10, bottomY - 48, 20, 10);
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x + 10, bottomY - 48, 20, 10);
+
+        // Red "Text" simulation
+        ctx.fillStyle = '#ef4444';
+        ctx.fillRect(x + 13, bottomY - 44, 14, 2); // Top line
+        ctx.fillRect(x + 15, bottomY - 41, 10, 1); // Bottom line
     }
 
     drawRollercoaster(ctx, x, s) {
@@ -586,10 +626,63 @@ class Background {
     }
 
     drawGameStall(ctx, x, s) {
-        ctx.fillStyle = '#1e3a8a';
-        ctx.fillRect(x, s.y - 30, 40, 30);
-        ctx.fillStyle = '#fde047';
-        ctx.fillRect(x + 5, s.y - 25, 30, 15);
+        const bottomY = s.y;
+
+        // 1. MAIN STRUCTURE
+        ctx.fillStyle = '#4b5563'; // Slate grey base
+        ctx.fillRect(x, bottomY - 30, 45, 30);
+
+        // 2. BACK SHELF & STUFFED ANIMALS
+        ctx.fillStyle = '#1f2937'; // Dark interior
+        ctx.fillRect(x + 4, bottomY - 28, 37, 12);
+
+        // Draw 3 "Stuffed Animals" (Colorful blobs with ears)
+        const colors = ['#f472b6', '#60a5fa', '#fbbf24']; // Pink, Blue, Yellow
+        colors.forEach((color, i) => {
+            const prizeX = x + 8 + (i * 12);
+            const prizeY = bottomY - 22;
+
+            ctx.fillStyle = color;
+            // Body
+            ctx.fillRect(prizeX, prizeY, 6, 6);
+            // Ears
+            ctx.fillRect(prizeX, prizeY - 2, 2, 2);
+            ctx.fillRect(prizeX + 4, prizeY - 2, 2, 2);
+            // "Eyes"
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(prizeX + 1, prizeY + 2, 1, 1);
+            ctx.fillRect(prizeX + 4, prizeY + 2, 1, 1);
+        });
+
+        // 3. FRONT COUNTER & GAME PIECES
+        ctx.fillStyle = '#374151'; // Counter top
+        ctx.fillRect(x - 2, bottomY - 16, 49, 3);
+
+        // Draw "Bottles" (Game targets) on the counter
+        ctx.fillStyle = '#ffffff';
+        for (let i = 0; i < 3; i++) {
+            ctx.fillRect(x + 10 + (i * 10), bottomY - 20, 3, 4); // Bottle body
+            ctx.fillRect(x + 11 + (i * 10), bottomY - 22, 1, 2); // Bottle neck
+        }
+
+        // 4. BLUE STRIPED AWNING
+        const awningY = bottomY - 38;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(x - 4, awningY, 53, 8);
+
+        ctx.fillStyle = '#3b82f6'; // Blue stripes
+        for (let i = 0; i < 7; i++) {
+            ctx.fillRect(x - 4 + (i * 8), awningY, 4, 8);
+        }
+
+        // Scalloped fringe
+        for (let i = 0; i < 13; i++) {
+            ctx.beginPath();
+            ctx.moveTo(x - 4 + (i * 4), awningY + 8);
+            ctx.lineTo(x - 2 + (i * 4), awningY + 11);
+            ctx.lineTo(x + (i * 4), awningY + 8);
+            ctx.fill();
+        }
     }
 
     drawElephant(ctx, x, s) {
