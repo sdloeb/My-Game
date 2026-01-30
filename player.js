@@ -317,9 +317,15 @@ class Player {
                 if (this.stunType === 'ice') {
                     // NEW: Lean backwards based on direction (-0.4 radians is ~23 degrees)
                     this.rotation = this.facingRight ? -0.4 : 0.4;
+                    // Play sound only if moving fast enough on ice
+                    if (Math.abs(this.velocityX) > 0.1) {
+                        if (typeof playIceSlideSound === 'function') playIceSlideSound(true);
+                    } else {
+                        if (typeof playIceSlideSound === 'function') playIceSlideSound(false);
+                    }
+                } else {
+                    this.rotation = 0;
                 }
-            } else {
-                this.rotation = 0;
             }
 
             // This only happens when the timer runs out
@@ -328,6 +334,8 @@ class Player {
                 this.rotation = 0;
                 this.stunType = null;
                 this.stunCooldown = 40;
+                if (typeof playIceSlideSound === 'function') playIceSlideSound(false);
+
             }
         } else {
             // Only process walking movement if NOT in a bubble
@@ -340,6 +348,7 @@ class Player {
                 this.velocityY = this.jumpForce;
                 this.onGround = false;
                 this.onElevator = null;
+                if (typeof playJumpSound === 'function') playJumpSound();
 
                 if (this.isSquatting) {
                     // If jumping while squatting, only stand up if there is room
@@ -434,6 +443,7 @@ class Player {
                 let c = coins[i];
                 if (this.x < c.x + 10 && this.x + this.width > c.x && this.y < c.y + 10 && this.y + this.height > c.y) {
                     coins.splice(i, 1);
+                    if (typeof playCoinSound === 'function') playCoinSound();
                     this.bullets += 1;
                     this.updateUI();
                 }
