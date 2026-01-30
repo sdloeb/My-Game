@@ -2,6 +2,139 @@
 let CANVAS_WIDTH = 256;
 const CANVAS_HEIGHT = 224;
 
+let audioCtx;
+let activeJumpOsc = null;
+
+function playEnemySound() {
+    if (!audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+    osc.frequency.linearRampToValueAtTime(20, audioCtx.currentTime + 0.15);
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.15);
+}
+
+function playCoinSound() {
+    if (!audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    // Classic 8-bit coin: Square wave with a quick frequency jump
+    osc.type = 'square';
+    const now = audioCtx.currentTime;
+
+    // Start at a mid-note and quickly jump to a high-note
+    osc.frequency.setValueAtTime(987.77, now); // B5
+    osc.frequency.setValueAtTime(1318.51, now + 0.05); // E6
+
+    gain.gain.setValueAtTime(0.1, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.start();
+    osc.stop(now + 0.15);
+}
+
+function playJumpSound() {
+    if (!audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    activeJumpOsc = osc; // Store the current jump sound
+
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.1);
+
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.1);
+    osc.onended = () => { if (activeJumpOsc === osc) activeJumpOsc = null; };
+}
+
+let activeIceSound = null;
+
+function playIceSlideSound(active) {
+    if (!audioCtx) return;
+
+    // If active is true and sound isn't already playing, start it
+    if (active && !activeIceSound) {
+        const bufferSize = audioCtx.sampleRate * 0.5; // 0.5 second loop
+        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+
+        activeIceSound = audioCtx.createBufferSource();
+        activeIceSound.buffer = buffer;
+        activeIceSound.loop = true;
+
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'highpass';
+        filter.frequency.setValueAtTime(2000, audioCtx.currentTime);
+
+        const gain = audioCtx.createGain();
+        gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+
+        activeIceSound.connect(filter);
+        filter.connect(gain);
+        gain.connect(audioCtx.destination);
+        activeIceSound.start();
+    } 
+    // If active is false and sound is playing, stop it
+    else if (!active && activeIceSound) {
+        activeIceSound.stop();
+        activeIceSound = null;
+    }
+}
+
+function playBrickSound() {
+    if (!audioCtx) return;
+    if (activeJumpOsc) {
+        try { activeJumpOsc.stop(); } catch (e) { }
+        activeJumpOsc = null;
+    }
+
+    const duration = 0.15;
+    const osc = audioCtx.createOscillator();
+    const noise = audioCtx.createBufferSource();
+    const gain = audioCtx.createGain();
+
+    // 1. Create a low-frequency square wave for the "impact"
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(100, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + duration);
+
+    // 2. Create a short burst of noise for the "shatter"
+    const bufferSize = audioCtx.sampleRate * duration;
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+    noise.buffer = buffer;
+
+    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+
+    osc.connect(gain);
+    noise.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.start();
+    noise.start();
+    osc.stop(audioCtx.currentTime + duration);
+}
+
 let canvas, ctx, player, fg, bg;
 let projectiles = [];
 let enemies = [];
@@ -36,6 +169,7 @@ const defaultEnemies = { skeleton: 4, zombie: 4, spider: 4 };
 
 // 2. INITIALIZATION
 function init() {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     if (isInitialized) return;
 
     canvas = document.getElementById('gameCanvas');
@@ -45,7 +179,7 @@ function init() {
     player = new Player(CANVAS_HEIGHT);
 
     // Use loadLevel to ensure all global states are synced from start
-    loadLevel(2);
+    loadLevel(1);
 
     // Listen for oil events
     window.addEventListener('oilSplash', (e) => {
@@ -77,6 +211,7 @@ function init() {
 
     // Handle brick-breaking logic (Head Bonks)
     window.addEventListener('brickHit', (e) => {
+        if (typeof playBrickSound === 'function') playBrickSound(); // Add this line
         const plat = e.detail.platform;
 
         // 1. SAFETY: Initialize hits if missing (default to 2)
@@ -230,6 +365,7 @@ function update() {
             if (hit) {
                 if (en.isBoss) {
                     const isDead = en.takeDamage();
+                    if (typeof playEnemySound === 'function') playEnemySound();
                     projectiles.splice(pIdx, 1);
                     if (isDead) {
                         createShatterEffect(en.x + en.width / 2, en.y + en.height / 2);
@@ -239,6 +375,7 @@ function update() {
                     }
                 } else {
                     // Standard Minion Death logic
+                    if (typeof playEnemySound === 'function') playEnemySound();
                     createShatterEffect(en.x + en.width / 2, en.y + en.height / 2);
                     enemies.splice(eIdx, 1);
                     projectiles.splice(pIdx, 1);
@@ -384,6 +521,7 @@ function update() {
                 if (p.x > plat.x && p.x < plat.x + platW &&
                     p.y > plat.y && p.y < plat.y + platH) {
                     bulletHitBrick = true;
+                    if (typeof playBrickSound === 'function') playBrickSound();
 
                     // NEW: If a bullet (from player OR enemy) hits a checkpoint brick
                     if (plat.isCheckpointCandidate) {
@@ -684,6 +822,7 @@ function updateParticles() {
 }
 
 function handlePlayerDeath(deathType) {
+    if (typeof playIceSlideSound === 'function') playIceSlideSound(false);
     // 1. Reset player state common to all deaths
     player.hasBow = false;
     player.bullets = 5;
