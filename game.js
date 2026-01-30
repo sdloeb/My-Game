@@ -45,7 +45,7 @@ function init() {
     player = new Player(CANVAS_HEIGHT);
 
     // Use loadLevel to ensure all global states are synced from start
-    loadLevel(2);
+    loadLevel(1);
 
     // Listen for oil events
     window.addEventListener('oilSplash', (e) => {
@@ -137,7 +137,7 @@ function update() {
     if (!player || !fg) return;
 
     // Initialize Bird if player is near portal
-    if (fg.level === 1 && !fg.bird && player.x > fg.portalX - 400) {
+    if (fg.level === 1 && !fg.bird && player.x > fg.portalX - 550) { // Bird spawns earlier
         fg.bird = {
             x: fg.portalX,
             y: fg.portal.y - 110,
@@ -773,7 +773,7 @@ function spawnEnemies() {
 
     // 1. Handle Boss Spawning
     if (currentLevelNum % 3 === 0) {
-        enemies.push(new Boss(fg.portal.x - 120, fg.groundY - 140));
+        enemies.push(new Boss(fg.portalX - 180, fg.groundY - 140)); // Boss spawns closer to the gate
     }
 
     // 2. Get the specific counts for the current level
@@ -783,7 +783,7 @@ function spawnEnemies() {
     const spawnType = (type, count) => {
         for (let i = 0; i < count; i++) {
             // Randomly place between 400px and 150px before the portal
-            const rx = 400 + (Math.random() * (fg.portal.x - 550));
+            const rx = 400 + (Math.random() * (fg.portalX - 900)); // Distributes enemies across new length
 
             // Adjust height based on the enemy type (Spiders are shorter)
             const spawnY = type === 'spider' ? fg.groundY - 12 : fg.groundY - 24;

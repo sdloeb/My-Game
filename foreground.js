@@ -7,7 +7,7 @@ class Foreground {
     constructor(level = 1) {
         this.tileSize = 16;
         this.groundY = 224 - 32;
-        this.portalX = 3200;
+        this.portalX = 5000; this.portalGoalX = 5000;
         this.levelWidth = this.portalX + (CANVAS_WIDTH / 2);
 
         this.platforms = [];
@@ -22,7 +22,7 @@ class Foreground {
         this.key = { x: 0, y: 0, vx: 0, vy: 0, dropped: false, collected: false };
         this.hasKey = false;
         this.portalLocked = true;
-        this.bow = { x: this.portalX - 175, y: this.groundY - 20, collected: false }; //bow location
+        this.bow = { x: this.portalX - 195, y: this.groundY - 20, collected: false }; //bow location
 
         this.troll = { x: this.portalX + 40, y: this.groundY, width: 32, height: 40, health: 5, hit: false, flashTimer: 0, bubbleTimer: 0, bubblesPopped: 0 };
 
@@ -260,7 +260,7 @@ class Foreground {
         });
 
         // 6. Set Level Star
-        const starX = 768 + Math.random() * 1500;
+        const starX = 768 + Math.random() * (this.portalX - 1200); // Scales with level length
         let starHighestY = this.groundY;
         this.platforms.forEach(p => { if (starX > p.x && starX < p.x + 16 && p.y < starHighestY) starHighestY = p.y; });
         this.star = { x: starX, y: starHighestY - 45 };
@@ -346,7 +346,7 @@ class Foreground {
         }
 
         const bossAlive = enemies.some(en => en.isBoss);
-        this.portalX = bossAlive ? 99999 : 3200;
+        this.portalX = bossAlive ? 99999 : this.portalGoalX;
 
         this.elevators.forEach(e => {
             e.y += e.speed * e.direction;
@@ -409,7 +409,7 @@ class Foreground {
         }
 
         // --- TROLL BUBBLE LOGIC (Level 2) ---
-        if (this.level === 2 && !this.troll.hit && player.x > this.portalX - 300) {
+        if (this.level === 2 && !this.troll.hit && player.x > this.portalX - 450) {
             this.troll.bubbleTimer++;
             if (this.troll.bubbleTimer > 60) { // Blow a bubble every second
                 this.troll.bubbleTimer = 0;

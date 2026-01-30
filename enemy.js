@@ -70,7 +70,7 @@ class Enemy {
             });
             // --- WORLD BOUNDARY CHECK ---
             // Prevent enemies from walking past the portal (pixel 2800)
-            if (this.x + this.width > 2800 && this.dir === 1) {
+            if (this.x + this.width > 4500 && this.dir === 1) {
                 this.dir = -1;
             }
             // Optional: Prevent them from walking off the left side of the map
@@ -367,7 +367,7 @@ class Boss {
                     // The range allows it to start anywhere up to 3120.
                     // (This ensures the 80px wide U-turn fits before the portal at 3200).
 
-                    const minSpawnX = this.originX - 0; // Approx 3070
+                    const minSpawnX = this.originX - 50; // Shifts the snake's path slightly left towards the player
                     const spawnRange = 120;               // Spreads it out further
 
                     this.x = minSpawnX + (Math.random() * spawnRange);
