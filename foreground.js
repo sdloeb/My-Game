@@ -405,6 +405,7 @@ class Foreground {
             const dy = (player.y + player.height / 2) - (this.activeFlag.y + 14);
             if (Math.sqrt(dx * dx + dy * dy) < 25) {
                 this.activeFlag.collected = true;
+                if (typeof playSecretSound === 'function') playSecretSound();
                 globalCheckpoints[this.level] = { x: this.activeFlag.x, y: this.activeFlag.y + 16 };
                 this.checkpointTextTimer = 90;
             }
@@ -424,6 +425,7 @@ class Foreground {
 
                     if (p.timer <= 0) {
                         p.state = 'moving';
+                        if (typeof playSecretSound === 'function') playSecretSound();
                         // Lock out other secret bricks as before
                         this.platforms.forEach(other => { if (other !== p) other.isSecret = false; });
                     }

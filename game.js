@@ -20,6 +20,29 @@ function playEnemySound() {
     osc.stop(audioCtx.currentTime + 0.15);
 }
 
+function playSecretSound() {
+    if (!audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    const now = audioCtx.currentTime;
+
+    osc.type = 'square';
+    // A quick rising "power-up" sequence
+    osc.frequency.setValueAtTime(440, now); // A4
+    osc.frequency.setValueAtTime(554.37, now + 0.05); // C#5
+    osc.frequency.setValueAtTime(659.25, now + 0.10); // E5
+    osc.frequency.setValueAtTime(880, now + 0.15); // A5
+
+    gain.gain.setValueAtTime(0.1, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.start();
+    osc.stop(now + 0.3);
+}
+
 function playCoinSound() {
     if (!audioCtx) return;
     const osc = audioCtx.createOscillator();
@@ -91,7 +114,7 @@ function playIceSlideSound(active) {
         filter.connect(gain);
         gain.connect(audioCtx.destination);
         activeIceSound.start();
-    } 
+    }
     // If active is false and sound is playing, stop it
     else if (!active && activeIceSound) {
         activeIceSound.stop();

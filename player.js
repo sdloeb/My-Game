@@ -429,6 +429,7 @@ class Player {
             const clockDy = (this.y + this.height / 2) - (fg.clock.y + 8);
             if (Math.sqrt(clockDx * clockDx + clockDy * clockDy) < 15) {
                 fg.clock.collected = true;
+                if (typeof playSecretSound === 'function') playSecretSound();
                 fg.timeLeft += 10;
                 const timerElement = document.getElementById('timer-display');
                 if (timerElement) {
