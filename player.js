@@ -169,6 +169,7 @@ class Player {
         this.isEndingLevel = true;
         this.targetPortalX = px;
         this.targetPortalY = py;
+        if (typeof playPortalSound === 'function') playPortalSound();
     }
 
     shoot() {

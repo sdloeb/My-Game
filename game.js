@@ -43,6 +43,33 @@ function playSecretSound() {
     osc.stop(now + 0.3);
 }
 
+function playPortalSound() {
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
+
+    // We play a sequence of 12 very fast notes to create the "spiral" effect
+    for (let i = 0; i < 12; i++) {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = 'square';
+        // The pitch jumps up in a pattern (Arpeggio)
+        // This math creates a rapidly ascending series of notes
+        const freq = 220 * Math.pow(1.5, i);
+        osc.frequency.setValueAtTime(freq, now + (i * 0.06));
+
+        gain.gain.setValueAtTime(0.05, now + (i * 0.06));
+        gain.gain.exponentialRampToValueAtTime(0.01, now + (i * 0.06) + 0.05);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start(now + (i * 0.06));
+        osc.stop(now + (i * 0.06) + 0.05);
+    }
+}
+
+
 function playCoinSound() {
     if (!audioCtx) return;
     const osc = audioCtx.createOscillator();
