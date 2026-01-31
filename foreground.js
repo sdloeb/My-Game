@@ -16,7 +16,7 @@ class Foreground {
         this.coins = [];
         this.level = level;
         this.checkpointTextTimer = 0;
-        this.timeLeft = 60;
+        this.timeLeft = 120;
         this.timerStarted = false;
         this.lastTick = 0;
         this.key = { x: 0, y: 0, vx: 0, vy: 0, dropped: false, collected: false };
@@ -52,7 +52,7 @@ class Foreground {
     }
 
     resetTimer() {
-        this.timeLeft = 60;
+        this.timeLeft = 120;
         const timerElement = document.getElementById('timer-display');
         if (timerElement) {
             timerElement.innerText = `TIME: ${this.timeLeft}`;
