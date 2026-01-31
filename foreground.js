@@ -293,6 +293,52 @@ class Foreground {
             this.coins.push({ x: coinX, y: coinHighestY - 25 });
             coinX += 150 + (Math.random() * 150);
         }
+
+        // 9. Generate 5 Quadrant-Based Elevators (No bricks in path)
+        const elevatorStart = 800;
+        const elevatorEnd = this.portalX - 1400;
+        const totalRange = elevatorEnd - elevatorStart;
+        const segmentWidth = totalRange / 5;
+
+        for (let i = 0; i < 5; i++) {
+            let quadrantStart = elevatorStart + (i * segmentWidth);
+            let quadrantEnd = quadrantStart + segmentWidth;
+            let found = false;
+            let attempts = 0;
+
+            while (!found && attempts < 50) {
+                attempts++;
+                // Pick a random X within this specific quadrant
+                let ex = quadrantStart + Math.random() * (segmentWidth - 32);
+                let ew = 32;
+                let eh = 8;
+                let top = this.groundY - 140;
+                let bot = this.groundY - 20;
+
+                // CLEARANCE CHECK: Are any bricks (platforms) in the vertical path?
+                let isPathBlocked = this.platforms.some(p => {
+                    let horizOverlap = (p.x < ex + ew && p.x + 16 > ex);
+                    let vertOverlap = (p.y < bot + eh && p.y + 16 > top);
+                    return horizOverlap && vertOverlap;
+                });
+
+                if (!isPathBlocked) {
+                    this.elevators.push({
+                        x: ex,
+                        y: this.groundY - 60,
+                        w: ew,
+                        h: eh,
+                        speed: 0.8,
+                        direction: 1,
+                        topLimit: top,
+                        bottomLimit: bot
+                    });
+                    found = true;
+                }
+            }
+        }
+
+
     } // Function finally ends here
 
 
