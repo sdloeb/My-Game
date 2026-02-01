@@ -135,6 +135,7 @@ class Foreground {
         if (kDist < 15) {
             // SET THIS FIRST: This stops the function from running again next frame
             this.key.collected = true;
+            if (typeof playKeySound === 'function') playKeySound();
             this.hasKey = true;
             this.portalLocked = false; // Start portal spinning
 

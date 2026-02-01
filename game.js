@@ -90,6 +90,28 @@ function playPortalSound() {
     }
 }
 
+function playKeySound() {
+    if (!audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    const now = audioCtx.currentTime;
+
+    osc.type = 'square';
+    // A quick 3-note ascending arpeggio (C6, E6, G6)
+    // This is higher and faster than the coin for a "special" feel
+    osc.frequency.setValueAtTime(1046.50, now);      // C6
+    osc.frequency.setValueAtTime(1318.51, now + 0.06); // E6
+    osc.frequency.setValueAtTime(1567.98, now + 0.12); // G6
+
+    gain.gain.setValueAtTime(0.1, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.start();
+    osc.stop(now + 0.2);
+}
 
 function playCoinSound() {
     if (!audioCtx) return;
