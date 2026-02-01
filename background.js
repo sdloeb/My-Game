@@ -662,7 +662,7 @@ class Background {
         const groundY = s.y;
         const loopR = 25; // Radius of the circular loop
         const loopCX = x + 85; // Center X of the loop
-        const loopCY = groundY - 60; // Center Y of the loop (raised so loop is above ground)
+        const loopCY = groundY - 60; // Center Y of the loop
 
         // Path helper function: maps t (0 to 1) to an (x, y) coordinate
         const getPos = (t) => {
@@ -680,7 +680,6 @@ class Background {
             } else if (t < 0.7) {
                 // Segment 2: The Full Circle Loop (0.3 - 0.7)
                 const tLocal = (t - 0.3) / 0.4;
-                // Starts at bottom (Math.PI/2), goes 360 degrees
                 const angle = (Math.PI / 2) + (tLocal * Math.PI * 2);
                 return {
                     x: loopCX + Math.cos(angle) * loopR,
@@ -710,7 +709,6 @@ class Background {
             ctx.moveTo(pos.x, pos.y);
             ctx.lineTo(pos.x, groundY);
             ctx.stroke();
-            // Draw cross-braces for realism
             for (let sy = pos.y + 8; sy < groundY; sy += 12) {
                 ctx.beginPath();
                 ctx.moveTo(pos.x - 2, sy); ctx.lineTo(pos.x + 2, sy);
@@ -734,47 +732,50 @@ class Background {
         drawTrack(0, 3, '#94a3b8'); // Main Rail
         drawTrack(2, 1, '#64748b'); // Detail Inner Rail
 
-        // 4. ANIMATED CARS
-        const loopTime = (Date.now() / 3500) % 1.2;
-        if (loopTime <= 1.0) {
-            for (let i = 0; i < 3; i++) {
-                const t = Math.max(0, loopTime - (i * 0.04));
-                const pos = getPos(t);
+        // 4. ANIMATED CARS (Oscillating back and forth)
+        const cycleTime = 7000; // Time for one round trip
+        const rawT = (Date.now() % cycleTime) / cycleTime;
+        const oscillatingT = rawT < 0.5 ? rawT * 2 : 2 - (rawT * 2);
+        const isReversing = rawT >= 0.5;
 
-                ctx.save();
-                ctx.translate(pos.x, pos.y);
+        for (let i = 0; i < 3; i++) {
+            const carSpacing = i * 0.04;
+            const t = isReversing ? Math.min(1, oscillatingT + carSpacing) : Math.max(0, oscillatingT - carSpacing);
+            const pos = getPos(t);
 
-                // Calculate tangent angle for rotation
-                const nextT = Math.min(1, t + 0.01);
-                const posNext = getPos(nextT);
-                const angle = Math.atan2(posNext.y - pos.y, posNext.x - pos.x);
-                ctx.rotate(angle);
+            ctx.save();
+            ctx.translate(pos.x, pos.y);
 
-                // --- SIGNAL BLINK: The front car's headlight ---
-                if (i === 0 && isLit) {
-                    ctx.save();
-                    ctx.fillStyle = '#ffffff';
-                    ctx.shadowBlur = 15;
-                    ctx.shadowColor = '#fde047';
-                    // Drawing inside translated/rotated space keeps the light fixed to the car's nose
-                    ctx.beginPath();
-                    ctx.arc(4, -4, 3, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.restore();
-                }
+            // Calculate tangent angle for rotation
+            const nextT = isReversing ? Math.max(0, t - 0.01) : Math.min(1, t + 0.01);
+            const posNext = getPos(nextT);
+            const angle = Math.atan2(posNext.y - pos.y, posNext.x - pos.x);
+            ctx.rotate(angle);
 
-                // Car Body
-                ctx.fillStyle = i === 0 ? '#ef4444' : '#fde047';
-                ctx.fillRect(-4, -6, 8, 5);
-                // Tiny Passenger Heads
-                ctx.fillStyle = '#ffdbac';
-                ctx.fillRect(-2, -8, 2, 2); ctx.fillRect(1, -8, 2, 2);
-                // Wheels
-                ctx.fillStyle = '#1e2937';
-                ctx.fillRect(-4, -1, 3, 2); ctx.fillRect(1, -1, 3, 2);
+            // --- CAR BODY COLOR LOGIC (Blinking cars) ---
+            const isLead = (!isReversing && i === 0) || (isReversing && i === 2);
 
-                ctx.restore();
+            if (isLit) {
+                ctx.fillStyle = '#ffffff'; // The car body flashes white
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = '#ffffff';
+            } else {
+                ctx.fillStyle = isLead ? '#ef4444' : '#fde047'; // Normal Red/Yellow
+                ctx.shadowBlur = 0;
             }
+
+            ctx.fillRect(-4, -6, 8, 5); // Car Body
+            ctx.shadowBlur = 0; // Reset shadow for passenger heads
+
+            // Tiny Passenger Heads
+            ctx.fillStyle = '#ffdbac';
+            ctx.fillRect(-2, -8, 2, 2); ctx.fillRect(1, -8, 2, 2);
+
+            // Wheels
+            ctx.fillStyle = '#1e2937';
+            ctx.fillRect(-4, -1, 3, 2); ctx.fillRect(1, -1, 3, 2);
+
+            ctx.restore();
         }
     }
 

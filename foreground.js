@@ -238,7 +238,7 @@ class Foreground {
 
         // 2. Assign Clock Secrets
         const clockCandidates = this.platforms.filter(p => !this.platforms.some(other => other.x === p.x && other.y < p.y) && p.x > CANVAS_WIDTH && p.x < this.portalX - 500);
-        for (let i = 0; i < 3; i++) {
+        for (let i = 0; i < 5; i++) {
             if (clockCandidates.length > 0) {
                 const idx = Math.floor(Math.random() * clockCandidates.length);
                 clockCandidates[idx].hasClock = true;
@@ -247,8 +247,15 @@ class Foreground {
             }
         }
 
-        // 3. Assign Checkpoint Secrets across 3 zones
-        const checkpointZones = [{ min: 500, max: 1500 }, { min: 1800, max: 3000 }, { min: 3300, max: 4500 }];
+        // 3. Assign Checkpoint Secrets across 5 zones
+        // Added two more zones to spread checkpoints across the longer 5000px level
+        const checkpointZones = [
+            { min: 500, max: 1200 },
+            { min: 1400, max: 2100 },
+            { min: 2300, max: 3000 },
+            { min: 3200, max: 3900 },
+            { min: 4100, max: 4800 }
+        ];
         checkpointZones.forEach(zone => {
             const zoneCandidates = this.platforms.filter(p => !p.hasClock && !p.isSecret && p.x >= zone.min && p.x <= zone.max && !this.platforms.some(other => other.x === p.x && other.y < p.y));
             if (zoneCandidates.length > 0) {
@@ -265,7 +272,7 @@ class Foreground {
 
         // 5. Assign Flying Secret Bricks
         const flyingCandidates = this.platforms.filter(p => !p.hasClock && !p.isCheckpointCandidate && p.x > 500 && p.x < this.portalX - 600 && !this.platforms.some(other => other.x === p.x && other.y < p.y));
-        for (let i = 0; i < 3; i++) {
+        for (let i = 0; i < 5; i++) {
             if (flyingCandidates.length > 0) {
                 const idx = Math.floor(Math.random() * flyingCandidates.length);
                 const target = flyingCandidates[idx];
