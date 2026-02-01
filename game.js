@@ -5,6 +5,7 @@ const CANVAS_HEIGHT = 224;
 let audioCtx;
 let activeJumpOsc = null;
 
+
 function playBossHitSound() {
     if (!audioCtx) return;
     const now = audioCtx.currentTime;
@@ -307,6 +308,7 @@ let fadeSpeed = 0.03;
 let pendingLevelChange = false;
 let levelKills = 0;
 let activeBubbles = [];
+let lastBrickSoundTime = 0;
 
 // --- LEVEL DIFFICULTY CONFIGURATION ---
 const levelEnemies = {
@@ -367,14 +369,20 @@ function init() {
 
     // Handle brick-breaking logic (Head Bonks)
     window.addEventListener('brickHit', (e) => {
-        if (typeof playBrickSound === 'function') playBrickSound(); // Add this line
+        // 1. SOUND COOLDOWN LOGIC
+        const now = Date.now(); // First declaration is fine
+        if (now - lastBrickSoundTime > 50) {
+            if (typeof playBrickSound === 'function') playBrickSound();
+            lastBrickSoundTime = now;
+        }
+
         const plat = e.detail.platform;
 
-        // 1. SAFETY: Initialize hits if missing (default to 2)
+        // 2. SAFETY: Initialize hits if missing (default to 2)
         if (plat.hits === undefined) plat.hits = 2;
 
-        // 2. COOLDOWN: Prevent the brick from taking 2 hits in one jump (100ms window)
-        const now = Date.now();
+        // 3. COLLISION COOLDOWN: Prevent the brick from taking 2 hits in one jump
+        // REMOVED 'const' here because 'now' is already defined at the top of this function
         if (plat.lastHitTime && now - plat.lastHitTime < 100) return;
         plat.lastHitTime = now;
 

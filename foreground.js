@@ -161,7 +161,20 @@ class Foreground {
 
         // 1. Generate the world structures
         while (x < lastScreenStart - 40) {
-            const structureType = Math.floor(Math.random() * 4);
+            const rand = Math.random();
+            let structureType;
+
+            if (rand < 0.20) {
+                structureType = 0; // 20% chance: Short High Float (Horizontal)
+            } else if (rand < 0.40) {
+                structureType = 4; // 20% chance: Long High Float (Horizontal)
+            } else if (rand < 0.60) {
+                structureType = 3; // 20% chance: Low horizontal lines (Horizontal)
+            } else if (rand < 0.80) {
+                structureType = 1; // 20% chance: Steps
+            } else {
+                structureType = 2; // 20% chance: Towers
+            }
             let structureWidth = 0;
             let startPlatformIndex = this.platforms.length;
 
@@ -200,6 +213,14 @@ class Foreground {
                         this.platforms.push({ x: x + (col * 16), y: this.groundY - (this.tileSize * 2), w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
                     }
                     structureWidth = longWidth * this.tileSize;
+                    break;
+                case 4: // New: High Long Float
+                    const longFloatWidth = 8 + Math.floor(Math.random() * 6); // 8-14 bricks wide
+                    const longFloatHeight = 80 + Math.floor(Math.random() * 40); // 80-120 pixels high
+                    for (let col = 0; col < longFloatWidth; col++) {
+                        this.platforms.push({ x: x + (col * 16), y: this.groundY - longFloatHeight, w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
+                    }
+                    structureWidth = longFloatWidth * this.tileSize;
                     break;
             }
 
