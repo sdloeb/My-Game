@@ -464,21 +464,16 @@ class Background {
                     ctx.fillStyle = '#111827'; // Frame
                     ctx.fillRect(wx - 1, wy - 1, 5, 6);
 
-                    // 1. Calculate if this window is normally lit yellow
                     const isNormallyLit = (Math.sin((wx - x) * wy + b.x) > 0);
-
-                    // 2. Find if this specific window index is assigned to an active signal
                     let blinkActive = false;
                     const sig = b.signals ? b.signals.find(s => s.winIdx === winIdx) : null;
 
                     if (sig) {
-                        const blinkDuration = sig.count * 40;
                         if (sig.timer < (sig.count * 40) && (sig.timer % 40 < 20)) {
                             blinkActive = true;
                         }
                     }
 
-                    // 3. Final Drawing logic
                     if (blinkActive) {
                         ctx.save();
                         ctx.fillStyle = '#fde047';
@@ -503,7 +498,7 @@ class Background {
             }
         }
 
-        // --- Building Details (Unchanged) ---
+        // --- Original Building Details (Kept exactly the same) ---
         ctx.fillStyle = b.color;
         ctx.fillRect(x - 2, b.y, b.w + 4, 3);
         if (b.w > 25) {
@@ -511,9 +506,29 @@ class Background {
             ctx.fillRect(x + 5, b.y - 6, 12, 6);
             ctx.fillStyle = '#4b5563';
             ctx.fillRect(x + 6, b.y - 4, 3, 3);
-            ctx.fillStyle = '#1f2937';
+
+            // --- ANTENNA BLINK LOGIC ---
+            const antennaSig = b.signals ? b.signals.find(sig => sig.isAntenna) : null;
+            const isAntennaLit = antennaSig && (antennaSig.timer < (antennaSig.count * 40) && (antennaSig.timer % 40 < 20));
+
+            // Set color: Yellow when blinking, original Dark Grey (#1f2937) otherwise
+            ctx.fillStyle = isAntennaLit ? '#fde047' : '#1f2937';
+
+            if (isAntennaLit) {
+                ctx.save();
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = '#ffffff';
+            }
+
+            // Your original antenna drawing code
             ctx.fillRect(x + b.w - 10, b.y - 15, 1, 15);
             ctx.fillRect(x + b.w - 12, b.y - 12, 5, 1);
+
+            if (isAntennaLit) {
+                // Add a small 3x3 glowing tip at the top of your antenna pole
+                ctx.fillRect(x + b.w - 11, b.y - 18, 3, 3);
+                ctx.restore();
+            }
         }
         ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
         ctx.fillRect(x, b.y + b.h - 2, b.w, 2);
@@ -530,12 +545,11 @@ class Background {
 
                 const candidates = this.scenery
                     .filter(obj => {
-                        // Use 0.5 parallax for Level 1, 0.8 for Level 2
                         const parallax = (this.level === 2) ? 0.8 : 0.5;
                         const bSX = obj.x - (cameraX * parallax);
 
-                        if (this.level === 1) return obj.type === 'building' && obj.windows && bSX > -obj.w && bSX < this.canvasWidth;
-                        // For Level 2, we target carnival structures (not stars or children)
+                        // UPDATED: Allow any building (skyscraper or brown) to be a candidate
+                        if (this.level === 1) return obj.type === 'building' && bSX > -obj.w && bSX < this.canvasWidth;
                         if (this.level === 2) return !['child', 'star', 'jupiter', 'saturn', 'moon', 'blackhole'].includes(obj.type) && bSX > -100 && bSX < this.canvasWidth;
                         return false;
                     })
@@ -552,21 +566,27 @@ class Background {
                         target.signals.push({ count: s.secretCount, timer: 0 });
                         s.isSignaled = true;
                     } else if (this.level === 1) {
-                        // Existing building window logic for Level 1
-                        let foundWinIdx = -1;
-                        let currentIdx = 0;
-                        for (let wy = target.y + 10; wy < target.y + target.h - 10; wy += 15) {
-                            for (let wx = 5; wx < target.w - 8; wx += 10) {
-                                if (!(Math.sin(wx * wy + target.x) > 0) && !target.signals.some(sig => sig.winIdx === currentIdx)) {
-                                    foundWinIdx = currentIdx;
-                                    break;
+                        if (target.windows) {
+                            // Existing logic for Skyscraper windows
+                            let foundWinIdx = -1;
+                            let currentIdx = 0;
+                            for (let wy = target.y + 10; wy < target.y + target.h - 10; wy += 15) {
+                                for (let wx = 5; wx < target.w - 8; wx += 10) {
+                                    if (!(Math.sin(wx * wy + target.x) > 0) && !target.signals.some(sig => sig.winIdx === currentIdx)) {
+                                        foundWinIdx = currentIdx;
+                                        break;
+                                    }
+                                    currentIdx++;
                                 }
-                                currentIdx++;
+                                if (foundWinIdx !== -1) break;
                             }
-                            if (foundWinIdx !== -1) break;
-                        }
-                        if (foundWinIdx !== -1) {
-                            target.signals.push({ count: s.secretCount, timer: 0, winIdx: foundWinIdx });
+                            if (foundWinIdx !== -1) {
+                                target.signals.push({ count: s.secretCount, timer: 0, winIdx: foundWinIdx });
+                                s.isSignaled = true;
+                            }
+                        } else if (target.w > 25 && !target.signals.some(sig => sig.isAntenna)) {
+                            // NEW: Assign signal to Antenna for brown buildings (if they have one)
+                            target.signals.push({ count: s.secretCount, timer: 0, isAntenna: true });
                             s.isSignaled = true;
                         }
                     }
@@ -584,7 +604,6 @@ class Background {
             }
         });
     }
-
     // --- MISSING DRAWING METHODS FOR LEVELS 2 & 3 ---
 
     drawTent(ctx, x, s) {
