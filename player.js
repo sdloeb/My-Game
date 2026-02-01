@@ -314,12 +314,9 @@ class Player {
             this.stunTimer--;
             if (Math.abs(this.velocityX) > 0.01) {
                 if (this.stunType === 'oil') {
-                    this.rotation += 0.2; // Keep oil as a spin
-                }
-                if (this.stunType === 'ice') {
-                    // NEW: Lean backwards based on direction (-0.4 radians is ~23 degrees)
+                    this.rotation += 0.2; // This now stays active
+                } else if (this.stunType === 'ice') { // Changed to else if
                     this.rotation = this.facingRight ? -0.4 : 0.4;
-                    // Play sound only if moving fast enough on ice
                     if (Math.abs(this.velocityX) > 0.1) {
                         if (typeof playIceSlideSound === 'function') playIceSlideSound(true);
                     } else {
@@ -505,7 +502,7 @@ class Player {
                 );
 
                 // Only splash if the probability check AND the position check pass
-                if (currentlyOnOil && Math.random() > 0.8) {
+                if (currentlyOnOil && Math.random() > 0.4) {
                     window.dispatchEvent(new CustomEvent('oilSplash', {
                         detail: { x: this.x + (this.width / 2), y: groundY }
                     }));

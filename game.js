@@ -230,6 +230,7 @@ function playQuicksandSound() {
     noise.stop(now + duration);
 }
 
+
 function playDeathSound() {
     if (!audioCtx) return;
     const now = audioCtx.currentTime;
@@ -338,6 +339,7 @@ function init() {
     // Listen for oil events
     window.addEventListener('oilSplash', (e) => {
         createOilSplash(e.detail.x, e.detail.y);
+        if (typeof playOilSound === 'function') playOilSound(); // Triggers the audio
     });
 
 
@@ -936,17 +938,42 @@ function createBubblePopEffect(x, y) {
 }
 
 
-function createOilSplash(x, y) {
-    for (let i = 0; i < 3; i++) {
-        particles.push({
-            x: x + (Math.random() - 0.5) * 10, // Spread across player width
-            y: y,
-            vx: (Math.random() - 0.5) * 2,     // Slight horizontal spread
-            vy: -Math.random() * 3 - 2,        // Strong upward force
-            life: 20 + Math.random() * 10,
-            color: '#202020'                   // Matches groundColors.oil
-        });
-    }
+function playOilSound() {
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
+
+    // 1. The main "Bloop" (Triangle wave)
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(150, now); // Higher start frequency
+    osc.frequency.exponentialRampToValueAtTime(40, now + 0.1);
+
+    gain.gain.setValueAtTime(0.1, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+
+    osc.connect(gain);
+    osc.start();
+    osc.stop(now + 0.15);
+
+    // 2. The "Squelch" (Noise burst)
+    const noise = audioCtx.createBufferSource();
+    const bufferSize = audioCtx.sampleRate * 0.05; // Very short burst
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+    noise.buffer = buffer;
+
+    const noiseGain = audioCtx.createGain();
+    noiseGain.gain.setValueAtTime(0.05, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+
+    noise.connect(noiseGain);
+    noiseGain.connect(audioCtx.destination);
+    gain.connect(audioCtx.destination); // Connect main osc to output as well
+
+    noise.start();
+    noise.stop(now + 0.05);
 }
 
 
@@ -1092,4 +1119,50 @@ function spawnEnemies() {
     Object.keys(counts).forEach(type => {
         spawnType(type, counts[type]);
     });
+
+    function playOilSound() {
+        if (!audioCtx) return;
+        const now = audioCtx.currentTime;
+
+        // 1. Thick liquid "Bloop"
+        const osc = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(150, now);
+        osc.frequency.exponentialRampToValueAtTime(40, now + 0.1);
+        g.gain.setValueAtTime(0.1, now);
+        g.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+        osc.connect(g);
+        g.connect(audioCtx.destination);
+        osc.start(); osc.stop(now + 0.15);
+
+        // 2. Short "Squelch" noise
+        const noise = audioCtx.createBufferSource();
+        const buffer = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.05, audioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+        noise.buffer = buffer;
+        const ng = audioCtx.createGain();
+        ng.gain.setValueAtTime(0.05, now);
+        ng.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+        noise.connect(ng);
+        ng.connect(audioCtx.destination);
+        noise.start(); noise.stop(now + 0.05);
+    }
+
+    function createOilSplash(x, y) {
+        for (let i = 0; i < 3; i++) {
+            particles.push({
+                x: x + (Math.random() - 0.5) * 10,
+                y: y,
+                vx: (Math.random() - 0.5) * 2,
+                vy: -Math.random() * 3 - 2,
+                life: 20 + Math.random() * 10,
+                color: '#202020'
+            });
+        }
+    }
+
+
 }
+

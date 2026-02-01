@@ -268,10 +268,10 @@ class Foreground {
 
         // 7. Generate Hazards
         for (let hx = 300; hx < lastScreenStart; hx += 150) {
-            if (Math.random() > 0.4) {
+            if (Math.random() > 0.3) {
                 const hWidth = 30 + Math.random() * 48;
                 const rand = Math.random();
-                let hType = rand < 0.15 ? 'oil' : (rand < 0.35 ? 'ice' : 'quicksand');
+                let hType = rand < 0.25 ? 'oil' : (rand < 0.50 ? 'ice' : 'quicksand');
 
                 const hasLowBricks = this.platforms.some(p => {
                     const horiz = (hx < p.x + 16 && hx + hWidth > p.x);
