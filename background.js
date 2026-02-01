@@ -125,7 +125,8 @@ class Background {
                 type: type,
                 x: cx,
                 y: this.groundY,
-                color: Math.random() > 0.5 ? '#ef4444' : '#ffffff'
+                color: Math.random() > 0.5 ? '#ef4444' : '#ffffff',
+                signals: []
             });
 
             // 3. Update lastType for the next iteration
@@ -251,18 +252,25 @@ class Background {
 
 
     drawFerrisWheel(ctx, x, s) {
+        // 1. Logic for blinking based on secret count
+        const isLit = s.signals && s.signals.some(sig => sig.timer < (sig.count * 40) && (sig.timer % 40 < 20));
+
         const centerY = s.y - 60;
         const radius = 40;
         const rotation = (Date.now() / 2000);
+
+        // --- Your original drawing code starts here ---
         ctx.strokeStyle = '#94a3b8';
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(x + 30, centerY); ctx.lineTo(x + 10, s.y);
         ctx.moveTo(x + 30, centerY); ctx.lineTo(x + 50, s.y);
         ctx.stroke();
+
         ctx.beginPath();
         ctx.arc(x + 30, centerY, radius, 0, Math.PI * 2);
         ctx.stroke();
+
         for (let i = 0; i < 8; i++) {
             const angle = (i / 8) * Math.PI * 2 + rotation;
             const bx = x + 30 + Math.cos(angle) * radius;
@@ -270,11 +278,23 @@ class Background {
             ctx.fillStyle = i % 2 === 0 ? '#ef4444' : '#ffffff';
             ctx.fillRect(bx - 4, by, 8, 6);
         }
+        // --- Your original drawing code ends here ---
+
+        // 2. Added Hub Blink (identifies the secrets without changing the structure)
+        ctx.fillStyle = isLit ? '#fde047' : '#94a3b8';
+        if (isLit) {
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#ffffff';
+        }
+        ctx.beginPath();
+        ctx.arc(x + 30, centerY, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0; // Reset for performance
     }
 
 
-
     drawCarousel(ctx, x, s) {
+        const isLit = s.signals && s.signals.some(sig => sig.timer < (sig.count * 40) && (sig.timer % 40 < 20));
         const bottomY = s.y;
         const centerX = x + 30;
         const carouselWidth = 60;
@@ -342,9 +362,18 @@ class Background {
         // Decorative Valance (The hanging edge of the roof)
         ctx.fillStyle = '#ef4444';
         ctx.fillRect(x - 10, bottomY - 45, carouselWidth + 20, 4);
+
+        // Adds a blinking "light" to the very top of your existing roof
+        if (isLit) {
+            ctx.fillStyle = '#fde047';
+            ctx.shadowBlur = 15; ctx.shadowColor = '#ffffff';
+            ctx.fillRect(centerX - 2, bottomY - 68, 4, 4);
+            ctx.shadowBlur = 0;
+        }
     }
 
     drawSwingRide(ctx, x, s) {
+        const isLit = s.signals && s.signals.some(sig => sig.timer < (sig.count * 40) && (sig.timer % 40 < 20));
         const bottomY = s.y;
         const poleX = x + 25;
         const poleHeight = 70;
@@ -369,8 +398,10 @@ class Background {
         ctx.fill();
 
         // Yellow trim on the cap
-        ctx.fillStyle = '#fde047';
+        ctx.fillStyle = isLit ? '#ffffff' : '#fde047';
+        if (isLit) { ctx.shadowBlur = 10; ctx.shadowColor = '#ffffff'; }
         ctx.fillRect(poleX - 25, topY - 2, 50, 4);
+        ctx.shadowBlur = 0;
 
         // 3. THE SWINGING SEATS
         const swingRange = 25; // How far they swing out
@@ -489,10 +520,7 @@ class Background {
     }
 
     updateSignals(cameraX, structures) {
-        if (this.level !== 1) return;
-
         structures.forEach(s => {
-            // 1. IMPROVED VISIBILITY: Trigger when the structure is mostly on screen (10px buffer)
             const structureScreenLeft = s.x - cameraX;
             const structureScreenRight = (s.x + s.width) - cameraX;
             const isVisibleOnScreen = structureScreenLeft >= -10 && structureScreenRight <= this.canvasWidth + 10;
@@ -500,64 +528,58 @@ class Background {
             if (isVisibleOnScreen && s.secretCount > 0 && !s.isSignaled) {
                 const structureScreenCenter = structureScreenLeft + (s.width / 2);
 
-                const sMinY = Math.min(...s.platforms.map(p => p.y));
-                const sMaxY = Math.max(...s.platforms.map(p => p.y + 16));
-
-                // 2. WIDER SEARCH: Look at all buildings currently visible to find a Safe Y
                 const candidates = this.scenery
                     .filter(obj => {
-                        const bSX = obj.x - (cameraX * 0.5);
-                        return obj.type === 'building' && obj.windows && bSX > -obj.w && bSX < this.canvasWidth;
+                        // Use 0.5 parallax for Level 1, 0.8 for Level 2
+                        const parallax = (this.level === 2) ? 0.8 : 0.5;
+                        const bSX = obj.x - (cameraX * parallax);
+
+                        if (this.level === 1) return obj.type === 'building' && obj.windows && bSX > -obj.w && bSX < this.canvasWidth;
+                        // For Level 2, we target carnival structures (not stars or children)
+                        if (this.level === 2) return !['child', 'star', 'jupiter', 'saturn', 'moon', 'blackhole'].includes(obj.type) && bSX > -100 && bSX < this.canvasWidth;
+                        return false;
                     })
                     .map(obj => {
-                        const bSX = obj.x - (cameraX * 0.5);
-                        return { building: obj, dist: Math.abs((bSX + obj.w / 2) - structureScreenCenter) };
+                        const parallax = (this.level === 2) ? 0.8 : 0.5;
+                        const bSX = obj.x - (cameraX * parallax);
+                        return { obj: obj, dist: Math.abs(bSX - structureScreenCenter) };
                     })
                     .sort((a, b) => a.dist - b.dist);
 
-                for (let cand of candidates) {
-                    const b = cand.building;
-                    let foundWinIdx = -1;
-                    let currentIdx = 0;
-
-                    for (let wy = b.y + 10; wy < b.y + b.h - 10; wy += 15) {
-                        for (let wx = 5; wx < b.w - 8; wx += 10) {
-                            const isNormallyLit = (Math.sin(wx * wy + b.x) > 0);
-
-                            // Safe Y: Ensures the window is vertically above or below the brick cluster
-                            const isSafeY = (wy + 4 < sMinY || wy > sMaxY);
-
-                            const isAvailable = !b.signals.some(sig => sig.winIdx === currentIdx);
-
-                            if (!isNormallyLit && isSafeY && isAvailable) {
-                                foundWinIdx = currentIdx;
-                                break;
-                            }
-                            currentIdx++;
-                        }
-                        if (foundWinIdx !== -1) break;
-                    }
-
-                    if (foundWinIdx !== -1) {
-                        b.signals.push({ count: s.secretCount, timer: 0, winIdx: foundWinIdx });
+                if (candidates.length > 0) {
+                    const target = candidates[0].obj;
+                    if (this.level === 2) {
+                        target.signals.push({ count: s.secretCount, timer: 0 });
                         s.isSignaled = true;
-                        break; // Stop searching once a building is assigned
+                    } else if (this.level === 1) {
+                        // Existing building window logic for Level 1
+                        let foundWinIdx = -1;
+                        let currentIdx = 0;
+                        for (let wy = target.y + 10; wy < target.y + target.h - 10; wy += 15) {
+                            for (let wx = 5; wx < target.w - 8; wx += 10) {
+                                if (!(Math.sin(wx * wy + target.x) > 0) && !target.signals.some(sig => sig.winIdx === currentIdx)) {
+                                    foundWinIdx = currentIdx;
+                                    break;
+                                }
+                                currentIdx++;
+                            }
+                            if (foundWinIdx !== -1) break;
+                        }
+                        if (foundWinIdx !== -1) {
+                            target.signals.push({ count: s.secretCount, timer: 0, winIdx: foundWinIdx });
+                            s.isSignaled = true;
+                        }
                     }
                 }
             }
         });
 
+        // Update timers for all active signals
         this.scenery.forEach(obj => {
             if (obj.signals) {
                 obj.signals.forEach(sig => {
                     sig.timer++;
-
-                    // Use a fixed 300 frames (5 seconds at 60fps) for the entire loop
-                    const sequenceEnd = 300;
-
-                    if (sig.timer >= sequenceEnd) {
-                        sig.timer = 0; // Restarts the loop every 5 seconds exactly
-                    }
+                    if (sig.timer >= 300) sig.timer = 0;
                 });
             }
         });
@@ -566,6 +588,7 @@ class Background {
     // --- MISSING DRAWING METHODS FOR LEVELS 2 & 3 ---
 
     drawTent(ctx, x, s) {
+        const isLit = s.signals && s.signals.some(sig => sig.timer < (sig.count * 40) && (sig.timer % 40 < 20));
         const bottomY = s.y;
         ctx.fillStyle = s.color;
         ctx.beginPath();
@@ -575,9 +598,15 @@ class Background {
         ctx.fill();
         ctx.fillStyle = s.color === '#ffffff' ? '#ef4444' : '#ffffff';
         ctx.fillRect(x + 20, bottomY - 15, 10, 15);
+        if (isLit) {
+            ctx.fillStyle = '#fde047'; ctx.shadowBlur = 10; ctx.shadowColor = '#ffffff';
+            ctx.beginPath(); ctx.arc(x + 25, bottomY - 42, 4, 0, Math.PI * 2); ctx.fill();
+            ctx.shadowBlur = 0;
+        }
     }
 
     drawFoodStand(ctx, x, s) {
+        const isLit = s.signals && s.signals.some(sig => sig.timer < (sig.count * 40) && (sig.timer % 40 < 20));
         const bottomY = s.y;
 
         // 1. MAIN STRUCTURE (Wooden base)
@@ -615,11 +644,10 @@ class Background {
 
         // 5. OVERHEAD SIGN
         // White sign board
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = isLit ? '#fde047' : '#ffffff';
+        if (isLit) { ctx.shadowBlur = 15; ctx.shadowColor = '#ffffff'; }
         ctx.fillRect(x + 10, bottomY - 48, 20, 10);
-        ctx.strokeStyle = '#000000';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(x + 10, bottomY - 48, 20, 10);
+        ctx.shadowBlur = 0;
 
         // Red "Text" simulation
         ctx.fillStyle = '#ef4444';
@@ -628,6 +656,7 @@ class Background {
     }
 
     drawRollercoaster(ctx, x, s) {
+        const isLit = s.signals && s.signals.some(sig => sig.timer < (sig.count * 40) && (sig.timer % 40 < 20));
         const groundY = s.y;
         const loopR = 25; // Radius of the circular loop
         const loopCX = x + 85; // Center X of the loop
@@ -704,12 +733,21 @@ class Background {
         drawTrack(0, 3, '#94a3b8'); // Main Rail
         drawTrack(2, 1, '#64748b'); // Detail Inner Rail
 
-        // 3. ANIMATED CARS (3-car train with rotation)
-        const loopTime = (Date.now() / 3500) % 1.2; // Loops every 3.5 seconds
+        const loopTime = (Date.now() / 3500) % 1.2;
         if (loopTime <= 1.0) {
             for (let i = 0; i < 3; i++) {
                 const t = Math.max(0, loopTime - (i * 0.04));
                 const pos = getPos(t);
+
+                // --- ADDED: BLINKING HEADLIGHT FOR THE FRONT CAR ---
+                if (i === 0 && isLit) {
+                    ctx.save();
+                    ctx.fillStyle = '#ffffff';
+                    ctx.shadowBlur = 10; ctx.shadowColor = '#fde047';
+                    ctx.beginPath(); ctx.arc(pos.x, pos.y - 7, 3, 0, Math.PI * 2); ctx.fill();
+                    ctx.restore();
+                }
+                // --- END OF ADDED LIGHT ---
 
                 ctx.save();
                 ctx.translate(pos.x, pos.y);
@@ -737,6 +775,7 @@ class Background {
 
     drawGameStall(ctx, x, s) {
         const bottomY = s.y;
+        const isLit = s.signals && s.signals.some(sig => sig.timer < (sig.count * 40) && (sig.timer % 40 < 20));
 
         // 1. MAIN STRUCTURE
         ctx.fillStyle = '#4b5563'; // Slate grey base
@@ -769,11 +808,14 @@ class Background {
         ctx.fillRect(x - 2, bottomY - 16, 49, 3);
 
         // Draw "Bottles" (Game targets) on the counter
-        ctx.fillStyle = '#ffffff';
+        // Bottles glow when blinking
+        ctx.fillStyle = isLit ? '#fde047' : '#ffffff';
+        if (isLit) { ctx.shadowBlur = 10; ctx.shadowColor = '#ffffff'; }
         for (let i = 0; i < 3; i++) {
-            ctx.fillRect(x + 10 + (i * 10), bottomY - 20, 3, 4); // Bottle body
-            ctx.fillRect(x + 11 + (i * 10), bottomY - 22, 1, 2); // Bottle neck
+            ctx.fillRect(x + 10 + (i * 10), bottomY - 20, 3, 4);
+            ctx.fillRect(x + 11 + (i * 10), bottomY - 22, 1, 2);
         }
+        ctx.shadowBlur = 0;
 
         // 4. BLUE STRIPED AWNING
         const awningY = bottomY - 38;
@@ -796,6 +838,7 @@ class Background {
     }
 
     drawElephant(ctx, x, s) {
+        const isLit = s.signals && s.signals.some(sig => sig.timer < (sig.count * 40) && (sig.timer % 40 < 20));
         const bottomY = s.y;
         const mainGrey = '#94a3b8';
         const darkGrey = '#64748b';
@@ -857,8 +900,11 @@ class Background {
         ctx.fill();
 
         // 7. EYE
-        ctx.fillStyle = '#000000';
-        ctx.fillRect(x + 44, bottomY - 34, 2, 2);
+
+        ctx.fillStyle = isLit ? '#fde047' : '#000000';
+        if (isLit) { ctx.shadowBlur = 10; ctx.shadowColor = '#ffffff'; }
+        ctx.fillRect(x + 44, bottomY - 34, 3, 3);
+        ctx.shadowBlur = 0;
 
         // 8. TAIL
         ctx.strokeStyle = darkGrey;
@@ -870,48 +916,43 @@ class Background {
     }
 
     drawJuggler(ctx, x, s) {
+        const isLit = s.signals && s.signals.some(sig => sig.timer < (sig.count * 40) && (sig.timer % 40 < 20));
         const bottomY = s.y;
         const bodyX = x + 10;
-        const time = Date.now() / 400; // Controls juggling speed
+        const time = Date.now() / 400;
 
         // 1. DRAW THE JUGGLER
         ctx.fillStyle = '#312e81'; // Dark blue outfit
-        // Legs
-        ctx.fillRect(bodyX - 3, bottomY - 8, 3, 8);
+        ctx.fillRect(bodyX - 3, bottomY - 8, 3, 8); // Legs
         ctx.fillRect(bodyX + 2, bottomY - 8, 3, 8);
-        // Torso
-        ctx.fillRect(bodyX - 4, bottomY - 20, 10, 12);
-        // Head
-        ctx.fillStyle = '#ffdbac';
+        ctx.fillRect(bodyX - 4, bottomY - 20, 10, 12); // Torso
+
+        ctx.fillStyle = '#ffdbac'; // Head
         ctx.fillRect(bodyX - 1, bottomY - 26, 6, 6);
-        // Arms (Reaching out)
-        ctx.fillStyle = '#ffdbac';
+
         const armWave = Math.sin(time * 2) * 4;
-        ctx.fillRect(bodyX - 8, bottomY - 18 + armWave, 4, 3); // Left hand
-        ctx.fillRect(bodyX + 8, bottomY - 18 - armWave, 4, 3); // Right hand
+        ctx.fillRect(bodyX - 8, bottomY - 18 + armWave, 4, 3); // Arms
+        ctx.fillRect(bodyX + 8, bottomY - 18 - armWave, 4, 3);
 
-        // 2. JUGGLING PINS (Animated)
-        ctx.fillStyle = '#ffffff'; // White pins
+        // 2. JUGGLING PINS (Blink yellow when secret is nearby)
+        ctx.fillStyle = isLit ? '#fde047' : '#ffffff';
+        if (isLit) { ctx.shadowBlur = 8; ctx.shadowColor = '#ffffff'; }
+
         for (let i = 0; i < 3; i++) {
-            // Staggered loop for each pin
             const t = (time + (i * (Math.PI * 2 / 3))) % (Math.PI * 2);
-
-            // Parabolic path for the pins
             const pinX = bodyX + Math.cos(t) * 15;
             const pinY = (bottomY - 35) + Math.sin(t) * 12;
 
             ctx.save();
             ctx.translate(pinX, pinY);
-            ctx.rotate(t * 2); // Pins spin as they fly
-
-            // Draw Pin Shape
+            ctx.rotate(t * 2);
             ctx.fillRect(-1, -3, 2, 6); // Handle
             ctx.beginPath();
-            ctx.arc(0, -3, 2, 0, Math.PI * 2); // Top bulb
+            ctx.arc(0, -3, 2, 0, Math.PI * 2); // Bulb
             ctx.fill();
-
             ctx.restore();
         }
+        ctx.shadowBlur = 0;
     }
 
     drawStar(ctx, x, s) {
