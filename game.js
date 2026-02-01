@@ -149,6 +149,67 @@ function playIceSlideSound(active) {
     }
 }
 
+function playQuicksandSound() {
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
+    const duration = 0.4;
+
+    // Create raw white noise (the "hiss" needed for wetness)
+    const noise = audioCtx.createBufferSource();
+    const bufferSize = audioCtx.sampleRate * duration;
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+    noise.buffer = buffer;
+
+    // Use a Bandpass filter with extremely high resonance (Q)
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.Q.value = 30;
+    filter.frequency.setValueAtTime(150, now);
+    filter.frequency.exponentialRampToValueAtTime(1500, now + duration);
+
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0, now);
+
+    // Rapid jitter/pulsing to simulate the sound of breaking surface tension
+    for (let i = 0; i < 12; i++) {
+        const t = now + (i * duration / 12);
+        gain.gain.linearRampToValueAtTime(Math.random() * 0.2 + 0.05, t);
+    }
+    gain.gain.exponentialRampToValueAtTime(0.01, now + duration);
+
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    noise.start();
+    noise.stop(now + duration);
+}
+
+function playDeathSound() {
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    // Classic 8-bit descent: Square wave that slides from mid-pitch to very low
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(300, now);
+    osc.frequency.setValueAtTime(300, now + 0.1); // Short pause at the start
+    osc.frequency.exponentialRampToValueAtTime(40, now + 0.6); // Long slide down
+
+    gain.gain.setValueAtTime(0.1, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.start();
+    osc.stop(now + 0.6);
+}
+
+
 function playBrickSound() {
     if (!audioCtx) return;
     if (activeJumpOsc) {
@@ -873,6 +934,7 @@ function updateParticles() {
 
 function handlePlayerDeath(deathType) {
     if (typeof playIceSlideSound === 'function') playIceSlideSound(false);
+    if (typeof playDeathSound === 'function') playDeathSound();
     // 1. Reset player state common to all deaths
     player.hasBow = false;
     player.bullets = 5;

@@ -250,6 +250,7 @@ class Player {
             if (this.keys.up) {
                 this.y -= 4.0;         // The power of a single struggle "tap"
                 this.keys.up = false; // Force the player to tap again
+                if (typeof playQuicksandSound === 'function') playQuicksandSound();
             }
 
             // 3. ESCAPE CONDITION: Trigger the vault out once the body is mostly visible
