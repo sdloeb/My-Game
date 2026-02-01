@@ -309,12 +309,31 @@ class Foreground {
             }
         }
 
-        // 8. Generate Coins
+        // 8. IMPROVED: Generate Coins (Ensures no contact with bricks, ignores elevators)
         let coinX = 350;
+        const coinWidth = 10; // The coin is 10px wide
+        const buffer = 2;     // Extra safety pixels to prevent "pixel-perfect" touching
+
         while (coinX < this.portalX - 150) {
-            let coinHighestY = this.groundY;
-            this.platforms.forEach(p => { if (coinX > p.x && coinX < p.x + 16 && p.y < coinHighestY) coinHighestY = p.y; });
-            this.coins.push({ x: coinX, y: coinHighestY - 25 });
+            // Start by assuming the ground is the highest point
+            let obstacleTopY = this.groundY;
+
+            // Check every brick to see if the coin's horizontal footprint overlaps it
+            this.platforms.forEach(p => {
+                // Check if the coin's X-range (plus buffer) overlaps the brick's 16px width
+                if (coinX + coinWidth + buffer > p.x && coinX - buffer < p.x + 16) {
+                    // If it overlaps, track the highest brick (lowest Y value) in this column
+                    if (p.y < obstacleTopY) {
+                        obstacleTopY = p.y;
+                    }
+                }
+            });
+
+            // Place the coin 25px above the highest brick found in its column.
+            // Since bricks are 16px tall and coins are 10px, this ensures a 15px air gap.
+            this.coins.push({ x: coinX, y: obstacleTopY - 25 });
+
+            // Randomize spacing to the next coin
             coinX += 150 + (Math.random() * 150);
         }
 
