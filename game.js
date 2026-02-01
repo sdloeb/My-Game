@@ -886,7 +886,34 @@ function draw() {
             ctx.restore();
         } else {
             // Standard enemy or player bullets
-            ctx.fillRect(p.x - cameraX, p.y, 4, 2);
+            if (p.isFireball) {
+                // --- DRAWING THE FIREBALL ---
+                const time = Date.now() / 50;
+                ctx.save();
+                ctx.translate(p.x - cameraX, p.y);
+
+                // Outer flickering orange glow
+                ctx.fillStyle = '#ea580c';
+                ctx.beginPath();
+                ctx.arc(0, 0, 4 + Math.sin(time) * 2, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Inner yellow core
+                ctx.fillStyle = '#fde047';
+                ctx.beginPath();
+                ctx.arc(0, 0, 2, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Small dark red flame trail
+                ctx.fillStyle = '#991b1b';
+                ctx.fillRect(p.dir === 1 ? -6 : 2, -1, 4, 2);
+
+                ctx.restore();
+            } else {
+                // Normal rectangular bullet for other enemies
+                ctx.fillStyle = p.color || '#ffffff';
+                ctx.fillRect(p.x - cameraX, p.y, 4, 2);
+            }
         }
     });
 

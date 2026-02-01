@@ -27,6 +27,7 @@ class Enemy {
         this.squatTimer = 0;
         this.shootTimer = 100 + Math.random() * 150;
         this.walkCounter = 0;
+        this.onGround = false;
     }
     update(platforms, player, projectiles) {
         // --- 0. GRAVITY LOGIC ---
@@ -37,22 +38,34 @@ class Enemy {
         if (this.y + this.height > 192) { // 192 is 224 - 32
             this.y = 192 - this.height;
             this.velocityY = 0;
+            this.onGround = true;
+        } else {
+            this.onGround = false;
         }
 
-        // --- 1. SQUAT LOGIC ---
-        if (!this.isSquatting && Math.random() < 0.005) {
-            this.isSquatting = true;
-            this.squatTimer = 60;
-            this.height = this.squatHeight;
-            this.y += (this.normalHeight - this.squatHeight);
-        }
+        // --- 1. SQUAT / JUMP LOGIC ---
+        if (this.type === 'fireMonster') {
+            // Jumping logic: Jump randomly if on the ground
+            if (this.onGround && Math.random() < 0.01) {
+                this.velocityY = -5.5; // Upward force
+                this.onGround = false;
+            }
+        } else {
+            // Standard Squat logic for other enemies
+            if (!this.isSquatting && Math.random() < 0.005) {
+                this.isSquatting = true;
+                this.squatTimer = 60;
+                this.height = this.squatHeight;
+                this.y += (this.normalHeight - this.squatHeight);
+            }
 
-        if (this.isSquatting) {
-            this.squatTimer--;
-            if (this.squatTimer <= 0) {
-                this.isSquatting = false;
-                this.y -= (this.normalHeight - this.squatHeight);
-                this.height = this.normalHeight;
+            if (this.isSquatting) {
+                this.squatTimer--;
+                if (this.squatTimer <= 0) {
+                    this.isSquatting = false;
+                    this.y -= (this.normalHeight - this.squatHeight);
+                    this.height = this.normalHeight;
+                }
             }
         }
 
@@ -99,17 +112,35 @@ class Enemy {
     }
 
     shoot(projectiles) {
-        // Bullet spawns at face height; if squatting, bullet spawns lower
-        const bulletY = this.isSquatting ? this.y + 4 : this.y + 6;
-        projectiles.push({
-            x: this.dir === 1 ? this.x + this.width : this.x,
-            y: bulletY,
-            spawnX: this.x,
-            dir: this.dir,
-            speed: 2,
-            isEnemyBullet: true,
-            color: this.type === 'skeleton' ? '#fff' : (this.type === 'zombie' ? '#4ade80' : (this.type === 'fireMonster' ? '#f97316' : '#f87171'))
-        });
+        const bulletY = this.y + 6; // Fire from the face area
+
+        if (this.type === 'fireMonster') {
+            // Shoot in BOTH directions at once
+            [-1, 1].forEach(fireDir => {
+                projectiles.push({
+                    x: fireDir === 1 ? this.x + this.width : this.x,
+                    y: bulletY,
+                    spawnX: this.x,
+                    vx: fireDir * 2.5, // Sets the horizontal velocity
+                    dir: fireDir,
+                    isEnemyBullet: true,
+                    isFireball: true,
+                    color: '#f97316'
+                });
+            });
+        } else {
+            // Standard single-shot logic for skeletons, zombies, spiders
+            const standardY = this.isSquatting ? this.y + 4 : this.y + 6;
+            projectiles.push({
+                x: this.dir === 1 ? this.x + this.width : this.x,
+                y: standardY,
+                spawnX: this.x,
+                vx: this.dir * 2, // Sets the horizontal velocity
+                dir: this.dir,
+                isEnemyBullet: true,
+                color: this.type === 'skeleton' ? '#fff' : (this.type === 'zombie' ? '#4ade80' : '#f87171')
+            });
+        }
     }
 
     draw(ctx, cameraX) {
