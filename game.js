@@ -415,7 +415,8 @@ function init() {
         // 1. SOUND COOLDOWN LOGIC
         const now = Date.now(); // First declaration is fine
         if (now - lastBrickSoundTime > 50) {
-            if (typeof playBrickSound === 'function') playBrickSound();
+            // Only play sound if it's NOT an enemy bullet (player) OR it is a fireball (fire monster)
+            if (typeof playBrickSound === 'function' && (!p.isEnemyBullet || p.isFireball)) playBrickSound();
             lastBrickSoundTime = now;
         }
 
@@ -736,7 +737,8 @@ function update() {
                 if (p.x > plat.x && p.x < plat.x + platW &&
                     p.y > plat.y && p.y < plat.y + platH) {
                     bulletHitBrick = true;
-                    if (typeof playBrickSound === 'function') playBrickSound();
+                    // Only play sound if it's the Player (!p.isEnemyBullet) or the Fire Monster (p.isFireball)
+                    if (typeof playBrickSound === 'function' && (!p.isEnemyBullet || p.isFireball)) playBrickSound();
 
                     // NEW: If a bullet (from player OR enemy) hits a checkpoint brick
                     if (plat.isCheckpointCandidate) {
