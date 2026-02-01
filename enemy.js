@@ -4,10 +4,12 @@
  * This file should be saved as enemy.js
  */
 class Enemy {
-    constructor(type, x, y) {
-        this.type = type; // 'skeleton', 'zombie', 'spider'
+    constructor(type, x, y, minX = null, maxX = null) {
+        this.type = type; // 'skeleton', 'zombie', 'spider', 'fireMonster'
         this.x = x;
         this.y = y;
+        this.minX = minX; // Movement boundary
+        this.maxX = maxX; // Movement boundary
         this.velocityY = 0;
 
         // Skeletons and Zombies are tall; Spiders are wide and short
@@ -59,6 +61,15 @@ class Enemy {
             this.x += this.speed * this.dir;
             this.walkCounter += 0.15;
 
+            //fireenemy
+            if (this.type === 'fireMonster' && this.minX !== null && this.maxX !== null) {
+                if (this.x <= this.minX) {
+                    this.dir = 1;
+                } else if (this.x + this.width >= this.maxX) {
+                    this.dir = -1;
+                }
+            }
+
             // Turn around if hitting a platform
             platforms.forEach(p => {
                 const pW = p.w * 16;
@@ -68,6 +79,7 @@ class Enemy {
                     else if (this.dir === -1 && this.x < p.x + pW && this.x + this.width > p.x + pW) this.dir = 1;
                 }
             });
+
             // --- WORLD BOUNDARY CHECK ---
             // Prevent enemies from walking past the portal (pixel 2800)
             if (this.x + this.width > 4500 && this.dir === 1) {
@@ -96,7 +108,7 @@ class Enemy {
             dir: this.dir,
             speed: 2,
             isEnemyBullet: true,
-            color: this.type === 'skeleton' ? '#fff' : (this.type === 'zombie' ? '#4ade80' : '#f87171')
+            color: this.type === 'skeleton' ? '#fff' : (this.type === 'zombie' ? '#4ade80' : (this.type === 'fireMonster' ? '#f97316' : '#f87171'))
         });
     }
 
@@ -116,6 +128,8 @@ class Enemy {
             this.drawZombie(ctx, limbSwing);
         } else if (this.type === 'spider') {
             this.drawSpider(ctx, limbSwing);
+        } else if (this.type === 'fireMonster') {
+            this.drawFireMonster(ctx, limbSwing);
         }
 
         ctx.restore();
@@ -313,8 +327,94 @@ class Enemy {
             ctx.stroke();
         }
     }
-}
 
+    drawFireMonster(ctx, limb) {
+        const time = Date.now();
+        const bob = Math.sin(time / 150) * 2;
+
+        // 1. THE "CHARRED LOG" CORE
+        // We draw crossed logs instead of a block for a more realistic bonfire look
+        ctx.fillStyle = '#0f172a'; // Deep charred black
+        ctx.save();
+        ctx.translate(8, 16 + bob);
+        ctx.rotate(0.4); ctx.fillRect(-6, -1, 12, 3); // Log 1
+        ctx.rotate(-0.8); ctx.fillRect(-6, -1, 12, 3); // Log 2
+        ctx.restore();
+
+        // 2. BURNT TWIG LIMBS
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = '#18181b';
+        ctx.beginPath();
+        ctx.moveTo(4, 12 + bob); ctx.lineTo(-4, 6 + bob + Math.sin(time / 100) * 3); // Left Arm
+        ctx.moveTo(12, 12 + bob); ctx.lineTo(20, 6 + bob + Math.cos(time / 100) * 3); // Right Arm
+        ctx.moveTo(6, 20 + bob); ctx.lineTo(6 - limb, 24); // Left Leg
+        ctx.moveTo(10, 20 + bob); ctx.lineTo(10 + limb, 24); // Right Leg
+        ctx.stroke();
+
+        // 3. FLAME LICK LOGIC (With Alpha Bloom)
+        const drawFlameLick = (offset, height, speed, color, alpha = 1.0, scale = 1.0) => {
+            const flicker = Math.sin((time * speed) + offset) * (4 * scale);
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(8 + offset - (4 * scale), 20 + bob);
+            ctx.quadraticCurveTo(8 + offset + flicker, 10 + bob, 8 + offset, 20 - (height * scale) + bob + flicker);
+            ctx.quadraticCurveTo(8 + offset - flicker, 10 + bob, 8 + offset + (4 * scale), 20 + bob);
+            ctx.fill();
+        };
+
+        // --- LAYER 1: OUTER HEAT GLOW (Semi-transparent, larger) ---
+        drawFlameLick(-5, 18, 0.008, '#991b1b', 0.3, 1.3);
+        drawFlameLick(5, 20, 0.007, '#991b1b', 0.3, 1.3);
+
+        // --- LAYER 2: MAIN BONFIRE FLAMES ---
+        drawFlameLick(-5, 15, 0.008, '#ea580c'); // Deep Orange
+        drawFlameLick(5, 18, 0.007, '#f97316'); // Bright Orange
+        drawFlameLick(0, 22, 0.009, '#fb923c'); // Golden Orange
+
+        // --- LAYER 3: HOT YELLOW CORE ---
+        drawFlameLick(-2, 10, 0.012, '#fde047');
+        drawFlameLick(3, 12, 0.011, '#fef08a');
+
+        // --- LAYER 4: HOTTEST BASE (Blue & White) ---
+        drawFlameLick(0, 6, 0.02, '#38bdf8', 0.6, 0.5); // Blue root
+        drawFlameLick(0, 4, 0.025, '#ffffff', 0.8, 0.3); // White heart
+
+        ctx.globalAlpha = 1.0;
+
+        // 4. SCARY FACE (Flickering eyes and coal mouth)
+        const eyeColor = () => Math.random() > 0.8 ? '#ffffff' : (Math.random() > 0.5 ? '#fde047' : '#f97316');
+        ctx.fillStyle = eyeColor(); ctx.fillRect(4, 10 + bob, 3, 3); // Left Eye
+        ctx.fillStyle = eyeColor(); ctx.fillRect(9, 10 + bob, 3, 3); // Right Eye
+
+        ctx.strokeStyle = '#000000'; ctx.lineWidth = 1.5; ctx.beginPath();
+        ctx.moveTo(3, 9 + bob); ctx.lineTo(7, 11 + bob);  // Left Brow
+        ctx.moveTo(13, 9 + bob); ctx.lineTo(9, 11 + bob); // Right Brow
+        ctx.stroke();
+
+        ctx.strokeStyle = '#fde047'; ctx.lineWidth = 1; ctx.beginPath(); // Glowing Mouth
+        ctx.moveTo(4, 16 + bob); ctx.lineTo(6, 18 + bob); ctx.lineTo(8, 15 + bob); ctx.lineTo(10, 18 + bob); ctx.lineTo(12, 16 + bob);
+        ctx.stroke();
+
+        // 5. SMOKE & SPARKS
+        for (let i = 0; i < 4; i++) {
+            const sparkX = (Math.sin(time / 200 + i) * 10) + 8;
+            const sparkY = (time / 5 + i * 15) % 50;
+            const progress = sparkY / 50;
+
+            // Draw Smoke (Dark Grey Puffs)
+            ctx.fillStyle = '#334155';
+            ctx.globalAlpha = (1 - progress) * 0.4;
+            ctx.beginPath(); ctx.arc(sparkX + (Math.sin(time / 100) * 3), 15 + bob - sparkY, 3 + progress * 4, 0, Math.PI * 2); ctx.fill();
+
+            // Draw Sparks (Bright Embers)
+            ctx.fillStyle = '#fefce8';
+            ctx.globalAlpha = 1 - progress;
+            ctx.fillRect(sparkX, 20 + bob - sparkY, 1.5, 1.5);
+        }
+        ctx.globalAlpha = 1.0;
+    }
+}
 
 class Boss {
     constructor(x, y) {
@@ -534,4 +634,6 @@ class Boss {
             ctx.restore();
         }
     }
+
+
 }

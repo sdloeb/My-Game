@@ -281,11 +281,6 @@ class Foreground {
             s.secretCount = s.platforms.filter(p => p.hasClock || p.isCheckpointCandidate || p.isSecret).length;
         });
 
-        // 6. Set Level Star
-        const starX = 768 + Math.random() * (this.portalX - 1200); // Scales with level length
-        let starHighestY = this.groundY;
-        this.platforms.forEach(p => { if (starX > p.x && starX < p.x + 16 && p.y < starHighestY) starHighestY = p.y; });
-        this.star = { x: starX, y: starHighestY - 45 };
 
         // 7. Generate Hazards
         for (let hx = 300; hx < lastScreenStart; hx += 150) {
@@ -1182,5 +1177,8 @@ class Foreground {
         });
     }
 
+    dropStar(x, y) {
+        this.star = { x: x, y: y };
+    }
 
 }

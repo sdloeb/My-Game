@@ -544,6 +544,9 @@ function update() {
                     enemies.splice(eIdx, 1);
                     projectiles.splice(pIdx, 1);
                     levelKills++;
+                    if (en.type === 'fireMonster') {
+                        fg.dropStar(en.x, en.y);
+                    }
                     if (levelKills % 4 === 0) {
                         activeBubbles.push({
                             x: cameraX + 220,
@@ -1084,6 +1087,13 @@ function spawnEnemies() {
     Object.keys(counts).forEach(type => {
         spawnType(type, counts[type]);
     });
+
+    const secSize = fg.portalX / 9;
+    const minX = secSize * 3; // Start of section 4
+    const maxX = secSize * 6; // End of section 6
+    const fireX = minX + Math.random() * (maxX - minX - 16);
+    enemies.push(new Enemy('fireMonster', fireX, fg.groundY - 24, minX, maxX));
+
 } // This brace closes spawnEnemies correctly
 
 // --- NOW THESE ARE IN THE GLOBAL SCOPE SO THE GAME CAN FIND THEM ---
