@@ -291,6 +291,49 @@ function playBrickSound() {
     osc.stop(audioCtx.currentTime + duration);
 }
 
+function playBubbleSound() {
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    // A light, "popping" sine wave sound
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(400, now);
+    osc.frequency.exponentialRampToValueAtTime(800, now + 0.1);
+
+    gain.gain.setValueAtTime(0.1, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.start();
+    osc.stop(now + 0.1);
+}
+
+function playPopSound() {
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    // SINE wave creates a clear, liquid "pop" sound
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(900, now);
+    osc.frequency.exponentialRampToValueAtTime(1600, now + 0.04); // Fast upward slide
+
+    gain.gain.setValueAtTime(0.15, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.04);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.start();
+    osc.stop(now + 0.04);
+}
+
+
 let canvas, ctx, player, fg, bg;
 let projectiles = [];
 let enemies = [];
@@ -336,7 +379,7 @@ function init() {
     player = new Player(CANVAS_HEIGHT);
 
     // Use loadLevel to ensure all global states are synced from start
-    loadLevel(1);
+    loadLevel(2);
 
     // Listen for oil events
     window.addEventListener('oilSplash', (e) => {
@@ -529,7 +572,7 @@ function update() {
             if (hit) {
                 if (en.isBoss) {
                     const isDead = en.takeDamage();
-                    if (typeof playBossHitSound === 'function') playBossHitSound();
+                    if (typeof playPopSound === 'function') playPopSound();
                     projectiles.splice(pIdx, 1);
                     if (isDead) {
                         createShatterEffect(en.x + en.width / 2, en.y + en.height / 2);
@@ -608,7 +651,10 @@ function update() {
                 // Check if EITHER the center OR the tip is inside the bubble's radius
                 if (!p.isEnemyBullet && (distCenter < b.radius || distTip < b.radius)) {
                     createBubblePopEffect(b.x, b.y);
-                    if (typeof playBossHitSound === 'function') playBossHitSound();
+
+                    // Trigger the new liquid "pop" sound instead of the boss hit sound
+                    if (typeof playPopSound === 'function') playPopSound();
+
                     // 1. Pop the bubble and remove projectile
                     activeBubbles.splice(j, 1);
                     projectiles.splice(i, 1);
@@ -764,6 +810,7 @@ function update() {
         // Collision with player
         let dist = Math.sqrt(Math.pow((player.x + 8) - b.x, 2) + Math.pow((player.y + 12) - b.y, 2));
         if (dist < b.radius) {
+            if (typeof playBubbleSound === 'function') playBubbleSound();
             player.inBubble = true;
             player.bubbleTimer = 0;
             player.facingRight = true;    // Force face right
