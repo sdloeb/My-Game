@@ -656,7 +656,9 @@ class Background {
     }
 
     drawRollercoaster(ctx, x, s) {
+        // 1. Detect if a secret is nearby to trigger the blink
         const isLit = s.signals && s.signals.some(sig => sig.timer < (sig.count * 40) && (sig.timer % 40 < 20));
+
         const groundY = s.y;
         const loopR = 25; // Radius of the circular loop
         const loopCX = x + 85; // Center X of the loop
@@ -698,13 +700,12 @@ class Background {
             }
         };
 
-        // 1. DRAW SCAFFOLDING SUPPORTS
+        // 2. DRAW SCAFFOLDING SUPPORTS
         ctx.strokeStyle = '#475569';
         ctx.lineWidth = 1;
         for (let i = 0; i <= 24; i++) {
             const t = i / 24;
             const pos = getPos(t);
-            // Draw main vertical support beam
             ctx.beginPath();
             ctx.moveTo(pos.x, pos.y);
             ctx.lineTo(pos.x, groundY);
@@ -717,7 +718,7 @@ class Background {
             }
         }
 
-        // 2. DRAW THE DUAL TRACK RAILS
+        // 3. DRAW THE DUAL TRACK RAILS
         const drawTrack = (offsetY, width, color) => {
             ctx.strokeStyle = color;
             ctx.lineWidth = width;
@@ -733,21 +734,12 @@ class Background {
         drawTrack(0, 3, '#94a3b8'); // Main Rail
         drawTrack(2, 1, '#64748b'); // Detail Inner Rail
 
+        // 4. ANIMATED CARS
         const loopTime = (Date.now() / 3500) % 1.2;
         if (loopTime <= 1.0) {
             for (let i = 0; i < 3; i++) {
                 const t = Math.max(0, loopTime - (i * 0.04));
                 const pos = getPos(t);
-
-                // --- ADDED: BLINKING HEADLIGHT FOR THE FRONT CAR ---
-                if (i === 0 && isLit) {
-                    ctx.save();
-                    ctx.fillStyle = '#ffffff';
-                    ctx.shadowBlur = 10; ctx.shadowColor = '#fde047';
-                    ctx.beginPath(); ctx.arc(pos.x, pos.y - 7, 3, 0, Math.PI * 2); ctx.fill();
-                    ctx.restore();
-                }
-                // --- END OF ADDED LIGHT ---
 
                 ctx.save();
                 ctx.translate(pos.x, pos.y);
@@ -757,6 +749,19 @@ class Background {
                 const posNext = getPos(nextT);
                 const angle = Math.atan2(posNext.y - pos.y, posNext.x - pos.x);
                 ctx.rotate(angle);
+
+                // --- SIGNAL BLINK: The front car's headlight ---
+                if (i === 0 && isLit) {
+                    ctx.save();
+                    ctx.fillStyle = '#ffffff';
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = '#fde047';
+                    // Drawing inside translated/rotated space keeps the light fixed to the car's nose
+                    ctx.beginPath();
+                    ctx.arc(4, -4, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                }
 
                 // Car Body
                 ctx.fillStyle = i === 0 ? '#ef4444' : '#fde047';
@@ -922,16 +927,14 @@ class Background {
         const time = Date.now() / 400;
 
         // 1. DRAW THE JUGGLER
-        ctx.fillStyle = '#312e81'; // Dark blue outfit
-        ctx.fillRect(bodyX - 3, bottomY - 8, 3, 8); // Legs
+        ctx.fillStyle = '#312e81';
+        ctx.fillRect(bodyX - 3, bottomY - 8, 3, 8);
         ctx.fillRect(bodyX + 2, bottomY - 8, 3, 8);
-        ctx.fillRect(bodyX - 4, bottomY - 20, 10, 12); // Torso
-
-        ctx.fillStyle = '#ffdbac'; // Head
+        ctx.fillRect(bodyX - 4, bottomY - 20, 10, 12);
+        ctx.fillStyle = '#ffdbac';
         ctx.fillRect(bodyX - 1, bottomY - 26, 6, 6);
-
         const armWave = Math.sin(time * 2) * 4;
-        ctx.fillRect(bodyX - 8, bottomY - 18 + armWave, 4, 3); // Arms
+        ctx.fillRect(bodyX - 8, bottomY - 18 + armWave, 4, 3);
         ctx.fillRect(bodyX + 8, bottomY - 18 - armWave, 4, 3);
 
         // 2. JUGGLING PINS (Blink yellow when secret is nearby)
@@ -942,19 +945,15 @@ class Background {
             const t = (time + (i * (Math.PI * 2 / 3))) % (Math.PI * 2);
             const pinX = bodyX + Math.cos(t) * 15;
             const pinY = (bottomY - 35) + Math.sin(t) * 12;
-
             ctx.save();
             ctx.translate(pinX, pinY);
             ctx.rotate(t * 2);
-            ctx.fillRect(-1, -3, 2, 6); // Handle
-            ctx.beginPath();
-            ctx.arc(0, -3, 2, 0, Math.PI * 2); // Bulb
-            ctx.fill();
+            ctx.fillRect(-1, -3, 2, 6);
+            ctx.beginPath(); ctx.arc(0, -3, 2, 0, Math.PI * 2); ctx.fill();
             ctx.restore();
         }
         ctx.shadowBlur = 0;
     }
-
     drawStar(ctx, x, s) {
         const opacity = s.twinkle ? (0.3 + Math.abs(Math.sin(Date.now() / 500)) * 0.7) : 1;
         ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;

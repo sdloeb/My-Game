@@ -797,10 +797,8 @@ function update() {
     fg.update(player);
 
     // ADD THIS: Update building signals in Level 1
-    if (fg.level === 1) {
-        // Pass fg.platforms as a third argument
-        bg.updateSignals(cameraX, fg.structures, fg.platforms);
-    }
+    // Update background signals for secret detection on all levels
+    bg.updateSignals(cameraX, fg.structures);
 
     for (let i = activeBubbles.length - 1; i >= 0; i--) {
         let b = activeBubbles[i];
