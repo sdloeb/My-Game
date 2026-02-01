@@ -331,7 +331,8 @@ class Foreground {
 
             // Place the coin 25px above the highest brick found in its column.
             // Since bricks are 16px tall and coins are 10px, this ensures a 15px air gap.
-            this.coins.push({ x: coinX, y: obstacleTopY - 25 });
+            const randomHeight = 25 + (Math.random() * 50);
+            this.coins.push({ x: coinX, y: obstacleTopY - randomHeight });
 
             // Randomize spacing to the next coin
             coinX += 150 + (Math.random() * 150);
