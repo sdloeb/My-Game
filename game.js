@@ -698,7 +698,8 @@ function update() {
                     }
 
                     // UPDATED: Bullet Hit Logic with Cooldown and 2-hit destruction
-                    if (!plat.isSecret) {
+                    // Only allow player bullets (!p.isEnemyBullet) OR Fireballs (p.isFireball) to crack bricks
+                    if (!plat.isSecret && (!p.isEnemyBullet || p.isFireball)) {
                         const now = Date.now();
                         // Initialize hits if missing
                         if (plat.hits === undefined) plat.hits = 2;
