@@ -938,45 +938,6 @@ function createBubblePopEffect(x, y) {
 }
 
 
-function playOilSound() {
-    if (!audioCtx) return;
-    const now = audioCtx.currentTime;
-
-    // 1. The main "Bloop" (Triangle wave)
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(150, now); // Higher start frequency
-    osc.frequency.exponentialRampToValueAtTime(40, now + 0.1);
-
-    gain.gain.setValueAtTime(0.1, now);
-    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
-
-    osc.connect(gain);
-    osc.start();
-    osc.stop(now + 0.15);
-
-    // 2. The "Squelch" (Noise burst)
-    const noise = audioCtx.createBufferSource();
-    const bufferSize = audioCtx.sampleRate * 0.05; // Very short burst
-    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-    noise.buffer = buffer;
-
-    const noiseGain = audioCtx.createGain();
-    noiseGain.gain.setValueAtTime(0.05, now);
-    noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
-
-    noise.connect(noiseGain);
-    noiseGain.connect(audioCtx.destination);
-    gain.connect(audioCtx.destination); // Connect main osc to output as well
-
-    noise.start();
-    noise.stop(now + 0.05);
-}
-
-
 function createIcePuff(x, y) {
     // 2-3 small particles per puff to keep it subtle
     for (let i = 0; i < 3; i++) {
@@ -1096,7 +1057,7 @@ function spawnEnemies() {
 
     // 1. Handle Boss Spawning
     if (currentLevelNum % 3 === 0) {
-        enemies.push(new Boss(fg.portalX - 180, fg.groundY - 140)); // Boss spawns closer to the gate
+        enemies.push(new Boss(fg.portalX - 180, fg.groundY - 140));
     }
 
     // 2. Get the specific counts for the current level
@@ -1105,12 +1066,8 @@ function spawnEnemies() {
     // 3. Helper function to spawn a specific type multiple times
     const spawnType = (type, count) => {
         for (let i = 0; i < count; i++) {
-            // Randomly place between 400px and 150px before the portal
-            const rx = 400 + (Math.random() * (fg.portalX - 900)); // Distributes enemies across new length
-
-            // Adjust height based on the enemy type (Spiders are shorter)
+            const rx = 400 + (Math.random() * (fg.portalX - 900));
             const spawnY = type === 'spider' ? fg.groundY - 12 : fg.groundY - 24;
-
             enemies.push(new Enemy(type, rx, spawnY));
         }
     };
@@ -1119,50 +1076,49 @@ function spawnEnemies() {
     Object.keys(counts).forEach(type => {
         spawnType(type, counts[type]);
     });
+} // This brace closes spawnEnemies correctly
 
-    function playOilSound() {
-        if (!audioCtx) return;
-        const now = audioCtx.currentTime;
+// --- NOW THESE ARE IN THE GLOBAL SCOPE SO THE GAME CAN FIND THEM ---
 
-        // 1. Thick liquid "Bloop"
-        const osc = audioCtx.createOscillator();
-        const g = audioCtx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(150, now);
-        osc.frequency.exponentialRampToValueAtTime(40, now + 0.1);
-        g.gain.setValueAtTime(0.1, now);
-        g.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
-        osc.connect(g);
-        g.connect(audioCtx.destination);
-        osc.start(); osc.stop(now + 0.15);
+function playOilSound() {
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
 
-        // 2. Short "Squelch" noise
-        const noise = audioCtx.createBufferSource();
-        const buffer = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.05, audioCtx.sampleRate);
-        const data = buffer.getChannelData(0);
-        for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
-        noise.buffer = buffer;
-        const ng = audioCtx.createGain();
-        ng.gain.setValueAtTime(0.05, now);
-        ng.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
-        noise.connect(ng);
-        ng.connect(audioCtx.destination);
-        noise.start(); noise.stop(now + 0.05);
-    }
+    // 1. Thick liquid "Bloop"
+    const osc = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(150, now);
+    osc.frequency.exponentialRampToValueAtTime(40, now + 0.1);
+    g.gain.setValueAtTime(0.1, now);
+    g.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+    osc.connect(g);
+    g.connect(audioCtx.destination);
+    osc.start(); osc.stop(now + 0.15);
 
-    function createOilSplash(x, y) {
-        for (let i = 0; i < 3; i++) {
-            particles.push({
-                x: x + (Math.random() - 0.5) * 10,
-                y: y,
-                vx: (Math.random() - 0.5) * 2,
-                vy: -Math.random() * 3 - 2,
-                life: 20 + Math.random() * 10,
-                color: '#202020'
-            });
-        }
-    }
-
-
+    // 2. Short "Squelch" noise
+    const noise = audioCtx.createBufferSource();
+    const buffer = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.05, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+    noise.buffer = buffer;
+    const ng = audioCtx.createGain();
+    ng.gain.setValueAtTime(0.05, now);
+    ng.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+    noise.connect(ng);
+    ng.connect(audioCtx.destination);
+    noise.start(); noise.stop(now + 0.05);
 }
 
+function createOilSplash(x, y) {
+    for (let i = 0; i < 3; i++) {
+        particles.push({
+            x: x + (Math.random() - 0.5) * 10,
+            y: y,
+            vx: (Math.random() - 0.5) * 2,
+            vy: -Math.random() * 3 - 2,
+            life: 20 + Math.random() * 10,
+            color: '#202020'
+        });
+    }
+}
