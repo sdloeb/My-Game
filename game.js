@@ -5,6 +5,27 @@ const CANVAS_HEIGHT = 224;
 let audioCtx;
 let activeJumpOsc = null;
 
+function playBossHitSound() {
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    // A deeper, more "crunchy" sound for bosses
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(150, now);
+    osc.frequency.exponentialRampToValueAtTime(40, now + 0.2);
+
+    gain.gain.setValueAtTime(0.2, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.start();
+    osc.stop(now + 0.2);
+}
+
 function playEnemySound() {
     if (!audioCtx) return;
     const osc = audioCtx.createOscillator();
@@ -476,7 +497,7 @@ function update() {
             if (hit) {
                 if (en.isBoss) {
                     const isDead = en.takeDamage();
-                    if (typeof playEnemySound === 'function') playEnemySound();
+                    if (typeof playBossHitSound === 'function') playBossHitSound();
                     projectiles.splice(pIdx, 1);
                     if (isDead) {
                         createShatterEffect(en.x + en.width / 2, en.y + en.height / 2);
@@ -552,6 +573,7 @@ function update() {
                 // Check if EITHER the center OR the tip is inside the bubble's radius
                 if (!p.isEnemyBullet && (distCenter < b.radius || distTip < b.radius)) {
                     createBubblePopEffect(b.x, b.y);
+                    if (typeof playBossHitSound === 'function') playBossHitSound();
                     // 1. Pop the bubble and remove projectile
                     activeBubbles.splice(j, 1);
                     projectiles.splice(i, 1);
@@ -583,6 +605,7 @@ function update() {
 
                 // Initialize health if it doesn't exist
                 if (fg.bird.health === undefined) fg.bird.health = 2;
+                if (typeof playBossHitSound === 'function') playBossHitSound();
 
 
                 fg.bird.health--;
