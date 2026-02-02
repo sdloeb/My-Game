@@ -166,23 +166,28 @@ class Foreground {
             const rand = Math.random();
             let structureType;
 
-            if (rand < 0.20) {
-                structureType = 0; // 20% chance: Short High Float (Horizontal)
-            } else if (rand < 0.40) {
-                structureType = 4; // 20% chance: Long High Float (Horizontal)
+            if (rand < 0.15) {
+                structureType = 0; // Short High Float
+            } else if (rand < 0.30) {
+                structureType = 4; // Long High Float
+            } else if (rand < 0.45) {
+                structureType = 3; // Low horizontal lines
             } else if (rand < 0.60) {
-                structureType = 3; // 20% chance: Low horizontal lines (Horizontal)
-            } else if (rand < 0.80) {
-                structureType = 1; // 20% chance: Steps
+                structureType = 1; // Steps
+            } else if (rand < 0.75) {
+                structureType = 2; // Towers
+            } else if (rand < 0.88) {
+                structureType = 5; // NEW: Small Steps (1/2 size)
             } else {
-                structureType = 2; // 20% chance: Towers
+                structureType = 6; // NEW: Small High Float (1/2 size)
             }
+
             let structureWidth = 0;
             let startPlatformIndex = this.platforms.length;
 
             switch (structureType) {
                 case 0: // Float
-                    const floatWidth = 3 + Math.floor(Math.random() * 4);
+                    const floatWidth = Math.floor(Math.random() * 4);
                     const floatHeight = 60 + Math.floor(Math.random() * 60);
                     for (let col = 0; col < floatWidth; col++) {
                         this.platforms.push({ x: x + (col * 16), y: this.groundY - floatHeight, w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
@@ -210,19 +215,38 @@ class Foreground {
                     groundOccupiedX.push({ start: x, end: x + structureWidth });
                     break;
                 case 3: // Long Width
-                    const longWidth = 6 + Math.floor(Math.random() * 8);
+                    const longWidth = 3 + Math.floor(Math.random() * 8);
                     for (let col = 0; col < longWidth; col++) {
                         this.platforms.push({ x: x + (col * 16), y: this.groundY - (this.tileSize * 2), w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
                     }
                     structureWidth = longWidth * this.tileSize;
                     break;
                 case 4: // New: High Long Float
-                    const longFloatWidth = 8 + Math.floor(Math.random() * 6); // 8-14 bricks wide
+                    const longFloatWidth = 5 + Math.floor(Math.random() * 6);
                     const longFloatHeight = 80 + Math.floor(Math.random() * 40); // 80-120 pixels high
                     for (let col = 0; col < longFloatWidth; col++) {
                         this.platforms.push({ x: x + (col * 16), y: this.groundY - longFloatHeight, w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
                     }
                     structureWidth = longFloatWidth * this.tileSize;
+                    break;
+                case 5: // Small Steps (1/2 size of Type 1)
+                    const smallSteps = 2; // Fixed at 2 steps
+                    for (let i = 0; i < smallSteps; i++) {
+                        for (let j = 0; j <= i; j++) {
+                            this.platforms.push({ x: x + (i * this.tileSize), y: this.groundY - ((j + 1) * this.tileSize), w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
+                            this.platforms.push({ x: x + ((smallSteps * 2 - i - 1) * this.tileSize), y: this.groundY - ((j + 1) * this.tileSize), w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
+                        }
+                    }
+                    structureWidth = (smallSteps * 2) * this.tileSize;
+                    groundOccupiedX.push({ start: x, end: x + structureWidth });
+                    break;
+                case 6: // Small High Float (1/2 size of Type 4)
+                    const smallFloatWidth = 4 + Math.floor(Math.random() * 3); // 4-6 bricks wide
+                    const smallFloatHeight = 80 + Math.floor(Math.random() * 40);
+                    for (let col = 0; col < smallFloatWidth; col++) {
+                        this.platforms.push({ x: x + (col * 16), y: this.groundY - smallFloatHeight, w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
+                    }
+                    structureWidth = smallFloatWidth * this.tileSize;
                     break;
             }
 
@@ -234,7 +258,8 @@ class Foreground {
                 isSignaled: false
             });
 
-            const gap = 80 + Math.random() * 180;
+            //gap between structures
+            const gap = 40 + Math.random() * 150;
             x += structureWidth + gap;
         }
 
