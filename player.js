@@ -38,6 +38,7 @@ class Player {
         this.rotation = 0;
         this.stunCooldown = 0;
         this.hasBow = false;
+        this.isSlamming = false; // Tracks if the player is currently ground-pounding
 
         // Squatting State
         this.isSquatting = false;
@@ -67,7 +68,15 @@ class Player {
                 if (!this.hasBow) this.keys.up = true;
             }
             if (e.code === 'KeyW') this.keys.up = true;
-            if (e.code === 'ArrowDown' || e.code === 'KeyS') this.keys.down = true;
+            if (e.code === 'ArrowDown' || e.code === 'KeyS') {
+                this.keys.down = true;
+                // NEW: Trigger Ground Pound if in the air
+                if (!this.onGround && !this.inBubble && !this.isSlamming) {
+                    this.isSlamming = true;
+                    this.velocityY = 12; // High downward velocity
+                    this.velocityX = 0;  // Stop horizontal momentum for a "precision" slam
+                }
+            }
 
 
             // --- 2. AIMING LOGIC (Up/Down) ---
@@ -244,6 +253,14 @@ class Player {
     }
 
     update(groundY, platforms, elevators, groundHazards, coins, fg) {
+
+        if (this.y + this.height >= groundY) {
+            this.y = groundY - this.height;
+            this.velocityY = 0;
+            this.onGround = true;
+            this.onElevator = null;
+            this.isSlamming = false; // Reset slam state when hitting the ground
+        }
 
 
         if (this.inQuicksand) {
@@ -478,6 +495,7 @@ class Player {
             this.velocityY = 0;
             this.onGround = true;
             this.onElevator = null;
+            this.isSlamming = false; // Reset slam state when hitting the floor
 
             if (groundHazards && !this.isStunned && this.stunCooldown <= 0 && !this.inBubble) {
                 const playerCenter = this.x + (this.width / 2);
@@ -577,12 +595,18 @@ class Player {
 
                     // LANDING ON TOP
                     if (minOverlap === overlapTop && this.velocityY >= 0) {
+                        // NEW: If slamming, trigger the brick crack
+                        if (this.isSlamming) {
+                            window.dispatchEvent(new CustomEvent('brickHit', { detail: { platform: p } }));
+                            this.isSlamming = false; // End the slam
+                            this.velocityY = -3;    // Bounce up slightly
+                        }
+
                         this.y = p.y - this.height;
                         this.velocityY = 0;
                         this.onGround = true;
 
                         if (this.velocityY === 0) this.y = Math.floor(this.y);
-
                     }
 
                     // BONKING HEAD (Breaking Brick)
