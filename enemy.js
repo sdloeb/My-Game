@@ -112,6 +112,10 @@ class Enemy {
     }
 
     shoot(projectiles) {
+        // Only play sound if the enemy is within the camera view
+        if (typeof playEnemyShootSound === 'function' && this.x + this.width > cameraX && this.x < cameraX + CANVAS_WIDTH) {
+            playEnemyShootSound();
+        }
         const bulletY = this.y + 6; // Fire from the face area
 
         if (this.type === 'fireMonster') {
@@ -555,6 +559,11 @@ class Boss {
     }
 
     shoot(projectiles, player) {
+        // Only play sound if the boss is within the camera view
+        if (typeof playEnemyShootSound === 'function' && this.x + this.width > cameraX && this.x < cameraX + CANVAS_WIDTH) {
+            playEnemyShootSound();
+        }
+
         const dx = player.x - this.x;
         const vx = dx * 0.02;
         projectiles.push({

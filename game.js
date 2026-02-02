@@ -5,6 +5,49 @@ const CANVAS_HEIGHT = 224;
 let audioCtx;
 let activeJumpOsc = null;
 
+function playPlayerShootSound() {
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    osc.type = 'square';
+    // A quick, sharp downward slide for the player's shot
+    osc.frequency.setValueAtTime(600, now);
+    osc.frequency.exponentialRampToValueAtTime(150, now + 0.1);
+
+    gain.gain.setValueAtTime(0.08, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(now + 0.1);
+}
+
+function playEnemyShootSound() {
+    if (!audioCtx) return;
+    // Ensure the audio context is active
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    // A sharper "pop" sound for enemies
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(150, now);
+    osc.frequency.exponentialRampToValueAtTime(40, now + 0.12);
+
+    gain.gain.setValueAtTime(0.12, now); // Increased volume
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(now + 0.12);
+}
+
 
 function playBossHitSound() {
     if (!audioCtx) return;
@@ -395,6 +438,7 @@ function init() {
 
     // Listen for player shooting events
     window.addEventListener('playerShoot', (e) => {
+        if (typeof playPlayerShootSound === 'function') playPlayerShootSound();
         const isArrow = e.detail.type === 'arrow';
 
         projectiles.push({
