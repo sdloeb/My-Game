@@ -496,14 +496,10 @@ class Boss {
             case 'hidden':
                 this.stateTimer--;
                 if (this.stateTimer <= 0) {
-                    // --- WIDER RANDOM SPAWN AREA ---
-                    // Gate is at ~3045. Portal is at 3200.
-                    // We now start at least 25 pixels past the gate (3070).
-                    // The range allows it to start anywhere up to 3120.
-                    // (This ensures the 80px wide U-turn fits before the portal at 3200).
-
-                    const minSpawnX = this.originX - 50; // Shifts the snake's path slightly left towards the player
-                    const spawnRange = 120;               // Spreads it out further
+                    // --- CONFINED SPAWN AREA (Right of Gate) ---
+                    // Gate is at originX + 5. We start 10px past it.
+                    const minSpawnX = this.originX + 40;
+                    const spawnRange = 120;
 
                     this.x = minSpawnX + (Math.random() * spawnRange);
                     this.turnRadius = 30 + Math.random() * 20; // Randomizes how wide and high the snake jumps
@@ -542,7 +538,7 @@ class Boss {
                 const tailPos = this.history[0];
                 if (tailPos && tailPos.y > this.groundY + 20) {
                     this.state = 'hidden';
-                    this.stateTimer = 100;
+                    this.stateTimer = 0;
                     this.history = [];
                 }
                 break;

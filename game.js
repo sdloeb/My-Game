@@ -422,7 +422,7 @@ function init() {
     player = new Player(CANVAS_HEIGHT);
 
     // Use loadLevel to ensure all global states are synced from start
-    loadLevel(1);
+    loadLevel(3);
 
     // Listen for oil events
     window.addEventListener('oilSplash', (e) => {
@@ -1159,7 +1159,7 @@ function loadLevel(num, keepTimer = false) {
     }
 
 
-    player.x = 125;
+    player.x = 4800; // change starting position back to 125
     player.y = 100;
     player.velocityX = 0;
     player.velocityY = 0;
