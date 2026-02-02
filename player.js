@@ -254,12 +254,15 @@ class Player {
 
     update(groundY, platforms, elevators, groundHazards, coins, fg) {
 
-        if (this.y + this.height >= groundY) {
+        // UPDATED: Do not snap to surface if in quicksand
+        if (this.y + this.height >= groundY && !this.inQuicksand) {
+            // Standard ground reset
             this.y = groundY - this.height;
             this.velocityY = 0;
             this.onGround = true;
             this.onElevator = null;
-            this.isSlamming = false; // Reset slam state when hitting the ground
+            // Reset slam state if you hit the floor
+            if (this.isSlamming) this.isSlamming = false;
         }
 
 
@@ -283,22 +286,25 @@ class Player {
             }
 
             // 1. SINKING: Constant slow downward pull
-            this.y += 0.35;
+            this.y += 0.2;
 
             // 2. STRUGGLING: Tapping Up/Jump moves you up slightly
             if (this.keys.up) {
-                this.y -= 4.0;         // The power of a single struggle "tap"
+                this.y -= 12.0;         // The power of a single struggle "tap"
+                this.velocityY = -3.0;  // NEW: Stronger upward momentum to fight gravity
+                this.velocityX = 0;     // NEW: Zero out friction
                 this.keys.up = false; // Force the player to tap again
                 if (typeof playQuicksandSound === 'function') playQuicksandSound();
             }
 
             // 3. ESCAPE CONDITION: Trigger the vault out once the body is mostly visible
             // height is 24, so groundY - 20 means only 4 pixels are submerged
-            const escapeThreshold = groundY - 20;
+            const escapeThreshold = groundY - 8;
             if (this.y <= escapeThreshold) {
                 this.inQuicksand = false;
-                this.velocityY = this.jumpForce * 0.75; // Vault out effect
-                this.velocityX = this.facingRight ? 1.5 : -1.5;
+                this.onGround = false; // Ensures physics take over correctly
+                this.velocityY = this.jumpForce * 0.9; // Stronger vault out force
+                this.velocityX = this.facingRight ? 3.0 : -3.0; // More horizontal kick
                 return;
             }
 
@@ -489,13 +495,14 @@ class Player {
             }
         }
 
-        if (this.y + this.height >= groundY) {
+        // UPDATED: Only snap to the ground if NOT currently sinking in quicksand
+        if (this.y + this.height >= groundY && !this.inQuicksand) {
             // Standard ground reset
             this.y = groundY - this.height;
             this.velocityY = 0;
             this.onGround = true;
             this.onElevator = null;
-            this.isSlamming = false; // Reset slam state when hitting the floor
+            if (this.isSlamming) this.isSlamming = false; // Reset stomp state
 
             if (groundHazards && !this.isStunned && this.stunCooldown <= 0 && !this.inBubble) {
                 const playerCenter = this.x + (this.width / 2);
@@ -508,12 +515,13 @@ class Player {
 
                     if (isTriggered) {
 
-                        // UPDATED: Only enter quicksand if we are NOT jumping (velocityY >= 0)
+                        // UPDATED: Enter quicksand and cancel Stomp
                         if (h.type === 'quicksand' && !this.inQuicksand && this.velocityY >= 0) {
                             this.inQuicksand = true;
+                            this.isSlamming = false; // NEW: Stop slamming so you can sink
                             this.velocityX = 0;
                             this.velocityY = 0;
-                            this.y = groundY - 6;
+                            this.y = groundY - 6; // Start slightly submerged
                             this.quicksandTimer = 0;
                         }
 
