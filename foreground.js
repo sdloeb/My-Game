@@ -433,7 +433,6 @@ class Foreground {
             if (Math.sqrt(dx * dx + dy * dy) < 20) {
                 this.bow.collected = true;
                 player.hasBow = true;
-                player.heavyAmmo = 0;
                 player.updateUI();
             }
         }
