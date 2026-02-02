@@ -633,10 +633,10 @@ function update() {
                     projectiles.splice(pIdx, 1);
                     levelKills++;
                     if (en.type === 'fireMonster') {
-                        fg.dropStar(en.x, en.y);
+                        fg.dropAmmo(en.x + en.width / 2, en.y + en.height / 2, true);
                     } else {
                         // Drop ammo for all other standard enemies
-                        fg.dropAmmo(en.x + en.width / 2, en.y + en.height / 2);
+                        fg.dropAmmo(en.x + en.width / 2, en.y + en.height / 2, false);
                     }
                     if (levelKills % 4 === 0) {
                         activeBubbles.push({

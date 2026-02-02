@@ -966,6 +966,37 @@ class Foreground {
                 const bob = Math.sin(Date.now() / 200) * 3;
                 ctx.translate(screenX, drop.y + bob);
 
+                // --- UPDATED: DENSE FLOATING SPARK PARTICLES ---
+                if (drop.isFire) {
+                    // Increased from 3 to 8 particles for a "hotter" look
+                    for (let i = 0; i < 8; i++) {
+                        // We use i * 0.7 to stagger the timing of each particle
+                        const time = (Date.now() * 0.002) + (i * 0.7);
+
+                        // Horizontal wiggle: different widths for a more natural look
+                        const particleX = Math.sin(time * 3) * (6 + (i % 4));
+
+                        // Vertical rise: staggered height reset using modulo
+                        // Increasing the modulo (2000) and divisor (30) adjusts speed/height
+                        const particleY = -((Date.now() - drop.spawnTime + (i * 250)) % 2000) / 30;
+
+                        // Opacity: particles fade out as they reach the top of their rise
+                        const opacity = 1 - (Math.abs(particleY) / 50);
+
+                        if (opacity > 0) {
+                            // Alternate between Fire Orange, Bright Yellow, and white-hot
+                            const colors = ['#fb923c', '#fde047', '#ffffff'];
+                            ctx.fillStyle = colors[i % 3];
+                            ctx.globalAlpha = opacity;
+
+                            // Vary the size slightly for texture (1x1 or 2x2 pixels)
+                            const size = (i % 2 === 0) ? 2 : 1;
+                            ctx.fillRect(particleX, particleY - 5, size, size);
+                            ctx.globalAlpha = 1.0;
+                        }
+                    }
+                }
+
                 if (this.level === 1) { // ARROW
                     ctx.fillStyle = '#7c2d12'; ctx.fillRect(-6, 0, 12, 2);
                     ctx.fillStyle = '#d1d5db'; ctx.beginPath(); ctx.moveTo(6, -2); ctx.lineTo(12, 1); ctx.lineTo(6, 4); ctx.fill();
@@ -1235,8 +1266,13 @@ class Foreground {
         this.star = { x: x, y: y };
     }
 
-    dropAmmo(x, y) {
-        this.ammoDrops.push({ x: x, y: y });
+    dropAmmo(x, y, isFire = false) {
+        this.ammoDrops.push({
+            x: x,
+            y: y,
+            isFire: isFire,
+            spawnTime: Date.now() // Used to animate the sparks
+        });
     }
 
     updateAmmo(player) {
@@ -1246,6 +1282,15 @@ class Foreground {
             const dy = (player.y + player.height / 2) - a.y;
             if (Math.sqrt(dx * dx + dy * dy) < 20) {
                 player.heavyAmmo += 1; // Add 1 projectile per drop
+                if (a.isFire) {
+                    this.hasKey = true; // Unlocks the weapon!
+                    // Optional: Update the UI to show the weapon is active
+                    const levelDisp = document.getElementById('level-display');
+                    if (levelDisp && !levelDisp.innerText.includes("🏹")) {
+                        levelDisp.innerText += " 🏹";
+                    }
+                }
+
                 player.updateUI();
                 if (typeof playCoinSound === 'function') playCoinSound();
                 this.ammoDrops.splice(i, 1);
