@@ -4,6 +4,7 @@ const CANVAS_HEIGHT = 224;
 
 let audioCtx;
 let activeJumpOsc = null;
+let collectedLevelWeapons = {}; // Stores { level: true } if the weapon is found
 
 function playPlayerShootSound() {
     if (!audioCtx) return;
@@ -1146,55 +1147,84 @@ function updateParticles() {
 function handlePlayerDeath(deathType) {
     if (typeof playIceSlideSound === 'function') playIceSlideSound(false);
     if (typeof playDeathSound === 'function') playDeathSound();
-    // 1. Reset player state common to all deaths
-    player.hasBow = false;
-    player.bullets = 0;
-    player.heavyAmmo = 0;
-    player.updateUI();
-    projectiles = [];
+
+    // 1. RESET ALL PLAYER STATES (Crucial so you don't respawn stunned/trapped)
+    player.isEndingLevel = false;
+    player.shrinkScale = 1.0;
+    player.rotation = 0;
     player.isStunned = false;
     player.stunTimer = 0;
-    player.rotation = 0;
     player.stunCooldown = 0;
     player.inBubble = false;
     player.bubbleTimer = 0;
+    projectiles = [];
 
-    // 2. PERMANENCE: Check if items were already collected
-    if (fg && (collectedStars[currentLevelNum] || collectedLevelItems[currentLevelNum])) {
+    // 2. STAR PERMANENCE
+    // Ensures stars don't reappear if they were already collected
+    if (fg && collectedStars[currentLevelNum]) {
         fg.hasStar = true;
         fg.star = null;
     }
 
-    // 3. CHECKPOINT LOGIC: Killed by standard Enemy
+    // 3. CHECKPOINT LOGIC
     if (deathType === 'enemy' || deathType === 'quicksand') {
         const cp = globalCheckpoints[currentLevelNum];
 
         if (cp) {
-            // Respawn at checkpoint; timer continues
-            player.x = cp.x;
-            player.y = cp.y - player.height;
+            // NEW: Fire Monster Ammo Logic
+            const wentBackBeforeFireMonster = (fg && fg.fireAmmoCollectedX !== -1 && cp.x < fg.fireAmmoCollectedX);
+
+            if (wentBackBeforeFireMonster) {
+                // If the checkpoint is behind the kill-site, reset and reload the level to respawn the monster
+                collectedLevelItems[currentLevelNum] = false;
+                loadLevel(currentLevelNum, true); // Keep the timer running
+
+                player.x = cp.x;
+                player.y = cp.y - player.height;
+                player.hasBow = false; // Player must fight the Fire Monster again
+                player.heavyAmmo = 0;
+            } else {
+                // If checkpoint is after the kill-site, keep the weapon and ammo
+                player.x = cp.x;
+                player.y = cp.y - player.height;
+
+                if (collectedLevelItems[currentLevelNum]) {
+                    player.hasBow = true;
+                    fg.hasKey = true;
+                    if (player.heavyAmmo <= 0) player.heavyAmmo = 3;
+                }
+
+                // 2. Restore WEAPON status ONLY if they picked it up at the end
+                if (collectedLevelWeapons[currentLevelNum]) {
+                    player.hasBow = true; // Reactivates the Bow/Gun visual and logic
+                } else {
+                    player.hasBow = false; // Ensures they don't get it for free
+                }
+
+
+            }
+
             player.velocityX = 0;
             player.velocityY = 0;
+            player.updateUI();
+            return;
         }
+        // 4. FALLBACK: Go to previous level's checkpoint if this level has none
         else if (currentLevelNum > 1 && globalCheckpoints[currentLevelNum - 1]) {
-            // Fall back to previous level checkpoint; timer continues
             currentLevelNum--;
-            loadLevel(currentLevelNum, true); // true keeps the current timer
+            loadLevel(currentLevelNum, true);
             const prevCp = globalCheckpoints[currentLevelNum];
             player.x = prevCp.x;
             player.y = prevCp.y - player.height;
-        }
-        else {
-            // No checkpoints: Start level 1 over
-            loadLevel(1);
+            return;
         }
     }
 
-    // 4. RESTART LOGIC: Killed by Boss or Timer Ran Out
-    else if (deathType === 'boss' || deathType === 'timeout') {
-        // Back to level start; timer resets to 60
-        loadLevel(currentLevelNum);
-    }
+    // 5. FULL RESTART (For Boss, Timeout, or no checkpoints found)
+    player.hasBow = false; // Reset equipment for full restart
+    player.bullets = 0;
+    player.heavyAmmo = 0;
+    loadLevel(currentLevelNum);
 }
 
 function loadLevel(num, keepTimer = false) {

@@ -38,6 +38,7 @@ class Foreground {
         this.clock = null;
         this.activeFlag = null;
         this.ammoDrops = []; // Track dropped ammunition
+        this.fireAmmoCollectedX = -1;
 
         this.brickColors = { main: '#bc4a24', shadow: '#541800', highlight: '#f8b800' };
         this.elevatorColors = {
@@ -166,8 +167,8 @@ class Foreground {
             const rand = Math.random();
             let structureType;
             let structureWidth = 0;
-            let structureHeight = 0; 
-            let secondaryWidth = 0; 
+            let structureHeight = 0;
+            let secondaryWidth = 0;
             let floatX = x;
             let startPlatformIndex = this.platforms.length;
 
@@ -276,7 +277,7 @@ class Foreground {
             });
 
             // 2. OVERLAP LOGIC: Check for a secondary floating structure
-           
+
             const isGrounded = [1, 2, 3, 5].includes(structureType);
 
             // 40% chance to overlap a float, with at least 3 bricks (48px) of clear vertical space
@@ -526,6 +527,7 @@ class Foreground {
             if (Math.sqrt(dx * dx + dy * dy) < 20) {
                 this.bow.collected = true;
                 player.hasBow = true;
+                collectedLevelWeapons[this.level] = true;
                 player.updateUI();
             }
         }
@@ -1387,6 +1389,8 @@ class Foreground {
                 player.heavyAmmo += 1; // Add 1 projectile per drop
                 if (a.isFire) {
                     this.hasKey = true; // Unlocks the weapon!
+                    this.fireAmmoCollectedX = a.x; // Store the location of the drop
+                    collectedLevelItems[this.level] = true; // Mark as permanently found
                     // Optional: Update the UI to show the weapon is active
                     const levelDisp = document.getElementById('level-display');
                     if (levelDisp && !levelDisp.innerText.includes("🏹")) {
