@@ -972,7 +972,7 @@ class Foreground {
                     const ringTime = (Date.now() / 1000) % 1.2; // 1.2 second loop
                     const ringRadius = ringTime * 25;           // Expands to 25px
                     const ringOpacity = 1 - (ringTime / 1.2);   // Fades out
-                    
+
                     ctx.strokeStyle = `rgba(251, 146, 60, ${ringOpacity})`; // Fire Orange
                     ctx.lineWidth = 2;
                     ctx.beginPath();
@@ -1302,7 +1302,11 @@ class Foreground {
                 }
 
                 player.updateUI();
-                if (typeof playCoinSound === 'function') playCoinSound();
+                if (a.isFire) {
+                    if (typeof playFireAmmoSound === 'function') playFireAmmoSound();
+                } else {
+                    if (typeof playPowerRechargeSound === 'function') playPowerRechargeSound();
+                }
                 this.ammoDrops.splice(i, 1);
             }
         }

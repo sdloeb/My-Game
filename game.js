@@ -180,6 +180,51 @@ function playCoinSound() {
     osc.stop(now + 0.15);
 }
 
+// [Add after playCoinSound() around line 188]
+function playPowerRechargeSound() {
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    // Fast, aggressive upward slide for an "energized" feel
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(150, now);
+    osc.frequency.exponentialRampToValueAtTime(1500, now + 0.4);
+
+    gain.gain.setValueAtTime(0.08, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(now + 0.4);
+}
+
+// [Add after playPowerRechargeSound() around line 208]
+function playFireAmmoSound() {
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    osc.type = 'sawtooth';
+    // 1. Start Low
+    osc.frequency.setValueAtTime(150, now);
+    // 2. Ramp Up to 1500Hz at the midpoint (0.2s)
+    osc.frequency.exponentialRampToValueAtTime(1500, now + 0.2);
+    // 3. Ramp Back Down to 150Hz at the end (0.4s)
+    osc.frequency.exponentialRampToValueAtTime(150, now + 0.4);
+
+    gain.gain.setValueAtTime(0.08, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(now + 0.4);
+}
+
 function playJumpSound() {
     if (!audioCtx) return;
     const osc = audioCtx.createOscillator();
