@@ -51,20 +51,20 @@ class Enemy {
                 this.onGround = false;
             }
         } else {
-            // Standard Squat logic for other enemies
-            if (!this.isSquatting && Math.random() < 0.005) {
+            // Standard Jump logic for other enemies (replaced Squat logic)
+            if (!this.isSquatting && this.onGround && Math.random() < 0.005) {
+                this.velocityY = -4.5; // Upward jump force
+                this.onGround = false;
+                // We use the existing timer/state to prevent constant back-to-back jumping
                 this.isSquatting = true;
                 this.squatTimer = 60;
-                this.height = this.squatHeight;
-                this.y += (this.normalHeight - this.squatHeight);
             }
 
             if (this.isSquatting) {
                 this.squatTimer--;
                 if (this.squatTimer <= 0) {
                     this.isSquatting = false;
-                    this.y -= (this.normalHeight - this.squatHeight);
-                    this.height = this.normalHeight;
+                    // Height resets are no longer needed as we aren't shrinking
                 }
             }
         }
@@ -133,13 +133,13 @@ class Enemy {
                 });
             });
         } else {
-            // Standard single-shot logic for skeletons, zombies, spiders
-            const standardY = this.isSquatting ? this.y + 4 : this.y + 6;
+            // Standard single-shot logic: Always fire from the face since they no longer shrink
+            const standardY = this.y + 6;
             projectiles.push({
                 x: this.dir === 1 ? this.x + this.width : this.x,
                 y: standardY,
                 spawnX: this.x,
-                vx: this.dir * 2, // Sets the horizontal velocity
+                vx: this.dir * 2,
                 dir: this.dir,
                 isEnemyBullet: true,
                 color: this.type === 'skeleton' ? '#fff' : (this.type === 'zombie' ? '#4ade80' : '#f87171')
@@ -197,29 +197,18 @@ class Enemy {
         // 4. BONY LIMBS
         ctx.fillStyle = '#f3f4f6';
 
-        if (this.isSquatting) {
-            // Squatting Legs: Positioned at the bottom (y=10 to y=12)
-            // Left Leg
-            ctx.fillRect(2, 10, 4, 2);  // Thigh angled out
-            ctx.fillRect(2, 11, 2, 1);  // Shin
-            // Right Leg
-            ctx.fillRect(10, 10, 4, 2); // Thigh angled out
-            ctx.fillRect(12, 11, 2, 1); // Shin
 
-            // Lowered Arms for squatting
-            ctx.fillRect(this.dir === 1 ? 12 : 2, 4 + headBob, 2, 4);
-        } else {
-            // Standard walking limbs
-            ctx.fillRect(this.dir === 1 ? 12 : 2, 8 + headBob, 2, 6); // Arms
+        // Standard walking limbs
+        ctx.fillRect(this.dir === 1 ? 12 : 2, 8 + headBob, 2, 6); // Arms
 
-            // Leg 1
-            ctx.fillRect(4, 18, 2, 4 + limb);
-            ctx.fillRect(4, 22 + limb, 3, 2); // Foot
+        // Leg 1
+        ctx.fillRect(4, 18, 2, 4 + limb);
+        ctx.fillRect(4, 22 + limb, 3, 2); // Foot
 
-            // Leg 2
-            ctx.fillRect(10, 18, 2, 4 - limb);
-            ctx.fillRect(10, 22 - limb, 3, 2); // Foot
-        }
+        // Leg 2
+        ctx.fillRect(10, 18, 2, 4 - limb);
+        ctx.fillRect(10, 22 - limb, 3, 2); // Foot
+
 
         // 5. THE LOWER JAW
         ctx.fillStyle = '#d1d5db';
@@ -249,20 +238,17 @@ class Enemy {
 
         // 2. LEGS (Asymmetrical Shambling)
         ctx.fillStyle = pantsColor;
-        if (this.isSquatting) {
-            ctx.fillRect(2, 8, 5, 4);
-            ctx.fillRect(9, 8, 5, 4);
-        } else {
-            // Leg 1: Tattered but whole
-            ctx.fillRect(3, 16, 4, 8 + limb);
 
-            // Leg 2: Exposed bone at the knee
-            ctx.fillRect(9, 16, 4, 8 - limb);
-            ctx.fillStyle = '#f3f4f6'; // Exposed Bone (White)
-            ctx.fillRect(10, 19 - (limb * 0.5), 2, 2);
-            ctx.fillStyle = bloodColor;
-            ctx.fillRect(9, 18 - (limb * 0.5), 4, 1); // Blood around the wound
-        }
+        // Leg 1: Tattered but whole
+        ctx.fillRect(3, 16, 4, 8 + limb);
+
+        // Leg 2: Exposed bone at the knee
+        ctx.fillRect(9, 16, 4, 8 - limb);
+        ctx.fillStyle = '#f3f4f6'; // Exposed Bone (White)
+        ctx.fillRect(10, 19 - (limb * 0.5), 2, 2);
+        ctx.fillStyle = bloodColor;
+        ctx.fillRect(9, 18 - (limb * 0.5), 4, 1); // Blood around the wound
+
 
         // 3. TORSO (Tattered Shirt)
         ctx.fillStyle = shirtColor;
