@@ -22,8 +22,8 @@ class Player {
         this.aimAngle = 0;
         this.inQuicksand = false;
         this.quicksandTimer = 0;
-
         this.bullets = 0;
+        this.heavyAmmo = 0;
         this.onGround = false;
         this.onElevator = null;
         this.facingRight = true;
@@ -51,6 +51,7 @@ class Player {
 
         this.setupControls();
         this.keys = { left: false, right: false, up: false, down: false };
+        this.updateUI(); // Initializes the UI text when the game starts
     }
 
     //GAME CONTROLLER KEYBOARD KEYS
@@ -103,7 +104,8 @@ class Player {
                 }
             }
 
-            if (e.code === 'KeyB' && this.bullets > 0 && !this.isStunned) this.shoot();
+            const canShoot = this.hasBow ? this.heavyAmmo > 0 : this.bullets > 0;
+            if (e.code === 'KeyB' && canShoot && !this.isStunned) this.shoot();
         });
 
         window.addEventListener('keyup', (e) => {
@@ -145,7 +147,9 @@ class Player {
         if (shootBtn) {
             shootBtn.addEventListener('touchstart', (e) => {
                 e.preventDefault();
-                if (this.bullets > 0 && !this.isStunned) this.shoot();
+                // Check heavyAmmo if player has the Bow, otherwise check standard bullets
+                const canShoot = this.hasBow ? this.heavyAmmo > 0 : this.bullets > 0;
+                if (canShoot && !this.isStunned) this.shoot();
             });
         }
 
@@ -180,7 +184,12 @@ class Player {
             return; // Stop the shot
         }
 
-        this.bullets--;
+        if (this.hasBow) {
+            this.heavyAmmo--;
+        } else {
+            this.bullets--;
+        }
+
         this.updateUI();
 
         const projectileType = this.hasBow ? 'arrow' : 'bullet';
@@ -212,12 +221,25 @@ class Player {
 
     updateUI() {
         const bulletDisplay = document.getElementById('bullet-display');
+        const heavyDisplay = document.getElementById('heavy-ammo-display');
+
         if (bulletDisplay) {
-            let label = "BULLETS";
-            if (this.hasBow) {
-                label = currentLevelNum === 3 ? "GRENADES" : "ARROWS";
+            bulletDisplay.innerText = `BULLETS: ${this.bullets}`;
+        }
+
+        if (heavyDisplay) {
+            // UPDATED: Show count if the player has the weapon OR has ammo stored
+            if (this.hasBow || this.heavyAmmo > 0) {
+                let label = "ARROWS";
+                // Safety check for the global level variable
+                const level = (typeof currentLevelNum !== 'undefined') ? currentLevelNum : 1;
+                if (level === 2) label = "DARTS";
+                if (level === 3) label = "GRENADES";
+
+                heavyDisplay.innerText = `${label}: ${this.heavyAmmo}`;
+            } else {
+                heavyDisplay.innerText = ""; // Hide if no ammo and no weapon
             }
-            bulletDisplay.innerText = `${label}: ${this.bullets}`;
         }
     }
 

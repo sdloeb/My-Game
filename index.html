@@ -1,8 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>8-Bit Side Scroller</title>
     <style>
         /* 1. LAYOUT & BACKGROUND */
@@ -49,9 +51,32 @@
             font-size: 8px;
         }
 
-        #level-display { float: left; color: white; text-shadow: 1px 1px #000; }
-        #bullet-display { float: left; color: #ffd700; margin-left: 10px; text-shadow: 1px 1px #000; }
-        #timer-display { float: right; color: #ff0000; font-weight: bold; text-shadow: 1px 1px #000; }
+        #level-display {
+            float: left;
+            color: white;
+            text-shadow: 1px 1px #000;
+        }
+
+        #bullet-display {
+            float: left;
+            color: #ffd700;
+            margin-left: 10px;
+            text-shadow: 1px 1px #000;
+        }
+
+        #heavy-ammo-display {
+            float: left;
+            color: #00ffff;
+            margin-left: 10px;
+            text-shadow: 1px 1px #000;
+        }
+
+        #timer-display {
+            float: right;
+            color: #ff0000;
+            font-weight: bold;
+            text-shadow: 1px 1px #000;
+        }
 
         #start-overlay {
             position: absolute;
@@ -82,29 +107,35 @@
         }
 
         /* Add this inside your <style> tag */
-#touch-controls > div:first-child {
-    margin-left: 5px; /* Adjust this number to move them exactly where you want */
+        #touch-controls>div:first-child {
+            margin-left: 5px;
+        }
+
+        /* Adjust this number to move them exactly where you want */
 
 
-#god-mode-ui {
-    margin-top: 20px;
-    padding: 8px 16px;
-    background: rgba(255, 255, 255, 0.1);
-    border: 2px solid #fff;
-    cursor: pointer;
-    font-size: 12px;
-    pointer-events: auto; /* Ensures it is clickable */
-}
-#god-mode-ui:hover {
-    background: rgba(255, 255, 255, 0.3);
-}
+        #god-mode-ui {
+            margin-top: 20px;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #fff;
+            cursor: pointer;
+            font-size: 12px;
+            pointer-events: auto;
+            /* Ensures it is clickable */
+        }
 
-}
+        #god-mode-ui:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
 
-/* This pushes the Shoot and Jump buttons further left from the right edge */
-#touch-controls > div:last-child {
-    margin-right: 80px; /* Increase this number to move them further toward the middle */
-}
+
+
+        /* This pushes the Shoot and Jump buttons further left from the right edge */
+        #touch-controls>div:last-child {
+            margin-right: 80px;
+            /* Increase this number to move them further toward the middle */
+        }
 
 
 
@@ -120,35 +151,39 @@
         }
 
         @media (hover: hover) {
-            #touch-controls { display: none; }
+            #touch-controls {
+                display: none;
+            }
         }
     </style>
 </head>
+
 <body>
 
     <div id="game-container">
         <div id="start-overlay" onclick="startFullScreen()">
-    <h1>8-BIT ADVENTURE</h1>
-    <p>CLICK TO START</p>
-    <div id="god-mode-ui" onclick="toggleGodMode(event)">GOD MODE: OFF</div>
-</div>
+            <h1>8-BIT ADVENTURE</h1>
+            <p>CLICK TO START</p>
+            <div id="god-mode-ui" onclick="toggleGodMode(event)">GOD MODE: OFF</div>
+        </div>
 
         <div id="ui-container">
             <div id="level-display">Level 1-1</div>
             <div id="bullet-display">0</div>
+            <div id="heavy-ammo-display"></div>
             <div id="timer-display">TIME: 120</div>
         </div>
 
-   <div id="touch-controls">
-    <div style="display: flex; gap: 5px;"> <button id="btn-left">◀</button>
-        <button id="btn-right">▶</button>
-    </div>
+        <div id="touch-controls">
+            <div style="display: flex; gap: 5px;"> <button id="btn-left">◀</button>
+                <button id="btn-right">▶</button>
+            </div>
 
-  <div style="display: flex; gap: 5px;">
-    <button id="btn-down" style="margin-right: 40px;">▼</button>
-     <button id="btn-shoot">B</button>
-    <button id="btn-up">▲</button>
-</div>
+            <div style="display: flex; gap: 5px;">
+                <button id="btn-down" style="margin-right: 40px;">▼</button>
+                <button id="btn-shoot">B</button>
+                <button id="btn-up">▲</button>
+            </div>
         </div>
 
         <canvas id="gameCanvas"></canvas>
@@ -162,83 +197,84 @@
 
     <script>
 
-function toggleGodMode(e) {
-    e.stopPropagation(); // Stops the game from starting when you click this
+        function toggleGodMode(e) {
+            e.stopPropagation(); // Stops the game from starting when you click this
 
-    // Toggle the variable in game.js
-    isGodMode = !isGodMode;
+            // Toggle the variable in game.js
+            isGodMode = !isGodMode;
 
-    // Update the button text
-    const ui = document.getElementById('god-mode-ui');
-    ui.innerText = "GOD MODE: " + (isGodMode ? "ON" : "OFF");
-    ui.style.color = isGodMode ? "#00ff00" : "#ff0000";
-}
-
-
-
-    function applyResponsiveScale() {
-        const container = document.getElementById('game-container');
-        const canvas = document.getElementById('gameCanvas');
-        if (!container || !canvas) return;
-
-        const winW = window.innerWidth;
-        const winH = window.innerHeight;
-
-        // 1. We keep the game height fixed at 224 pixels internally
-        const targetHeight = 224;
-
-        // 2. We calculate a width based on your ACTUAL screen shape
-        // This removes the "empty space" on the sides in landscape
-        const aspectRatio = winW / winH;
-        const targetWidth = Math.floor(targetHeight * aspectRatio);
-
-        // 3. Update the Canvas and Global Variables
-        canvas.width = targetWidth;
-        canvas.height = targetHeight;
-
-        if (typeof CANVAS_WIDTH !== 'undefined') {
-            CANVAS_WIDTH = targetWidth; // Updates the let CANVAS_WIDTH in game.js
+            // Update the button text
+            const ui = document.getElementById('god-mode-ui');
+            ui.innerText = "GOD MODE: " + (isGodMode ? "ON" : "OFF");
+            ui.style.color = isGodMode ? "#00ff00" : "#ff0000";
         }
 
-        if (bg) bg.canvasWidth = targetWidth;
 
-        // 4. Position the container exactly in the center
-        container.style.width = targetWidth + "px";
-        container.style.height = targetHeight + "px";
-        container.style.marginLeft = -(targetWidth / 2) + "px";
-        container.style.marginTop = -(targetHeight / 2) + "px";
 
-        // 5. THE BIG FIX: Scale to fill the ENTIRE window height
-        // We multiply by 0.98 just to keep a tiny border visible
-        const finalScale = (winH / targetHeight) * 0.98;
-        container.style.transform = `scale(${finalScale})`;
-    }
+        function applyResponsiveScale() {
+            const container = document.getElementById('game-container');
+            const canvas = document.getElementById('gameCanvas');
+            if (!container || !canvas) return;
 
-    function startFullScreen() {
-        const overlay = document.getElementById('start-overlay');
-        overlay.style.display = 'none';
+            const winW = window.innerWidth;
+            const winH = window.innerHeight;
 
-        // Start logic from game.js
-        if (typeof init === "function") {
-            init();
+            // 1. We keep the game height fixed at 224 pixels internally
+            const targetHeight = 224;
+
+            // 2. We calculate a width based on your ACTUAL screen shape
+            // This removes the "empty space" on the sides in landscape
+            const aspectRatio = winW / winH;
+            const targetWidth = Math.floor(targetHeight * aspectRatio);
+
+            // 3. Update the Canvas and Global Variables
+            canvas.width = targetWidth;
+            canvas.height = targetHeight;
+
+            if (typeof CANVAS_WIDTH !== 'undefined') {
+                CANVAS_WIDTH = targetWidth; // Updates the let CANVAS_WIDTH in game.js
+            }
+
+            if (bg) bg.canvasWidth = targetWidth;
+
+            // 4. Position the container exactly in the center
+            container.style.width = targetWidth + "px";
+            container.style.height = targetHeight + "px";
+            container.style.marginLeft = -(targetWidth / 2) + "px";
+            container.style.marginTop = -(targetHeight / 2) + "px";
+
+            // 5. THE BIG FIX: Scale to fill the ENTIRE window height
+            // We multiply by 0.98 just to keep a tiny border visible
+            const finalScale = (winH / targetHeight) * 0.98;
+            container.style.transform = `scale(${finalScale})`;
         }
 
-        // Attempt Fullscreen for mobile users
-        if (document.documentElement.requestFullscreen) {
-            document.documentElement.requestFullscreen();
-        } else if (document.documentElement.webkitRequestFullscreen) {
-            document.documentElement.webkitRequestFullscreen();
+        function startFullScreen() {
+            const overlay = document.getElementById('start-overlay');
+            overlay.style.display = 'none';
+
+            // Start logic from game.js
+            if (typeof init === "function") {
+                init();
+            }
+
+            // Attempt Fullscreen for mobile users
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen();
+            } else if (document.documentElement.webkitRequestFullscreen) {
+                document.documentElement.webkitRequestFullscreen();
+            }
+
+            applyResponsiveScale();
         }
-        
+
+        // Handle rotations and window resizing
+        window.addEventListener('resize', applyResponsiveScale);
+        document.addEventListener('fullscreenchange', applyResponsiveScale);
+
+        // Initial call to set size
         applyResponsiveScale();
-    }
-
-    // Handle rotations and window resizing
-    window.addEventListener('resize', applyResponsiveScale);
-    document.addEventListener('fullscreenchange', applyResponsiveScale);
-    
-    // Initial call to set size
-    applyResponsiveScale();
-</script>
+    </script>
 </body>
+
 </html>

@@ -634,6 +634,9 @@ function update() {
                     levelKills++;
                     if (en.type === 'fireMonster') {
                         fg.dropStar(en.x, en.y);
+                    } else {
+                        // Drop ammo for all other standard enemies
+                        fg.dropAmmo(en.x + en.width / 2, en.y + en.height / 2);
                     }
                     if (levelKills % 4 === 0) {
                         activeBubbles.push({
@@ -784,10 +787,10 @@ function update() {
                     // Only play sound if it's the Player (!p.isEnemyBullet) or the Fire Monster (p.isFireball)
                     if (typeof playBrickSound === 'function' && (!p.isEnemyBullet || p.isFireball)) playBrickSound();
 
-                  // Only trigger the flag if the Player (!p.isEnemyBullet) or a Fireball (p.isFireball) hits the brick
-if (plat.isCheckpointCandidate && (!p.isEnemyBullet || p.isFireball)) {
-    fg.activeFlag = { x: plat.x, y: plat.y - 40, collected: false };
-}
+                    // Only trigger the flag if the Player (!p.isEnemyBullet) or a Fireball (p.isFireball) hits the brick
+                    if (plat.isCheckpointCandidate && (!p.isEnemyBullet || p.isFireball)) {
+                        fg.activeFlag = { x: plat.x, y: plat.y - 40, collected: false };
+                    }
 
                     // UPDATED: Bullet Hit Logic with Cooldown and 2-hit destruction
                     // Only allow player bullets (!p.isEnemyBullet) OR Fireballs (p.isFireball) to crack bricks
@@ -1100,7 +1103,8 @@ function handlePlayerDeath(deathType) {
     if (typeof playDeathSound === 'function') playDeathSound();
     // 1. Reset player state common to all deaths
     player.hasBow = false;
-    player.bullets = 5;
+    player.bullets = 0;
+    player.heavyAmmo = 0;
     player.updateUI();
     projectiles = [];
     player.isStunned = false;

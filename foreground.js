@@ -37,6 +37,7 @@ class Foreground {
         this.star = null;
         this.clock = null;
         this.activeFlag = null;
+        this.ammoDrops = []; // Track dropped ammunition
 
         this.brickColors = { main: '#bc4a24', shadow: '#541800', highlight: '#f8b800' };
         this.elevatorColors = {
@@ -142,6 +143,7 @@ class Foreground {
             // RESTORE GUN: Remove bow and give bullets
             player.hasBow = false;
             player.bullets = 10;
+            player.heavyAmmo = 0;
             player.updateUI();
 
             const levelDisp = document.getElementById('level-display');
@@ -406,6 +408,7 @@ class Foreground {
         }
 
         this.updateKey(player);
+        this.updateAmmo(player); // Check for ammo collection
 
 
 
@@ -430,7 +433,7 @@ class Foreground {
             if (Math.sqrt(dx * dx + dy * dy) < 20) {
                 this.bow.collected = true;
                 player.hasBow = true;
-                player.bullets = 20;
+                player.heavyAmmo = 0;
                 player.updateUI();
             }
         }
@@ -955,6 +958,31 @@ class Foreground {
             }
         }
 
+        // DRAW DROPPED AMMO
+        this.ammoDrops.forEach(drop => {
+            const screenX = drop.x - cameraX;
+            if (screenX > -30 && screenX < (CANVAS_WIDTH + 30)) {
+                ctx.save();
+                // Add a small bobbing effect to make it look like a pickup
+                const bob = Math.sin(Date.now() / 200) * 3;
+                ctx.translate(screenX, drop.y + bob);
+
+                if (this.level === 1) { // ARROW
+                    ctx.fillStyle = '#7c2d12'; ctx.fillRect(-6, 0, 12, 2);
+                    ctx.fillStyle = '#d1d5db'; ctx.beginPath(); ctx.moveTo(6, -2); ctx.lineTo(12, 1); ctx.lineTo(6, 4); ctx.fill();
+                    ctx.fillStyle = '#ef4444'; ctx.fillRect(-10, -2, 4, 2); ctx.fillRect(-10, 2, 4, 2);
+                } else if (this.level === 2) { // DART
+                    ctx.fillStyle = '#94a3b8'; ctx.fillRect(-4, 0, 10, 2);
+                    ctx.fillStyle = '#f8fafc'; ctx.beginPath(); ctx.moveTo(6, -1); ctx.lineTo(11, 1); ctx.lineTo(6, 3); ctx.fill();
+                    ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.moveTo(-4, 1); ctx.lineTo(-10, -4); ctx.lineTo(-10, 6); ctx.fill();
+                } else if (this.level === 3) { // GRENADE
+                    ctx.fillStyle = '#365314'; ctx.beginPath(); ctx.ellipse(0, 0, 6, 8, 0, 0, Math.PI * 2); ctx.fill();
+                    ctx.fillStyle = '#94a3b8'; ctx.fillRect(-2, -10, 4, 3); ctx.fillRect(-4, -12, 8, 2);
+                }
+                ctx.restore();
+            }
+        });
+
         if (this.activeFlag && !this.activeFlag.collected) {
             const fx = this.activeFlag.x - cameraX;
             if (fx > -20 && fx < (CANVAS_WIDTH + 20)) {
@@ -1206,6 +1234,24 @@ class Foreground {
 
     dropStar(x, y) {
         this.star = { x: x, y: y };
+    }
+
+    dropAmmo(x, y) {
+        this.ammoDrops.push({ x: x, y: y });
+    }
+
+    updateAmmo(player) {
+        for (let i = this.ammoDrops.length - 1; i >= 0; i--) {
+            let a = this.ammoDrops[i];
+            const dx = (player.x + player.width / 2) - a.x;
+            const dy = (player.y + player.height / 2) - a.y;
+            if (Math.sqrt(dx * dx + dy * dy) < 20) {
+                player.heavyAmmo += 1; // Add 1 projectile per drop
+                player.updateUI();
+                if (typeof playCoinSound === 'function') playCoinSound();
+                this.ammoDrops.splice(i, 1);
+            }
+        }
     }
 
 }
