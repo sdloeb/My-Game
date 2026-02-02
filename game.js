@@ -422,7 +422,7 @@ function init() {
     player = new Player(CANVAS_HEIGHT);
 
     // Use loadLevel to ensure all global states are synced from start
-    loadLevel(3);
+    loadLevel(1);
 
     // Listen for oil events
     window.addEventListener('oilSplash', (e) => {
@@ -784,10 +784,10 @@ function update() {
                     // Only play sound if it's the Player (!p.isEnemyBullet) or the Fire Monster (p.isFireball)
                     if (typeof playBrickSound === 'function' && (!p.isEnemyBullet || p.isFireball)) playBrickSound();
 
-                    // NEW: If a bullet (from player OR enemy) hits a checkpoint brick
-                    if (plat.isCheckpointCandidate) {
-                        fg.activeFlag = { x: plat.x, y: plat.y - 40, collected: false };
-                    }
+                  // Only trigger the flag if the Player (!p.isEnemyBullet) or a Fireball (p.isFireball) hits the brick
+if (plat.isCheckpointCandidate && (!p.isEnemyBullet || p.isFireball)) {
+    fg.activeFlag = { x: plat.x, y: plat.y - 40, collected: false };
+}
 
                     // UPDATED: Bullet Hit Logic with Cooldown and 2-hit destruction
                     // Only allow player bullets (!p.isEnemyBullet) OR Fireballs (p.isFireball) to crack bricks
@@ -1159,7 +1159,7 @@ function loadLevel(num, keepTimer = false) {
     }
 
 
-    player.x = 4800; // change starting position back to 125
+    player.x = 125; // change starting position back to 125 end to 4800
     player.y = 100;
     player.velocityX = 0;
     player.velocityY = 0;
