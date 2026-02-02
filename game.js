@@ -458,9 +458,9 @@ function init() {
     window.addEventListener('brickHit', (e) => {
         // 1. SOUND COOLDOWN LOGIC
         const now = Date.now(); // First declaration is fine
-        if (now - lastBrickSoundTime > 50) {
-            // Only play sound if it's NOT an enemy bullet (player) OR it is a fireball (fire monster)
-            if (typeof playBrickSound === 'function' && (!p.isEnemyBullet || p.isFireball)) playBrickSound();
+        if (now - lastBrickSoundTime > 150) { // Increased cooldown to 150ms to prevent double triggers
+            // A head bonk is always the player, so we just play the sound.
+            if (typeof playBrickSound === 'function') playBrickSound();
             lastBrickSoundTime = now;
         }
 
