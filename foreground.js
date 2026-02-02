@@ -165,6 +165,15 @@ class Foreground {
         while (x < lastScreenStart - 40) {
             const rand = Math.random();
             let structureType;
+            let structureWidth = 0;
+            let structureHeight = 0; 
+            let secondaryWidth = 0; 
+            let floatX = x;
+            let startPlatformIndex = this.platforms.length;
+
+
+
+
 
             if (rand < 0.15) {
                 structureType = 0; // Short High Float
@@ -182,20 +191,22 @@ class Foreground {
                 structureType = 6; // NEW: Small High Float (1/2 size)
             }
 
-            let structureWidth = 0;
-            let startPlatformIndex = this.platforms.length;
+
 
             switch (structureType) {
                 case 0: // Float
                     const floatWidth = Math.floor(Math.random() * 4);
                     const floatHeight = 60 + Math.floor(Math.random() * 60);
+                    structureHeight = floatHeight;
                     for (let col = 0; col < floatWidth; col++) {
                         this.platforms.push({ x: x + (col * 16), y: this.groundY - floatHeight, w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
                     }
                     structureWidth = floatWidth * this.tileSize;
+
                     break;
                 case 1: // Steps
                     const steps = 3 + Math.floor(Math.random() * 3);
+                    structureHeight = steps * 16;
                     for (let i = 0; i < steps; i++) {
                         for (let j = 0; j <= i; j++) {
                             this.platforms.push({ x: x + (i * this.tileSize), y: this.groundY - ((j + 1) * this.tileSize), w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
@@ -207,6 +218,7 @@ class Foreground {
                     break;
                 case 2: // Tower
                     const towerHeight = 3 + Math.floor(Math.random() * 5);
+                    structureHeight = towerHeight * 16;
                     for (let row = 0; row < towerHeight; row++) {
                         this.platforms.push({ x: x, y: this.groundY - ((row + 1) * this.tileSize), w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
                         this.platforms.push({ x: x + 16, y: this.groundY - ((row + 1) * this.tileSize), w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
@@ -216,6 +228,7 @@ class Foreground {
                     break;
                 case 3: // Long Width
                     const longWidth = 3 + Math.floor(Math.random() * 8);
+                    structureHeight = 32;
                     for (let col = 0; col < longWidth; col++) {
                         this.platforms.push({ x: x + (col * 16), y: this.groundY - (this.tileSize * 2), w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
                     }
@@ -224,6 +237,7 @@ class Foreground {
                 case 4: // New: High Long Float
                     const longFloatWidth = 5 + Math.floor(Math.random() * 6);
                     const longFloatHeight = 80 + Math.floor(Math.random() * 40); // 80-120 pixels high
+                    structureHeight = longFloatHeight;
                     for (let col = 0; col < longFloatWidth; col++) {
                         this.platforms.push({ x: x + (col * 16), y: this.groundY - longFloatHeight, w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
                     }
@@ -231,6 +245,7 @@ class Foreground {
                     break;
                 case 5: // Small Steps (1/2 size of Type 1)
                     const smallSteps = 2; // Fixed at 2 steps
+                    structureHeight = 32;
                     for (let i = 0; i < smallSteps; i++) {
                         for (let j = 0; j <= i; j++) {
                             this.platforms.push({ x: x + (i * this.tileSize), y: this.groundY - ((j + 1) * this.tileSize), w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
@@ -243,6 +258,7 @@ class Foreground {
                 case 6: // Small High Float (1/2 size of Type 4)
                     const smallFloatWidth = 4 + Math.floor(Math.random() * 3); // 4-6 bricks wide
                     const smallFloatHeight = 80 + Math.floor(Math.random() * 40);
+                    structureHeight = smallFloatHeight;
                     for (let col = 0; col < smallFloatWidth; col++) {
                         this.platforms.push({ x: x + (col * 16), y: this.groundY - smallFloatHeight, w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
                     }
@@ -250,6 +266,7 @@ class Foreground {
                     break;
             }
 
+            // 1. Push the main structure
             this.structures.push({
                 x: x,
                 width: structureWidth,
@@ -258,9 +275,60 @@ class Foreground {
                 isSignaled: false
             });
 
-            //gap between structures
-            const gap = 40 + Math.random() * 150;
-            x += structureWidth + gap;
+            // 2. OVERLAP LOGIC: Check for a secondary floating structure
+           
+            const isGrounded = [1, 2, 3, 5].includes(structureType);
+
+            // 40% chance to overlap a float, with at least 3 bricks (48px) of clear vertical space
+            if (isGrounded && Math.random() < 0.4 && structureHeight < 120) {
+                const floatType = [0, 4, 6][Math.floor(Math.random() * 3)];
+                floatX = x + (Math.floor(Math.random() * 5) - 2) * 16;
+                let floatStartIdx = this.platforms.length;
+
+                // Sets height to: grounded height + 48px space + 16px for the brick itself (64px total)
+                const fHeight = Math.min(180, structureHeight + 64 + Math.floor(Math.random() * 20));
+
+                switch (floatType) {
+                    case 0: // Short High Float
+                        const fWidth0 = Math.floor(Math.random() * 4);
+                        for (let col = 0; col < fWidth0; col++) {
+                            this.platforms.push({ x: floatX + (col * 16), y: this.groundY - fHeight, w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
+                        }
+                        secondaryWidth = fWidth0 * this.tileSize;
+                        break;
+                    case 4: // Long High Float
+                        const fWidth4 = 5 + Math.floor(Math.random() * 6);
+                        for (let col = 0; col < fWidth4; col++) {
+                            this.platforms.push({ x: floatX + (col * 16), y: this.groundY - fHeight, w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
+                        }
+                        secondaryWidth = fWidth4 * this.tileSize;
+                        break;
+                    case 6: // Small High Float
+                        const fWidth6 = 4 + Math.floor(Math.random() * 3);
+                        for (let col = 0; col < fWidth6; col++) {
+                            this.platforms.push({ x: floatX + (col * 16), y: this.groundY - fHeight, w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
+                        }
+                        secondaryWidth = fWidth6 * this.tileSize;
+                        break;
+                }
+
+                // Register the secondary structure for background signals
+                this.structures.push({
+                    x: floatX,
+                    width: secondaryWidth,
+                    platforms: this.platforms.slice(floatStartIdx),
+                    secretCount: 0,
+                    isSignaled: false
+                });
+            }
+
+            // 3. Advance X based on the wider of the two structures
+            const gap = 80 + Math.random() * 140;
+            const mainEnd = x + structureWidth;
+            const secondaryEnd = floatX + secondaryWidth;
+            const totalWidthReached = Math.max(mainEnd, secondaryEnd) - x;
+
+            x += totalWidthReached + gap;
         }
 
         // 2. Assign Clock Secrets
