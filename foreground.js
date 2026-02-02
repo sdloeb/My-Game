@@ -968,6 +968,16 @@ class Foreground {
 
                 // --- UPDATED: DENSE FLOATING SPARK PARTICLES ---
                 if (drop.isFire) {
+                    // --- NEW: PULSING RING EFFECT ---
+                    const ringTime = (Date.now() / 1000) % 1.2; // 1.2 second loop
+                    const ringRadius = ringTime * 25;           // Expands to 25px
+                    const ringOpacity = 1 - (ringTime / 1.2);   // Fades out
+                    
+                    ctx.strokeStyle = `rgba(251, 146, 60, ${ringOpacity})`; // Fire Orange
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, ringRadius, 0, Math.PI * 2);
+                    ctx.stroke();
                     // Increased from 3 to 8 particles for a "hotter" look
                     for (let i = 0; i < 8; i++) {
                         // We use i * 0.7 to stagger the timing of each particle
