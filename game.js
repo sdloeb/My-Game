@@ -1242,18 +1242,31 @@ function spawnEnemies() {
     // 2. Get the specific counts for the current level
     const counts = levelEnemies[currentLevelNum] || defaultEnemies;
 
-    // 3. Helper function to spawn a specific type multiple times
-    const spawnType = (type, count) => {
-        for (let i = 0; i < count; i++) {
-            const rx = 400 + (Math.random() * (fg.portalX - 900));
-            const spawnY = type === 'spider' ? fg.groundY - 12 : fg.groundY - 24;
-            enemies.push(new Enemy(type, rx, spawnY));
-        }
-    };
-
-    // 4. Run the spawner for each type defined in your config
+    // 3. Create a list of all minion types to be spawned for the level
+    let minionList = [];
     Object.keys(counts).forEach(type => {
-        spawnType(type, counts[type]);
+        for (let i = 0; i < counts[type]; i++) {
+            minionList.push(type);
+        }
+    });
+
+    // Shuffle the list so the order of skeletons/zombies/spiders is random
+    minionList.sort(() => Math.random() - 0.5);
+
+    // 4. Segmented Spawning: Divide the map into equal zones
+    const spawnStart = 400;
+    const spawnEnd = fg.portalX - 900;
+    const totalDist = spawnEnd - spawnStart;
+    const segmentWidth = totalDist / minionList.length;
+
+    minionList.forEach((type, i) => {
+        // Each enemy is assigned to its own segment of the map
+        const segmentX = spawnStart + (i * segmentWidth);
+        // Randomize position strictly WITHIN its segment to prevent clumping
+        const rx = segmentX + (Math.random() * (segmentWidth - 20));
+
+        const spawnY = type === 'spider' ? fg.groundY - 12 : fg.groundY - 24;
+        enemies.push(new Enemy(type, rx, spawnY));
     });
 
     const secSize = fg.portalX / 9;
