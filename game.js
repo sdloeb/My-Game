@@ -1177,11 +1177,10 @@ function handlePlayerDeath(deathType) {
     if (typeof playIceSlideSound === 'function') playIceSlideSound(false);
     if (typeof playDeathSound === 'function') playDeathSound();
 
-    // 1. STORE CURRENT RESOURCES
+    // 1. STORE CURRENT RESOURCES (Bullets are always kept)
     const currentBullets = player.bullets;
-    const currentHeavyAmmo = player.heavyAmmo;
 
-    // 2. RESET ALL PLAYER STATES
+    // 2. RESET PHYSICAL STATES
     player.isEndingLevel = false;
     player.shrinkScale = 1.0;
     player.rotation = 0;
@@ -1192,7 +1191,7 @@ function handlePlayerDeath(deathType) {
     player.bubbleTimer = 0;
     projectiles = [];
 
-    // Clear weapon/key states initially so checkpoint logic can re-apply them correctly
+    // Default: Clear active weapon states; Section 5 will restore them if valid
     player.hasBow = false;
     if (fg) fg.hasKey = false;
 
@@ -1205,16 +1204,16 @@ function handlePlayerDeath(deathType) {
     const cp = globalCheckpoints[currentLevelNum];
     let forceRestart = false;
 
-    // 4. CHECK FOR SPECIAL "END GATE" RESTART RULE
-    // Restarts level if killed by Boss or Timeout while holding the Bow
-    if ((deathType === 'boss' || deathType === 'timeout') && collectedLevelWeapons[currentLevelNum]) {
-        // Force restart if no checkpoint exists OR if the checkpoint is before the Bow gate
-        if (!cp || cp.x < fg.bow.x) {
-            forceRestart = true;
-        }
+    // 4. SPECIAL "END GATE" RULE (Boss/Timeout with Bow)
+    // If holding Bow and die by Boss or Timeout, lose Bow, lose Fire Monster trigger, lose ammo.
+    if (collectedLevelWeapons[currentLevelNum] && (deathType === 'boss' || deathType === 'timeout')) {
+        collectedLevelItems[currentLevelNum] = false;  // Lose Fire Monster projectile trigger
+        collectedLevelWeapons[currentLevelNum] = false; // Lose Bow trigger
+        player.heavyAmmo = 0; // Lose all projectile ammo
+        forceRestart = true;
     }
 
-    // 5. CHECKPOINT RETURN LOGIC
+    // 5. CHECKPOINT LOGIC (Current Level Only - No fallback to previous levels)
     if (!forceRestart && cp) {
         player.x = cp.x;
         player.y = cp.y - player.height;
@@ -1222,31 +1221,19 @@ function handlePlayerDeath(deathType) {
         player.velocityY = 0;
 
         player.bullets = currentBullets;
-        player.heavyAmmo = currentHeavyAmmo;
+        player.heavyAmmo = 0; // "Lose projectiles" (ammo count) on standard death
 
-        if (deathType === 'timeout' && fg) fg.resetTimer();
-
-        // --- FIRE MONSTER / PROJECTILE PERSISTENCE ---
-        const pastFireMonster = (fg && fg.fireAmmoCollectedX !== -1 && cp.x >= fg.fireAmmoCollectedX);
-
-        if (pastFireMonster || collectedLevelItems[currentLevelNum]) {
-            // Keep the projectile state but do NOT give the Bow visual here
-            fg.hasKey = true;
-            collectedLevelItems[currentLevelNum] = true;
-        } else {
-            // Respawn Fire Monster by reloading the level
-            collectedLevelItems[currentLevelNum] = false;
-            loadLevel(currentLevelNum, true);
-
-            player.x = cp.x;
-            player.y = cp.y - player.height;
-            player.bullets = currentBullets;
-            player.heavyAmmo = 0;
-            fg.hasKey = false;
+        if (deathType === 'timeout' && fg) {
+            fg.resetTimer();
         }
 
-        // --- GATE WEAPON PERSISTENCE ---
-        // Restore Bow ONLY if they had picked it up at the gate previously
+        // --- RESTORE PERSISTENT TRIGGER STATES ---
+        // Restore Fire Monster ability if earned and not stripped by the rule in Section 4
+        if (collectedLevelItems[currentLevelNum]) {
+            if (fg) fg.hasKey = true;
+        }
+
+        // Restore Bow visual if not lost
         if (collectedLevelWeapons[currentLevelNum]) {
             player.hasBow = true;
         }
@@ -1255,15 +1242,13 @@ function handlePlayerDeath(deathType) {
         return;
     }
 
-    // 6. FULL LEVEL RESTART LOGIC
-    player.hasBow = false;
+    // 6. FULL LEVEL RESTART (Restart current level from beginning)
+    // Used if no checkpoint exists on the current level or forceRestart is true.
     player.heavyAmmo = 0;
-    collectedLevelItems[currentLevelNum] = false;
-    collectedLevelWeapons[currentLevelNum] = false; // Player loses the Gate weapon
 
     loadLevel(currentLevelNum);
 
-    player.bullets = currentBullets;
+    player.bullets = currentBullets; // Ensure bullets are kept across the level reload
     player.updateUI();
 }
 
@@ -1283,20 +1268,20 @@ function loadLevel(num, keepTimer = false) {
     currentKilledStreak = 0;
     player.inBubble = false;
 
-    // Ensure weapon and ammo states are reset for the physical player
+    // Clear active weapon visual and ammo count for the start of the level
     player.hasBow = false;
     player.heavyAmmo = 0;
 
     projectiles = [];
     spawnEnemies();
 
-    // Apply persistent states if items were already collected
+    // Restore persistent states if already collected
     if (collectedStars[num]) {
         fg.hasStar = true;
         fg.star = null;
     }
 
-    // Restore projectile ability if fire monster was killed
+    // Restore the Fire Monster projectile trigger if it was earned
     if (collectedLevelItems[num]) {
         fg.hasKey = true;
     }
@@ -1347,17 +1332,16 @@ function spawnEnemies() {
     });
 
     // 5. Fire Monster Spawning (Only spawn if NOT already collected)
-    // This ensures that once the Fire Monster is beaten, it stays gone after a checkpoint death
     if (!collectedLevelItems[currentLevelNum]) {
-        const minX = fg.portalX * 0.3; // Starts around 1500px on a 5000px map
-        const maxX = fg.portalX * 0.7; // Ends around 3500px
+        const secSize = fg.portalX / 9;
+        const minX = secSize * 3;
+        const maxX = secSize * 6;
         const fireX = minX + Math.random() * (maxX - minX - 16);
         enemies.push(new Enemy('fireMonster', fireX, fg.groundY - 24, minX, maxX));
     }
+} // Closes spawnEnemies
 
-} // This brace closes spawnEnemies correctly
 
-// --- NOW THESE ARE IN THE GLOBAL SCOPE SO THE GAME CAN FIND THEM ---
 
 function playOilSound() {
     if (!audioCtx) return;
