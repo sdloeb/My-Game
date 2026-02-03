@@ -163,7 +163,7 @@ class Foreground {
         const lastScreenStart = this.portalX - CANVAS_WIDTH;
 
         // 1. Generate the world structures
-        while (x < lastScreenStart - 40) {
+        while (x < this.portalX - 300) {
             const rand = Math.random();
             let structureType;
             let structureWidth = 0;
@@ -303,6 +303,7 @@ class Foreground {
                         for (let col = 0; col < p.w; col++) {
                             this.platforms.push({
                                 x: x + p.xOff + (col * 16),
+
                                 y: this.groundY - p.y,
                                 w: 1, h: 1,
                                 hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2
@@ -447,7 +448,7 @@ class Foreground {
 
 
         // 7. Generate Hazards
-        for (let hx = 300; hx < lastScreenStart; hx += 150) {
+        for (let hx = 300; hx < this.portalX - 300; hx += 150) {
             if (Math.random() > 0.3) {
                 const hWidth = 30 + Math.random() * 48;
                 const rand = Math.random();

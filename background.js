@@ -68,7 +68,7 @@ class Background {
         let bx = 0;
         // 1. CHOOSE YOUR STOP POINT
         // This is the point in the Foreground where you want the buildings to end.
-        const foregroundStopPoint = 4600;
+        const foregroundStopPoint = 4700;
 
         // 2. CALCULATE LIMIT BASED ON PARALLAX
         // City buildings (Level 1) use 0.5 parallax.
@@ -105,7 +105,7 @@ class Background {
         // 1. CHOOSE YOUR STOP POINT
         // This is the point in the "Foreground" (where the player walks) 
         // where you want the background to be completely empty.
-        const foregroundStopPoint = 4600;
+        const foregroundStopPoint = 4700;
 
         // 2. GENERATE BUILDINGS/TENTS (0.8 Parallax)
         // We multiply the stop point by 0.8 so the background ends exactly 

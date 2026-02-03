@@ -1238,7 +1238,7 @@ function loadLevel(num, keepTimer = false) {
     }
 
 
-    player.x = 125; // change starting position back to 125 end to 4800
+    player.x = 125; // change starting position back to 125 end to 4500
     player.y = 100;
     player.velocityX = 0;
     player.velocityY = 0;
