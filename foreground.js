@@ -395,7 +395,7 @@ class Foreground {
         }
 
         // 2. Assign Clock Secrets
-        const clockCandidates = this.platforms.filter(p => !this.platforms.some(other => other.x === p.x && other.y < p.y) && p.x > CANVAS_WIDTH && p.x < this.portalX - 500);
+        const clockCandidates = this.platforms.filter(p => !this.platforms.some(other => other.x === p.x && other.y < p.y) && p.x > CANVAS_WIDTH && p.x < this.portalX - 150);
         for (let i = 0; i < 5; i++) {
             if (clockCandidates.length > 0) {
                 const idx = Math.floor(Math.random() * clockCandidates.length);
@@ -429,7 +429,7 @@ class Foreground {
         });
 
         // 5. Assign Flying Secret Bricks
-        const flyingCandidates = this.platforms.filter(p => !p.hasClock && !p.isCheckpointCandidate && p.x > 500 && p.x < this.portalX - 600 && !this.platforms.some(other => other.x === p.x && other.y < p.y));
+        const flyingCandidates = this.platforms.filter(p => !p.hasClock && !p.isCheckpointCandidate && p.x > 150 && p.x < this.portalX - 600 && !this.platforms.some(other => other.x === p.x && other.y < p.y));
         for (let i = 0; i < 5; i++) {
             if (flyingCandidates.length > 0) {
                 const idx = Math.floor(Math.random() * flyingCandidates.length);
