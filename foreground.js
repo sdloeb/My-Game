@@ -591,6 +591,11 @@ class Foreground {
                 player.hasBow = true;
                 collectedLevelWeapons[this.level] = true;
                 player.updateUI();
+                if (player.inBubble) {
+                    player.inBubble = false;
+                    player.bubbleTimer = 0;
+                    if (typeof playPopSound === 'function') playPopSound(); // Optional: plays the pop sound
+                }
             }
         }
 
