@@ -652,6 +652,18 @@ function update() {
     for (let eIdx = enemies.length - 1; eIdx >= 0; eIdx--) {
         const en = enemies[eIdx];
 
+        // --- NEW: CONTACT DEATH DETECTION ---
+        // Checks if the player physically overlaps an enemy or boss
+        if (!isGodMode && !player.isEndingLevel && !player.inBubble && !player.isStunned) {
+            // Smaller hitbox for player to avoid "cheap" feeling deaths
+            const pBox = { x: player.x + 4, y: player.y, w: player.width - 8, h: player.height };
+            if (pBox.x + pBox.w > en.x && pBox.x < en.x + en.width &&
+                pBox.y + pBox.h > en.y && pBox.y < en.y + en.height) {
+                handlePlayerDeath(en.isBoss ? 'boss' : 'enemy');
+                return;
+            }
+        }
+
         if (en.isBoss) {
             en.update(projectiles, player);
         } else {
@@ -825,13 +837,12 @@ function update() {
             if (p.x > player.x && p.x < player.x + player.width &&
                 p.y > player.y && p.y < player.y + player.height) {
                 if (player.inBubble) {
-                    // NEW: Pop the bubble instead of killing the player
                     player.inBubble = false;
                     player.bubbleTimer = 0;
                 } else {
-                    // Pass 'enemy' so it always uses the checkpoint logic instead of restarting the level
-                    handlePlayerDeath('enemy');
-                    return; // Added safety return to prevent the freeze mentioned earlier
+                    // UPDATED: Pass 'boss' if the bullet came from the boss for specific restart rules
+                    handlePlayerDeath(p.fromBoss ? 'boss' : 'enemy');
+                    return;
                 }
                 projectiles.splice(i, 1);
                 continue;
@@ -1166,7 +1177,11 @@ function handlePlayerDeath(deathType) {
     if (typeof playIceSlideSound === 'function') playIceSlideSound(false);
     if (typeof playDeathSound === 'function') playDeathSound();
 
-    // 1. RESET ALL PLAYER STATES (Crucial so you don't respawn stunned/trapped)
+    // 1. STORE CURRENT RESOURCES
+    const currentBullets = player.bullets;
+    const currentHeavyAmmo = player.heavyAmmo;
+
+    // 2. RESET ALL PLAYER STATES
     player.isEndingLevel = false;
     player.shrinkScale = 1.0;
     player.rotation = 0;
@@ -1177,72 +1192,79 @@ function handlePlayerDeath(deathType) {
     player.bubbleTimer = 0;
     projectiles = [];
 
-    // 2. STAR PERMANENCE
-    // Ensures stars don't reappear if they were already collected
+    // Clear weapon/key states initially so checkpoint logic can re-apply them correctly
+    player.hasBow = false;
+    if (fg) fg.hasKey = false;
+
+    // 3. STAR PERMANENCE
     if (fg && collectedStars[currentLevelNum]) {
         fg.hasStar = true;
         fg.star = null;
     }
 
-    // 3. CHECKPOINT LOGIC
-    if (deathType === 'enemy' || deathType === 'quicksand') {
-        const cp = globalCheckpoints[currentLevelNum];
+    const cp = globalCheckpoints[currentLevelNum];
+    let forceRestart = false;
 
-        if (cp) {
-            // NEW: Fire Monster Ammo Logic
-            const wentBackBeforeFireMonster = (fg && fg.fireAmmoCollectedX !== -1 && cp.x < fg.fireAmmoCollectedX);
-
-            if (wentBackBeforeFireMonster) {
-                // If the checkpoint is behind the kill-site, reset and reload the level to respawn the monster
-                collectedLevelItems[currentLevelNum] = false;
-                loadLevel(currentLevelNum, true); // Keep the timer running
-
-                player.x = cp.x;
-                player.y = cp.y - player.height;
-                player.hasBow = false; // Player must fight the Fire Monster again
-                player.heavyAmmo = 0;
-            } else {
-                // If checkpoint is after the kill-site, keep the weapon and ammo
-                player.x = cp.x;
-                player.y = cp.y - player.height;
-
-                if (collectedLevelItems[currentLevelNum]) {
-                    player.hasBow = true;
-                    fg.hasKey = true;
-                    if (player.heavyAmmo <= 0) player.heavyAmmo = 3;
-                }
-
-                // 2. Restore WEAPON status ONLY if they picked it up at the end
-                if (collectedLevelWeapons[currentLevelNum]) {
-                    player.hasBow = true; // Reactivates the Bow/Gun visual and logic
-                } else {
-                    player.hasBow = false; // Ensures they don't get it for free
-                }
-
-
-            }
-
-            player.velocityX = 0;
-            player.velocityY = 0;
-            player.updateUI();
-            return;
-        }
-        // 4. FALLBACK: Go to previous level's checkpoint if this level has none
-        else if (currentLevelNum > 1 && globalCheckpoints[currentLevelNum - 1]) {
-            currentLevelNum--;
-            loadLevel(currentLevelNum, true);
-            const prevCp = globalCheckpoints[currentLevelNum];
-            player.x = prevCp.x;
-            player.y = prevCp.y - player.height;
-            return;
+    // 4. CHECK FOR SPECIAL "END GATE" RESTART RULE
+    // Restarts level if killed by Boss or Timeout while holding the Bow
+    if ((deathType === 'boss' || deathType === 'timeout') && collectedLevelWeapons[currentLevelNum]) {
+        // Force restart if no checkpoint exists OR if the checkpoint is before the Bow gate
+        if (!cp || cp.x < fg.bow.x) {
+            forceRestart = true;
         }
     }
 
-    // 5. FULL RESTART (For Boss, Timeout, or no checkpoints found)
-    player.hasBow = false; // Reset equipment for full restart
-    player.bullets = 0;
+    // 5. CHECKPOINT RETURN LOGIC
+    if (!forceRestart && cp) {
+        player.x = cp.x;
+        player.y = cp.y - player.height;
+        player.velocityX = 0;
+        player.velocityY = 0;
+
+        player.bullets = currentBullets;
+        player.heavyAmmo = currentHeavyAmmo;
+
+        if (deathType === 'timeout' && fg) fg.resetTimer();
+
+        // --- FIRE MONSTER / PROJECTILE PERSISTENCE ---
+        const pastFireMonster = (fg && fg.fireAmmoCollectedX !== -1 && cp.x >= fg.fireAmmoCollectedX);
+
+        if (pastFireMonster || collectedLevelItems[currentLevelNum]) {
+            // Keep the projectile state but do NOT give the Bow visual here
+            fg.hasKey = true;
+            collectedLevelItems[currentLevelNum] = true;
+        } else {
+            // Respawn Fire Monster by reloading the level
+            collectedLevelItems[currentLevelNum] = false;
+            loadLevel(currentLevelNum, true);
+
+            player.x = cp.x;
+            player.y = cp.y - player.height;
+            player.bullets = currentBullets;
+            player.heavyAmmo = 0;
+            fg.hasKey = false;
+        }
+
+        // --- GATE WEAPON PERSISTENCE ---
+        // Restore Bow ONLY if they had picked it up at the gate previously
+        if (collectedLevelWeapons[currentLevelNum]) {
+            player.hasBow = true;
+        }
+
+        player.updateUI();
+        return;
+    }
+
+    // 6. FULL LEVEL RESTART LOGIC
+    player.hasBow = false;
     player.heavyAmmo = 0;
+    collectedLevelItems[currentLevelNum] = false;
+    collectedLevelWeapons[currentLevelNum] = false; // Player loses the Gate weapon
+
     loadLevel(currentLevelNum);
+
+    player.bullets = currentBullets;
+    player.updateUI();
 }
 
 function loadLevel(num, keepTimer = false) {
@@ -1250,13 +1272,9 @@ function loadLevel(num, keepTimer = false) {
     bg = new Background(num, CANVAS_WIDTH, CANVAS_HEIGHT);
     fg = new Foreground(num);
 
-    // Only reset timer if NOT told to keep it
-    if (!keepTimer) {
-        fg.resetTimer();
-    }
+    if (!keepTimer) fg.resetTimer();
 
-
-    player.x = 125; // change starting position back to 125 end to 4500
+    player.x = 125;
     player.y = 100;
     player.velocityX = 0;
     player.velocityY = 0;
@@ -1265,19 +1283,28 @@ function loadLevel(num, keepTimer = false) {
     currentKilledStreak = 0;
     player.inBubble = false;
 
+    // Ensure weapon and ammo states are reset for the physical player
+    player.hasBow = false;
+    player.heavyAmmo = 0;
+
     projectiles = [];
     spawnEnemies();
 
-    if (collectedLevelItems[num]) {
+    // Apply persistent states if items were already collected
+    if (collectedStars[num]) {
         fg.hasStar = true;
         fg.star = null;
+    }
+
+    // Restore projectile ability if fire monster was killed
+    if (collectedLevelItems[num]) {
+        fg.hasKey = true;
     }
 
     const levelDisp = document.getElementById('level-display');
     if (levelDisp) {
         levelDisp.innerText = `Level 1-${num}${collectedStars[num] ? " ⭐" : ""}`;
     }
-
 }
 
 function spawnEnemies() {
@@ -1319,11 +1346,14 @@ function spawnEnemies() {
         enemies.push(new Enemy(type, rx, spawnY));
     });
 
-    const secSize = fg.portalX / 9;
-    const minX = secSize * 3; // Start of section 4
-    const maxX = secSize * 6; // End of section 6
-    const fireX = minX + Math.random() * (maxX - minX - 16);
-    enemies.push(new Enemy('fireMonster', fireX, fg.groundY - 24, minX, maxX));
+    // 5. Fire Monster Spawning (Only spawn if NOT already collected)
+    // This ensures that once the Fire Monster is beaten, it stays gone after a checkpoint death
+    if (!collectedLevelItems[currentLevelNum]) {
+        const minX = fg.portalX * 0.3; // Starts around 1500px on a 5000px map
+        const maxX = fg.portalX * 0.7; // Ends around 3500px
+        const fireX = minX + Math.random() * (maxX - minX - 16);
+        enemies.push(new Enemy('fireMonster', fireX, fg.groundY - 24, minX, maxX));
+    }
 
 } // This brace closes spawnEnemies correctly
 
