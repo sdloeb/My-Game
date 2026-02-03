@@ -269,22 +269,49 @@ class Foreground {
                     }
                     structureWidth = smallFloatWidth * this.tileSize;
                     break;
-                case 7: // The Gateway (Two towers with a bridge)
-                    const gateHeight = 3 + Math.floor(Math.random() * 2);
-                    const gateSpan = 4; // Space between towers
-                    structureHeight = (gateHeight + 1) * 16;
+                case 7: // Option 1: The Triple Stagger (3 Platforms)
+                    const numPlats = 3;
+                    const platData = [];
+                    // Generate 3 platforms with randomized widths and offsets
+                    for (let i = 0; i < numPlats; i++) {
+                        platData.push({
+                            w: 2 + Math.floor(Math.random() * 4),      // 2-5 bricks wide
+                            xOff: Math.floor(Math.random() * 6) * 16, // Random horizontal start
+                            y: 0                                      // Placeholder for height logic
+                        });
+                    }
 
-                    // Draw Towers
-                    for (let row = 0; row < gateHeight; row++) {
-                        this.platforms.push({ x: x, y: this.groundY - ((row + 1) * 16), w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
-                        this.platforms.push({ x: x + (gateSpan + 1) * 16, y: this.groundY - ((row + 1) * 16), w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
-                    }
-                    // Draw Bridge
-                    for (let col = 0; col < gateSpan + 2; col++) {
-                        this.platforms.push({ x: x + (col * 16), y: this.groundY - ((gateHeight + 1) * 16), w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
-                    }
-                    structureWidth = (gateSpan + 2) * 16;
-                    groundOccupiedX.push({ start: x, end: x + structureWidth });
+                    // Assign heights with a guaranteed 2-brick (32px) gap if they overlap on X
+                    // We stagger heights: Low (32-50), Mid (96-114), High (160-180)
+                    // This ensures any overlap always has at least a 46-48px vertical difference
+                    platData[0].y = 32 + Math.floor(Math.random() * 18);
+                    platData[1].y = platData[0].y + 48 + Math.floor(Math.random() * 15);
+                    platData[2].y = platData[1].y + 48 + Math.floor(Math.random() * 15);
+
+                    // Shuffle heights so the "stairs" don't always go in the same direction
+                    platData.sort(() => Math.random() - 0.5);
+
+                    let maxX = 0;
+                    let maxH = 0;
+
+                    // Build the platforms based on the calculated data
+                    platData.forEach(p => {
+                        const pWidthPx = p.w * 16;
+                        if (p.xOff + pWidthPx > maxX) maxX = p.xOff + pWidthPx;
+                        if (p.y > maxH) maxH = p.y;
+
+                        for (let col = 0; col < p.w; col++) {
+                            this.platforms.push({
+                                x: x + p.xOff + (col * 16),
+                                y: this.groundY - p.y,
+                                w: 1, h: 1,
+                                hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2
+                            });
+                        }
+                    });
+
+                    structureWidth = maxX;
+                    structureHeight = maxH;
                     break;
 
                 case 8: // Staggered Floats (Diagonal path upward)
