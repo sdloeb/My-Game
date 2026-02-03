@@ -254,16 +254,6 @@ class Player {
 
     update(groundY, platforms, elevators, groundHazards, coins, fg) {
 
-        // UPDATED: Do not snap to surface if in quicksand
-        if (this.y + this.height >= groundY && !this.inQuicksand) {
-            // Standard ground reset
-            this.y = groundY - this.height;
-            this.velocityY = 0;
-            this.onGround = true;
-            this.onElevator = null;
-            // Reset slam state if you hit the floor
-            if (this.isSlamming) this.isSlamming = false;
-        }
 
 
         if (this.inQuicksand) {
@@ -290,7 +280,7 @@ class Player {
 
             // 2. STRUGGLING: Tapping Up/Jump moves you up slightly
             if (this.keys.up) {
-                this.y -= 12.0;         // The power of a single struggle "tap"
+                this.y -= 2.4;         // The power of a single struggle "tap"
                 this.velocityY = -3.0;  // NEW: Stronger upward momentum to fight gravity
                 this.velocityX = 0;     // NEW: Zero out friction
                 this.keys.up = false; // Force the player to tap again
@@ -299,11 +289,11 @@ class Player {
 
             // 3. ESCAPE CONDITION: Trigger the vault out once the body is mostly visible
             // height is 24, so groundY - 20 means only 4 pixels are submerged
-            const escapeThreshold = groundY - 8;
+            const escapeThreshold = groundY - 12;
             if (this.y <= escapeThreshold) {
                 this.inQuicksand = false;
                 this.onGround = false; // Ensures physics take over correctly
-                this.velocityY = this.jumpForce * 0.9; // Stronger vault out force
+                this.velocityY = this.jumpForce * .9; // Stronger vault out force
                 this.velocityX = this.facingRight ? 3.0 : -3.0; // More horizontal kick
                 return;
             }
@@ -496,7 +486,7 @@ class Player {
         }
 
         // UPDATED: Only snap to the ground if NOT currently sinking in quicksand
-        if (this.y + this.height >= groundY && !this.inQuicksand) {
+        if (this.y + this.height >= groundY && !this.inQuicksand && this.velocityY >= 0) {
             // Standard ground reset
             this.y = groundY - this.height;
             this.velocityY = 0;
@@ -521,7 +511,7 @@ class Player {
                             this.isSlamming = false; // NEW: Stop slamming so you can sink
                             this.velocityX = 0;
                             this.velocityY = 0;
-                            this.y = groundY - 6; // Start slightly submerged
+                            this.y = groundY - 4; // Start slightly submerged
                             this.quicksandTimer = 0;
                         }
 

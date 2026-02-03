@@ -805,21 +805,7 @@ class Foreground {
                     ctx.fillRect(screenX, this.groundY, h.w, 1);
                 }
                 // Inside the loop, after the 'ice' block (else block), add this:
-                else if (h.type === 'quicksand') {
-                    ctx.fillStyle = this.groundColors.quicksand;
-                    // This draws the sand from ground level to the very bottom of the canvas
-                    ctx.fillRect(screenX, this.groundY, h.w, 224 - this.groundY);
 
-                    // Add some "grain" details for texture
-                    ctx.fillStyle = 'rgba(0,0,0,0.1)';
-                    for (let i = 0; i < h.w; i += 8) {
-                        ctx.fillRect(screenX + i + (Math.sin(Date.now() / 500) * 2), this.groundY + 10, 2, 2);
-                    }
-
-
-
-
-                } // Closes the else block
             } // Closes the screen check if-statement
         }); // Closes the forEach loop
 
