@@ -487,6 +487,14 @@ class Player {
 
         // UPDATED: Only snap to the ground if NOT currently sinking in quicksand
         if (this.y + this.height >= groundY && !this.inQuicksand && this.velocityY >= 0) {
+
+            // --- ADDED: BUBBLE BOUNCE ---
+            if (this.inBubble) {
+                this.velocityY = -2.5; // Upward bounce force
+                this.y = groundY - this.height - 2; // Prevent getting stuck in the floor
+                return; // Skip the rest of the landing logic (like snapping to ground)
+            }
+
             // Standard ground reset
             this.y = groundY - this.height;
             this.velocityY = 0;
@@ -593,7 +601,15 @@ class Player {
 
                     // LANDING ON TOP
                     if (minOverlap === overlapTop && this.velocityY >= 0) {
-                        // NEW: If slamming, trigger the brick crack
+
+                        // --- ADDED: BUBBLE BOUNCE FOR BRICKS ---
+                        if (this.inBubble) {
+                            this.velocityY = -2.5;
+                            this.y = p.y - this.height - 2;
+                            return; // Skip standard landing logic for this platform
+                        }
+
+                        // NEW: If slamming, trigger the brick crack (Your existing code)
                         if (this.isSlamming) {
                             window.dispatchEvent(new CustomEvent('brickHit', { detail: { platform: p } }));
                             this.isSlamming = false; // End the slam
