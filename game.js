@@ -439,6 +439,8 @@ let fadeTarget = 0;
 let fadeSpeed = 0.03;
 let pendingLevelChange = false;
 let levelKills = 0;
+let lastKilledType = null;
+let currentKilledStreak = 0;
 let activeBubbles = [];
 let lastBrickSoundTime = 0;
 
@@ -646,30 +648,30 @@ function update() {
         }
     }
 
-    enemies.forEach((en, eIdx) => {
+    // Use a backward loop to prevent skipping enemies when one is killed
+    for (let eIdx = enemies.length - 1; eIdx >= 0; eIdx--) {
+        const en = enemies[eIdx];
+
         if (en.isBoss) {
             en.update(projectiles, player);
         } else {
             en.update(fg.platforms, player, projectiles);
         }
 
-        projectiles.forEach((p, pIdx) => {
-            if (p.isEnemyBullet) return; // Skip enemy bullets hitting themselves
+        // Use a backward loop for projectiles as well
+        for (let pIdx = projectiles.length - 1; pIdx >= 0; pIdx--) {
+            const p = projectiles[pIdx];
+            if (p.isEnemyBullet) continue;
 
             let hit = false;
-
-            // --- NEW: Level 1-3 Boss Tail Collision ---
             if (en.isBoss && fg.level === 3 && p.isArrow) {
                 const tailPos = en.getTailPosition();
                 if (tailPos) {
-                    // Check distance between grenade and the tail ball (offsets match draw logic)
                     const dx = p.x - (tailPos.x + 10);
                     const dy = p.y - (tailPos.y + 6);
                     if (Math.sqrt(dx * dx + dy * dy) < 18) hit = true;
                 }
-            }
-            // --- DEFAULT: Standard Bounding Box (Minions & Level 1 Boss) ---
-            else if (p.x > en.x && p.x < en.x + en.width &&
+            } else if (p.x > en.x && p.x < en.x + en.width &&
                 p.y > en.y && p.y < en.y + en.height) {
                 hit = true;
             }
@@ -682,42 +684,44 @@ function update() {
                     if (isDead) {
                         createShatterEffect(en.x + en.width / 2, en.y + en.height / 2);
                         enemies.splice(eIdx, 1);
-                        // NEW: Drop the key to unlock the portal
                         fg.dropKey();
                     }
                 } else {
-                    // Standard Minion Death logic
+                    // --- MINION DEATH & UPDATED STREAK LOGIC ---
                     if (typeof playEnemySound === 'function') playEnemySound();
                     createShatterEffect(en.x + en.width / 2, en.y + en.height / 2);
+
+                    const deadType = en.type; // Store type before splicing
                     enemies.splice(eIdx, 1);
                     projectiles.splice(pIdx, 1);
                     levelKills++;
-                    if (en.type === 'fireMonster') {
-                        fg.dropAmmo(en.x + en.width / 2, en.y + en.height / 2, true);
-                    } else {
-                        // Drop ammo for all other standard enemies
-                        fg.dropAmmo(en.x + en.width / 2, en.y + en.height / 2, false);
+
+                    // 1. Ignore Fire Monsters for the streak (they no longer reset it)
+                    if (deadType !== 'fireMonster') {
+                        if (deadType === lastKilledType) {
+                            currentKilledStreak++;
+                        } else {
+                            lastKilledType = deadType;
+                            currentKilledStreak = 1;
+                        }
                     }
-                    if (levelKills % 4 === 0) {
+
+                    // 2. Drop Ammo
+                    fg.dropAmmo(en.x + en.width / 2, en.y + en.height / 2, deadType === 'fireMonster');
+
+                    // 3. Trigger Bubble (3 in a row of the same standard enemy)
+                    if (currentKilledStreak === 3) {
                         activeBubbles.push({
-                            x: cameraX + 220,
-                            y: 224,
-                            radius: 18,
-                            vx: -0.5,
-                            vy: -0.8
+                            x: cameraX + 220, y: 224, radius: 18, vx: -0.5, vy: -0.8
                         });
+                        currentKilledStreak = 0; // Reset after success
+                        lastKilledType = null;
                     }
                 }
+                break; // Stop checking other projectiles for this specific enemy
             }
-        });
-
-
-        // PLAYER COLLISION WITH ENEMY/BOSS
-        if (!isGodMode && !player.inBubble && player.x < en.x + en.width && player.x + player.width > en.x &&
-            player.y < en.y + en.height && player.y + player.height > en.y) {
-            handlePlayerDeath(en.isBoss ? 'boss' : 'enemy');
         }
-    });
+    }
 
     // PROJECTILE UPDATES 
     for (let i = projectiles.length - 1; i >= 0; i--) {
@@ -1257,6 +1261,8 @@ function loadLevel(num, keepTimer = false) {
     player.velocityX = 0;
     player.velocityY = 0;
     levelKills = 0;
+    lastKilledType = null;
+    currentKilledStreak = 0;
     player.inBubble = false;
 
     projectiles = [];
