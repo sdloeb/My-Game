@@ -621,7 +621,21 @@ function update() {
     const distance = Math.sqrt(dx * dx + dy * dy);
 
     if (distance < 20 && !player.isEndingLevel) {
-        if (fg.hasStar) {
+        // CHANGED: Use !fg.portalLocked instead of fg.hasStar
+        if (!fg.portalLocked) {
+            player.startPortalSuck(fg.portal.x, fg.portal.y);
+        } else {
+            const timerElement = document.getElementById('timer-display');
+            if (timerElement) {
+                // CHANGED: Update the message to reflect the actual requirement
+                timerElement.innerText = "NEED KEY!";
+                timerElement.style.color = "#ffff00";
+            }
+        }
+    }
+
+    if (distance < 20 && !player.isEndingLevel) {
+        if (fg.hasStar || !fg.portalLocked) {
             player.startPortalSuck(fg.portal.x, fg.portal.y);
         } else {
             const timerElement = document.getElementById('timer-display');
