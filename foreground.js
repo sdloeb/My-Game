@@ -176,20 +176,24 @@ class Foreground {
 
 
 
-            if (rand < 0.15) {
+            if (rand < 0.12) {
                 structureType = 0; // Short High Float
-            } else if (rand < 0.30) {
+            } else if (rand < 0.24) {
                 structureType = 4; // Long High Float
-            } else if (rand < 0.45) {
+            } else if (rand < 0.36) {
                 structureType = 3; // Low horizontal lines
-            } else if (rand < 0.60) {
+            } else if (rand < 0.48) {
                 structureType = 1; // Steps
-            } else if (rand < 0.75) {
+            } else if (rand < 0.60) {
                 structureType = 2; // Towers
-            } else if (rand < 0.88) {
-                structureType = 5; // NEW: Small Steps (1/2 size)
+            } else if (rand < 0.72) {
+                structureType = 5; // Small Steps
+            } else if (rand < 0.84) {
+                structureType = 6; // Small High Float
+            } else if (rand < 0.92) {
+                structureType = 7; // NEW: The Gateway
             } else {
-                structureType = 6; // NEW: Small High Float (1/2 size)
+                structureType = 8; // NEW: Staggered Floats
             }
 
 
@@ -264,6 +268,36 @@ class Foreground {
                         this.platforms.push({ x: x + (col * 16), y: this.groundY - smallFloatHeight, w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
                     }
                     structureWidth = smallFloatWidth * this.tileSize;
+                    break;
+                case 7: // The Gateway (Two towers with a bridge)
+                    const gateHeight = 3 + Math.floor(Math.random() * 2);
+                    const gateSpan = 4; // Space between towers
+                    structureHeight = (gateHeight + 1) * 16;
+
+                    // Draw Towers
+                    for (let row = 0; row < gateHeight; row++) {
+                        this.platforms.push({ x: x, y: this.groundY - ((row + 1) * 16), w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
+                        this.platforms.push({ x: x + (gateSpan + 1) * 16, y: this.groundY - ((row + 1) * 16), w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
+                    }
+                    // Draw Bridge
+                    for (let col = 0; col < gateSpan + 2; col++) {
+                        this.platforms.push({ x: x + (col * 16), y: this.groundY - ((gateHeight + 1) * 16), w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
+                    }
+                    structureWidth = (gateSpan + 2) * 16;
+                    groundOccupiedX.push({ start: x, end: x + structureWidth });
+                    break;
+
+                case 8: // Staggered Floats (Diagonal path upward)
+                    const numFloats = 3;
+                    structureHeight = 120;
+                    for (let i = 0; i < numFloats; i++) {
+                        const floatX = x + (i * 32);
+                        const floatY = this.groundY - (40 + (i * 32));
+                        // Each float is 2 bricks wide
+                        this.platforms.push({ x: floatX, y: floatY, w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
+                        this.platforms.push({ x: floatX + 16, y: floatY, w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
+                    }
+                    structureWidth = (numFloats * 32) + 16;
                     break;
             }
 
@@ -390,7 +424,7 @@ class Foreground {
             if (Math.random() > 0.3) {
                 const hWidth = 30 + Math.random() * 48;
                 const rand = Math.random();
-                let hType = rand < 0.25 ? 'oil' : (rand < 0.50 ? 'ice' : 'quicksand');
+                let hType = rand < 0.30 ? 'oil' : (rand < 0.30 ? 'ice' : 'quicksand');
 
                 const hasLowBricks = this.platforms.some(p => {
                     const horiz = (hx < p.x + 16 && hx + hWidth > p.x);
