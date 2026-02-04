@@ -163,7 +163,7 @@ class Foreground {
         const lastScreenStart = this.portalX - CANVAS_WIDTH;
 
         // 1. Generate the world structures
-        while (x < this.portalX - 300) {
+        while (x < this.portalX - 320) {
             const rand = Math.random();
             let structureType;
             let structureWidth = 0;

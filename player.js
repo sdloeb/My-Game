@@ -18,7 +18,7 @@ class Player {
         this.maxSpeed = 2.0;
         this.friction = 0.80;
         this.gravity = 0.35;
-        this.jumpForce = -8.8;
+        this.jumpForce = -9.2;
         this.aimAngle = 0;
         this.inQuicksand = false;
         this.quicksandTimer = 0;
