@@ -404,6 +404,16 @@ class Player {
                         this.onChain = c;
                         this.climbDist = relativeY;
                         this.chainGraceTimer = 15; // Ignore jump inputs for 0.25s after grabbing
+
+                        // Transfer player's horizontal speed into the vine's rotation speed
+                        c.angleVelocity -= this.velocityX * 0.015;
+
+                        // NEW: Snap player position immediately to the vine's visual path 
+                        // to prevent the 1-frame "reset" glitch.
+                        this.x = c.x - (Math.sin(c.angle) * this.climbDist) - (this.width / 2);
+                        this.y = c.y + (Math.cos(c.angle) * this.climbDist) - (this.height / 2);
+
+
                     }
                 }
             });

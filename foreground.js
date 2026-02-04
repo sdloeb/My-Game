@@ -553,7 +553,9 @@ class Foreground {
                 y: 0, // Hang from the top of the screen
                 length: this.groundY - 90, // Length stops above the ground
                 angle: 0,
-                offset: Math.random() * Math.PI * 2
+                angleVelocity: 0,
+                offset: Math.random() * Math.PI * 2,
+                impactForce: 0
             });
         }
 
@@ -570,8 +572,19 @@ class Foreground {
     }
 
     update(player) {
+        // --- WITH THIS PHYSICS VERSION ---
         this.chains.forEach(c => {
-            c.angle = Math.sin(Date.now() / 1500 + c.offset) * 0.25;
+            // 1. Determine the 'Natural' target angle (the background swing)
+            const targetAngle = Math.sin(Date.now() / 800 + c.offset) * 0.25;
+
+            // 2. Spring Physics: Pull the current angle toward the target
+            // The 0.01 is 'stiffness' and 0.94 is 'damping' (friction)
+            const diff = targetAngle - c.angle;
+            c.angleVelocity += diff * 0.04;
+            c.angleVelocity *= 0.94;
+
+            // 3. Update the actual angle based on velocity
+            c.angle += c.angleVelocity;
         });
 
         // --- PROGRESS LOCK ---
