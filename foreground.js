@@ -550,10 +550,10 @@ class Foreground {
             const cx = sectionMin + Math.random() * (sectionWidth - 20);
             this.chains.push({
                 x: cx,
-                y: 0, // Hangs from the very top
-                length: this.groundY - 40,
+                y: 0, // Hang from the top of the screen
+                length: this.groundY - 20, // Length stops just above the ground
                 angle: 0,
-                offset: Math.random() * Math.PI * 2 // Randomizes swing phase
+                offset: Math.random() * Math.PI * 2
             });
         }
 
@@ -627,29 +627,6 @@ class Foreground {
             else if (e.y >= e.bottomLimit) { e.y = e.bottomLimit; e.direction = -1; }
         });
 
-        // --- ADD THE SWINGING CHAINS CODE HERE ---
-        this.chains.forEach(c => {
-            const screenX = c.x - cameraX;
-            if (screenX > -50 && screenX < CANVAS_WIDTH + 50) {
-                ctx.save();
-                ctx.translate(screenX, c.y);
-                ctx.rotate(c.angle);
-
-                ctx.strokeStyle = '#94a3b8'; // Chain grey
-                ctx.lineWidth = 2;
-                ctx.setLineDash([4, 2]); // Makes it look like links
-                ctx.beginPath();
-                ctx.moveTo(0, 0);
-                ctx.lineTo(0, c.length);
-                ctx.stroke();
-                ctx.setLineDash([]); // Reset
-
-                // Add a small weight/anchor at the bottom
-                ctx.fillStyle = '#475569';
-                ctx.fillRect(-3, c.length, 6, 6);
-                ctx.restore();
-            }
-        });
 
         if (this.activeFlag && !this.activeFlag.collected) {
             const dx = (player.x + player.width / 2) - this.activeFlag.x;
@@ -987,6 +964,42 @@ class Foreground {
                 ctx.fillRect(screenX + 5, e.y + 3, 2, 1);
                 ctx.fillRect(screenX + 22, e.y + 5, 1, 1);
                 ctx.fillRect(screenX + 14, e.y + 2, 1, 1);
+            }
+        });
+
+        // DRAW SWINGING VINES
+        this.chains.forEach(c => {
+            const screenX = c.x - cameraX;
+            if (screenX > -50 && screenX < CANVAS_WIDTH + 50) {
+                ctx.save();
+                ctx.translate(screenX, c.y);
+                ctx.rotate(c.angle);
+
+                // Draw the vine stem (Bright green)
+                ctx.strokeStyle = '#22c55e';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(0, c.length);
+                ctx.stroke();
+
+                // Draw leaves along the vine (Dark green)
+                ctx.fillStyle = '#166534';
+                for (let i = 20; i < c.length; i += 20) {
+                    ctx.beginPath();
+                    ctx.ellipse(-2, i, 4, 2, -0.5, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.ellipse(2, i + 10, 4, 2, 0.5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // Add a small red flower/bulb at the bottom
+                ctx.fillStyle = '#ef4444';
+                ctx.beginPath();
+                ctx.arc(0, c.length, 4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
             }
         });
 

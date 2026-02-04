@@ -32,6 +32,8 @@ class Player {
         this.bubbleTimer = 0;
         this.onChain = null;
         this.climbDist = 0;
+        this.chainGraceTimer = 0;
+        this.chainGrabCooldown = 0;
 
         // State Management
         this.isStunned = false;
@@ -347,52 +349,65 @@ class Player {
 
         let moving = false;
 
-        // --- CHAIN INTERACTION ---
+        // --- VINE INTERACTION & TIMERS ---
+        if (this.chainGraceTimer > 0) this.chainGraceTimer--;
+        if (this.chainGrabCooldown > 0) this.chainGrabCooldown--;
+
         if (this.onChain) {
             this.velocityX = 0;
             this.velocityY = 0;
             this.onGround = false;
 
-            // 1. CLIMBING LOGIC
-            if (this.keys.up) this.climbDist = Math.max(20, this.climbDist - 2);
-            if (this.keys.down) this.climbDist = Math.min(this.onChain.length - 10, this.climbDist + 2);
-
-            // 2. SNAP TO CHAIN POSITION
-            this.x = this.onChain.x + Math.sin(this.onChain.angle) * this.climbDist - (this.width / 2);
-            this.y = this.onChain.y + Math.cos(this.onChain.angle) * this.climbDist - (this.height / 2);
-
-            // 3. JUMPING OFF
-            if (this.keys.up && (e.code === 'Space' || e.code === 'KeyW')) { // Check for jump key
-                const jumpDir = this.keys.left ? -4 : (this.keys.right ? 4 : 0);
-                this.velocityX = jumpDir;
-                this.velocityY = this.jumpForce;
+            // 1. CLIMBING VS JUMPING
+            // Separation: Holding a direction (Left/Right) + Jump (Up) triggers a jump off.
+            // We use the Grace Timer so you don't instantly jump off the frame you catch it.
+            if (this.chainGraceTimer === 0 && this.keys.up && (this.keys.left || this.keys.right)) {
+                this.velocityX = this.keys.left ? -4 : 4;
+                this.velocityY = this.jumpForce * 0.8;
                 this.onChain = null;
+                this.chainGrabCooldown = 30; // 0.5s cooldown before you can grab a vine again
                 if (typeof playJumpSound === 'function') playJumpSound();
                 return;
             }
-            // Simple dismount if just jump is pressed
-            if (this.keys.up && !this.hasBow) { // Using 'up' as the jump trigger from your setupControls
-                this.velocityY = this.jumpForce;
-                if (this.keys.left) this.velocityX = -3;
-                if (this.keys.right) this.velocityX = 3;
-                this.onChain = null;
-                return;
+            else {
+                // Regular Climbing
+                if (this.keys.up) this.climbDist = Math.max(20, this.climbDist - 2);
+                if (this.keys.down) this.climbDist = Math.min(this.onChain.length - 10, this.climbDist + 2);
             }
 
-            return; // Skip normal physics while on chain
+            // 2. SNAP TO VINE POSITION (World Coordinates following the arc)
+            // Using "- Math.sin" correctly aligns the player with Canvas's clockwise rotation
+            this.x = this.onChain.x - (Math.sin(this.onChain.angle) * this.climbDist) - (this.width / 2);
+            this.y = this.onChain.y + (Math.cos(this.onChain.angle) * this.climbDist) - (this.height / 2);
+
+            // Auto-drop if at bottom
+            if (this.climbDist >= this.onChain.length - 11 && this.keys.down) {
+                this.onChain = null;
+                this.chainGrabCooldown = 20;
+            }
+
+            return; // Skip standard physics while on vine
         }
 
-        // --- ATTACH TO CHAIN CHECK ---
-        if (!this.onChain && !this.inBubble) {
+        // --- ATTACH TO VINE CHECK ---
+        // Added check for chainGrabCooldown to prevent instant re-grabbing
+        if (!this.onChain && this.chainGrabCooldown === 0 && !this.inBubble && !this.isSlamming && !this.isStunned) {
             fg.chains.forEach(c => {
-                const chainX = c.x + Math.sin(c.angle) * (this.y - c.y + this.height / 2);
-                if (Math.abs((this.x + this.width / 2) - chainX) < 15 && this.y > c.y && this.y < c.y + c.length) {
-                    this.onChain = c;
-                    this.climbDist = this.y - c.y + (this.height / 2);
+                const playerCenterX = this.x + this.width / 2;
+                const playerCenterY = this.y + this.height / 2;
+                const relativeY = playerCenterY - c.y;
+
+                if (relativeY > 10 && relativeY < c.length) {
+                    // Match the visual swing position exactly
+                    const vineXAtHeight = c.x - Math.sin(c.angle) * relativeY;
+                    if (Math.abs(playerCenterX - vineXAtHeight) < 15) {
+                        this.onChain = c;
+                        this.climbDist = relativeY;
+                        this.chainGraceTimer = 15; // Ignore jump inputs for 0.25s after grabbing
+                    }
                 }
             });
         }
-
 
         if (this.isStunned) {
             this.stunTimer--;
