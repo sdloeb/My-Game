@@ -543,9 +543,9 @@ class Foreground {
         // 10. Generate 9 Swinging Chains in sections
         const chainStart = 200;
         const chainEnd = this.portalX - 300;
-        const sectionWidth = (chainEnd - chainStart) / 9;
+        const sectionWidth = (chainEnd - chainStart) / 4;
 
-        for (let i = 0; i < 9; i++) {
+        for (let i = 0; i < 4; i++) {
             const sectionMin = chainStart + (i * sectionWidth);
             const cx = sectionMin + Math.random() * (sectionWidth - 20);
 
