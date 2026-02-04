@@ -400,20 +400,22 @@ class Player {
                 if (relativeY > 10 && relativeY < c.length) {
                     // Match the visual swing position exactly
                     const vineXAtHeight = c.x - Math.sin(c.angle) * relativeY;
+                    // --- FIND THIS SECTION (around line 254) ---
                     if (Math.abs(playerCenterX - vineXAtHeight) < 15) {
                         this.onChain = c;
                         this.climbDist = relativeY;
-                        this.chainGraceTimer = 15; // Ignore jump inputs for 0.25s after grabbing
+                        this.chainGraceTimer = 15;
 
-                        // Transfer player's horizontal speed into the vine's rotation speed
-                        c.angleVelocity -= this.velocityX * 0.015;
+                        // 1. Transfer momentum into the vine's rotation speed
+                        // We use a cap to keep it realistic
+                        let kick = this.velocityX * 0.02;
+                        const maxKick = 0.035;
+                        c.angleVelocity -= Math.max(-maxKick, Math.min(maxKick, kick));
 
-                        // NEW: Snap player position immediately to the vine's visual path 
-                        // to prevent the 1-frame "reset" glitch.
+                        // 2. SEAMLESS SNAP: Recalculate player position immediately
+                        // This removes the 1-frame jitter during the transition
                         this.x = c.x - (Math.sin(c.angle) * this.climbDist) - (this.width / 2);
                         this.y = c.y + (Math.cos(c.angle) * this.climbDist) - (this.height / 2);
-
-
                     }
                 }
             });

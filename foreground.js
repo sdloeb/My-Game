@@ -574,16 +574,22 @@ class Foreground {
     update(player) {
         // --- WITH THIS PHYSICS VERSION ---
         this.chains.forEach(c => {
-            // 1. Determine the 'Natural' target angle (the background swing)
-            const targetAngle = Math.sin(Date.now() / 800 + c.offset) * 0.25;
+            // 1. GRAVITY: A force that always pulls the vine back toward center (0)
+            // This is the "stiffness" of the vine.
+            const gravity = -c.angle * 0.012;
 
-            // 2. Spring Physics: Pull the current angle toward the target
-            // The 0.01 is 'stiffness' and 0.94 is 'damping' (friction)
-            const diff = targetAngle - c.angle;
-            c.angleVelocity += diff * 0.04;
-            c.angleVelocity *= 0.94;
+            // 2. IDLE FORCE: A tiny "nudge" that keeps the vine swaying naturally
+            // We use Math.cos so it's a constant push, not a fixed target position.
+            const idleForce = Math.cos(Date.now() / 500 + c.offset) * 0.0015;
 
-            // 3. Update the actual angle based on velocity
+            // 3. APPLY PHYSICS
+            // The vine now moves based on its own momentum + gravity + idle nudge
+            c.angleVelocity += gravity + idleForce;
+
+            // 4. FRICTION: 0.96 ensures momentum fades out smoothly
+            c.angleVelocity *= 0.96;
+
+            // 5. UPDATE ANGLE
             c.angle += c.angleVelocity;
         });
 
