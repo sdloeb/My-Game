@@ -551,7 +551,7 @@ class Foreground {
             this.chains.push({
                 x: cx,
                 y: 0, // Hang from the top of the screen
-                length: this.groundY - 20, // Length stops just above the ground
+                length: this.groundY - 90, // Length stops above the ground
                 angle: 0,
                 offset: Math.random() * Math.PI * 2
             });
