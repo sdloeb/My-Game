@@ -1189,6 +1189,8 @@ function handlePlayerDeath(deathType) {
     player.stunCooldown = 0;
     player.inBubble = false;
     player.bubbleTimer = 0;
+    player.onChain = null;        // Forces the player to let go of the vine
+    player.inQuicksand = false;   // Ensures they aren't stuck in "sinking" mode
     projectiles = [];
 
     // Default: Clear active weapon states; Section 5 will restore them if valid
