@@ -775,14 +775,15 @@ class Foreground {
 
         // 3. MULTI-STAGE CRACK DRAWING
         if (!isSecret) {
-            const is3Hit = hasClock || isCheckpointCandidate;
+            const isSpecial = hasClock || isCheckpointCandidate;
             let crackType = 'none';
 
-            // Logic: 1 hit left on 3-hit brick = HEAVY. Otherwise, 1-2 hits left = LIGHT.
+            // Corrected logic: 
+            // If it's a special brick and has been hit once (hits is 1), show a crack.
+            // If it's a normal brick and has been hit once (hits is 1), show a crack.
             if (platformObj.hits === 1) {
-                crackType = is3Hit ? 'heavy' : 'light';
-            } else if (platformObj.hits === 2 && is3Hit) {
-                crackType = 'light';
+                // Special bricks show a heavier crack before breaking on the next hit
+                crackType = isSpecial ? 'heavy' : 'light';
             }
 
             if (crackType !== 'none') {
@@ -1492,15 +1493,64 @@ class Foreground {
             if (h.type === 'quicksand') {
                 const screenX = h.x - cameraX;
                 if (screenX + h.w > 0 && screenX < CANVAS_WIDTH) {
-                    // Draw the solid sand block
-                    ctx.fillStyle = this.groundColors.quicksand;
-                    ctx.fillRect(screenX, this.groundY, h.w, 224 - this.groundY);
+                    const sandTop = this.groundY;
+                    const sandHeight = 224 - this.groundY;
 
-                    // Draw the texture grains so they appear on top
-                    ctx.fillStyle = 'rgba(0,0,0,0.1)';
-                    for (let i = 0; i < h.w; i += 8) {
-                        ctx.fillRect(screenX + i + (Math.sin(Date.now() / 500) * 2), this.groundY + 10, 2, 2);
+                    // 1. SAVE CONTEXT & CLIP
+                    // Ensures all particles stay perfectly within the quicksand area
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.rect(screenX, sandTop, h.w, sandHeight);
+                    ctx.clip();
+
+                    // 2. DEPTH GRADIENT
+                    const grad = ctx.createLinearGradient(0, sandTop, 0, sandTop + sandHeight);
+                    grad.addColorStop(0, this.groundColors.quicksand);
+                    grad.addColorStop(1, '#8b5e34'); // Deep muddy brown
+                    ctx.fillStyle = grad;
+                    ctx.fillRect(screenX, sandTop, h.w, sandHeight);
+
+                    // 3. HIGH-DENSITY TINY STATIC GRAINS
+                    // We use coordinate-based offsets so the grains look random 
+                    // but do not move or flicker.
+
+                    // Layer 1: Tiny Dark Grains (Very Dense)
+                    ctx.fillStyle = 'rgba(0,0,0,0.2)';
+                    for (let i = 0; i < h.w; i += 1.5) {
+                        for (let j = 0; j < sandHeight; j += 1.5) {
+                            // Fixed "random" shift based on coordinates instead of Time
+                            const rx = (i * 17 + j * 31) % 4;
+                            const ry = (i * 31 + j * 17) % 4;
+                            // Size is reduced to 0.5x0.5
+                            ctx.fillRect(screenX + i + rx, sandTop + j + ry, 0.5, 0.5);
+                        }
                     }
+
+                    // Layer 2: Tiny Light Grains (Very Dense)
+                    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+                    for (let i = 0; i < h.w; i += 1.5) {
+                        for (let j = 0; j < sandHeight; j += 1.5) {
+                            const rx = (i * 23 + j * 37) % 5;
+                            const ry = (i * 37 + j * 23) % 3;
+                            ctx.fillRect(screenX + i + rx, sandTop + j + ry, 0.5, 0.5);
+                        }
+                    }
+
+                    // 4. STATIC SURFACE TEXTURE
+                    // Replaces the moving waves with a jagged static top
+                    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                    for (let i = 0; i < h.w; i += 2) {
+                        const staticWave = (i * 13) % 3;
+                        ctx.fillRect(screenX + i, sandTop + staticWave, 1.5, 0.5);
+                    }
+
+                    // 5. RESTORE CONTEXT
+                    ctx.restore();
+
+                    // Edge shading
+                    ctx.fillStyle = 'rgba(0,0,0,0.15)';
+                    ctx.fillRect(screenX, sandTop, 1, sandHeight);
+                    ctx.fillRect(screenX + h.w - 1, sandTop, 1, sandHeight);
                 }
             }
         });
