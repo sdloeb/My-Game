@@ -9,7 +9,7 @@ class Foreground {
         this.groundY = 224 - 32;
         this.portalX = 5000; this.portalGoalX = 5000;
         this.levelWidth = this.portalX + (CANVAS_WIDTH / 2);
-
+        this.chains = [];
         this.platforms = [];
         this.groundHazards = [];
         this.elevators = [];
@@ -540,6 +540,22 @@ class Foreground {
             }
         }
 
+        // 10. Generate 9 Swinging Chains in sections
+        const chainStart = 200;
+        const chainEnd = this.portalX - 300;
+        const sectionWidth = (chainEnd - chainStart) / 9;
+
+        for (let i = 0; i < 9; i++) {
+            const sectionMin = chainStart + (i * sectionWidth);
+            const cx = sectionMin + Math.random() * (sectionWidth - 20);
+            this.chains.push({
+                x: cx,
+                y: 0, // Hangs from the very top
+                length: this.groundY - 40,
+                angle: 0,
+                offset: Math.random() * Math.PI * 2 // Randomizes swing phase
+            });
+        }
 
     } // Function finally ends here
 
@@ -554,6 +570,9 @@ class Foreground {
     }
 
     update(player) {
+        this.chains.forEach(c => {
+            c.angle = Math.sin(Date.now() / 1500 + c.offset) * 0.25;
+        });
 
         // --- PROGRESS LOCK ---
         // If the key hasn't dropped yet, don't let the player pass the bow area
@@ -606,6 +625,30 @@ class Foreground {
             e.y += e.speed * e.direction;
             if (e.y <= e.topLimit) { e.y = e.topLimit; e.direction = 1; }
             else if (e.y >= e.bottomLimit) { e.y = e.bottomLimit; e.direction = -1; }
+        });
+
+        // --- ADD THE SWINGING CHAINS CODE HERE ---
+        this.chains.forEach(c => {
+            const screenX = c.x - cameraX;
+            if (screenX > -50 && screenX < CANVAS_WIDTH + 50) {
+                ctx.save();
+                ctx.translate(screenX, c.y);
+                ctx.rotate(c.angle);
+
+                ctx.strokeStyle = '#94a3b8'; // Chain grey
+                ctx.lineWidth = 2;
+                ctx.setLineDash([4, 2]); // Makes it look like links
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(0, c.length);
+                ctx.stroke();
+                ctx.setLineDash([]); // Reset
+
+                // Add a small weight/anchor at the bottom
+                ctx.fillStyle = '#475569';
+                ctx.fillRect(-3, c.length, 6, 6);
+                ctx.restore();
+            }
         });
 
         if (this.activeFlag && !this.activeFlag.collected) {

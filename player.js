@@ -30,6 +30,8 @@ class Player {
         this.walkCounter = 0;
         this.inBubble = false;
         this.bubbleTimer = 0;
+        this.onChain = null;
+        this.climbDist = 0;
 
         // State Management
         this.isStunned = false;
@@ -344,6 +346,53 @@ class Player {
         }
 
         let moving = false;
+
+        // --- CHAIN INTERACTION ---
+        if (this.onChain) {
+            this.velocityX = 0;
+            this.velocityY = 0;
+            this.onGround = false;
+
+            // 1. CLIMBING LOGIC
+            if (this.keys.up) this.climbDist = Math.max(20, this.climbDist - 2);
+            if (this.keys.down) this.climbDist = Math.min(this.onChain.length - 10, this.climbDist + 2);
+
+            // 2. SNAP TO CHAIN POSITION
+            this.x = this.onChain.x + Math.sin(this.onChain.angle) * this.climbDist - (this.width / 2);
+            this.y = this.onChain.y + Math.cos(this.onChain.angle) * this.climbDist - (this.height / 2);
+
+            // 3. JUMPING OFF
+            if (this.keys.up && (e.code === 'Space' || e.code === 'KeyW')) { // Check for jump key
+                const jumpDir = this.keys.left ? -4 : (this.keys.right ? 4 : 0);
+                this.velocityX = jumpDir;
+                this.velocityY = this.jumpForce;
+                this.onChain = null;
+                if (typeof playJumpSound === 'function') playJumpSound();
+                return;
+            }
+            // Simple dismount if just jump is pressed
+            if (this.keys.up && !this.hasBow) { // Using 'up' as the jump trigger from your setupControls
+                this.velocityY = this.jumpForce;
+                if (this.keys.left) this.velocityX = -3;
+                if (this.keys.right) this.velocityX = 3;
+                this.onChain = null;
+                return;
+            }
+
+            return; // Skip normal physics while on chain
+        }
+
+        // --- ATTACH TO CHAIN CHECK ---
+        if (!this.onChain && !this.inBubble) {
+            fg.chains.forEach(c => {
+                const chainX = c.x + Math.sin(c.angle) * (this.y - c.y + this.height / 2);
+                if (Math.abs((this.x + this.width / 2) - chainX) < 15 && this.y > c.y && this.y < c.y + c.length) {
+                    this.onChain = c;
+                    this.climbDist = this.y - c.y + (this.height / 2);
+                }
+            });
+        }
+
 
         if (this.isStunned) {
             this.stunTimer--;
