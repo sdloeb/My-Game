@@ -1207,13 +1207,14 @@ function handlePlayerDeath(deathType) {
     const cp = globalCheckpoints[currentLevelNum];
     let forceRestart = false;
 
-    // 4. SPECIAL "END GATE" RULE (Boss/Timeout with Bow)
-    // If holding Bow and die by Boss or Timeout, lose Bow, lose Fire Monster trigger, lose ammo.
-    if (collectedLevelWeapons[currentLevelNum] && (deathType === 'boss' || deathType === 'timeout')) {
-        collectedLevelItems[currentLevelNum] = false;  // Lose Fire Monster projectile trigger
-        collectedLevelWeapons[currentLevelNum] = false; // Lose Bow trigger
-        player.heavyAmmo = 0; // Lose all projectile ammo
-        forceRestart = true;
+   // 4. UPDATED: TIMEOUT & END GATE RULES
+    // Running out of time ALWAYS restarts the full level and strips special gear/triggers.
+    // Dying by a boss while holding the weapon also triggers a full restart.
+    if (deathType === 'timeout' || (collectedLevelWeapons[currentLevelNum] && deathType === 'boss')) {
+        collectedLevelItems[currentLevelNum] = false;   // Strip weapon trigger (Arrow/Dart/Grenade)
+        collectedLevelWeapons[currentLevelNum] = false;  // Strip weapon visual (Bow/Gun)
+        player.heavyAmmo = 0;                           // Lose all special ammo
+        forceRestart = true;                            // Skip checkpoints, go to Section 6
     }
 
     // 5. CHECKPOINT LOGIC (Current Level Only - No fallback to previous levels)
