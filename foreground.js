@@ -400,7 +400,7 @@ class Foreground {
             if (clockCandidates.length > 0) {
                 const idx = Math.floor(Math.random() * clockCandidates.length);
                 clockCandidates[idx].hasClock = true;
-                clockCandidates[idx].hits = 3;
+                clockCandidates[idx].hits = 2;
                 clockCandidates.splice(idx, 1);
             }
         }
@@ -419,7 +419,7 @@ class Foreground {
             if (zoneCandidates.length > 0) {
                 const idx = Math.floor(Math.random() * zoneCandidates.length);
                 zoneCandidates[idx].isCheckpointCandidate = true;
-                zoneCandidates[idx].hits = 3;
+                zoneCandidates[idx].hits = 2;
             }
         });
 
