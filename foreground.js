@@ -548,17 +548,22 @@ class Foreground {
         for (let i = 0; i < 9; i++) {
             const sectionMin = chainStart + (i * sectionWidth);
             const cx = sectionMin + Math.random() * (sectionWidth - 20);
+
+            // --- REPLACE THE .push BLOCK WITH THIS ---
+            const cOffset = Math.random() * Math.PI * 2;
+            // Pre-calculate the starting angle so it begins already in motion
+            // 0.12 matches the steady-state width of your 500-speed swing
+            const startAngle = Math.cos(Date.now() / 500 + cOffset) * 0.12;
+
             this.chains.push({
                 x: cx,
-                y: 0, // Hang from the top of the screen
-                length: this.groundY - 90, // Length stops above the ground
-                angle: 0,
-                angleVelocity: 0,
-                offset: Math.random() * Math.PI * 2,
-                impactForce: 0
+                y: 0,
+                length: this.groundY - 90,
+                angle: startAngle,      // Start at the correct position
+                angleVelocity: 0,       // Start with 0 velocity at the 'peak' of the swing
+                offset: cOffset         // Use the same offset for update()
             });
         }
-
     } // Function finally ends here
 
 
@@ -578,16 +583,22 @@ class Foreground {
             // This is the "stiffness" of the vine.
             const gravity = -c.angle * 0.012;
 
-            // 2. IDLE FORCE: A tiny "nudge" that keeps the vine swaying naturally
-            // We use Math.cos so it's a constant push, not a fixed target position.
-            const idleForce = Math.cos(Date.now() / 500 + c.offset) * 0.0015;
+            // 2. DYNAMIC IDLE FADE (The Smooth Transition):
+            // We calculate the current speed. If the vine is swinging fast from a jump, 
+            // we set 'idleFade' to 0 so the auto-motor stays off.
+            // As the speed drops below 0.05, the auto-swing gradually fades back in.
+            const speed = Math.abs(c.angleVelocity);
+            const idleFade = Math.max(0, 1 - (speed * 12));
+
+            // Apply the fade to the idle force
+            const idleForce = Math.cos(Date.now() / 500 + c.offset) * 0.0015 * idleFade;
 
             // 3. APPLY PHYSICS
             // The vine now moves based on its own momentum + gravity + idle nudge
             c.angleVelocity += gravity + idleForce;
 
-            // 4. FRICTION: 0.96 ensures momentum fades out smoothly
-            c.angleVelocity *= 0.96;
+            // 4. FRICTION: 0.95 ensures momentum fades out smoothly
+            c.angleVelocity *= 0.95;
 
             // 5. UPDATE ANGLE
             c.angle += c.angleVelocity;
