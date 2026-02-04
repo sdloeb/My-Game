@@ -538,7 +538,6 @@ function init() {
             if (index > -1) {
                 if (plat.hasClock) {
                     fg.clock = { x: plat.x, y: plat.y, collected: false };
-                    fg.platforms.forEach(other => { other.hasClock = false; });
                 }
                 createShatterEffect(plat.x + 8, plat.y + 8);
                 fg.platforms.splice(index, 1);
@@ -888,7 +887,6 @@ function update() {
                                 }
                                 if (plat.hasClock) {
                                     fg.clock = { x: plat.x, y: plat.y, collected: false };
-                                    fg.platforms.forEach(other => { other.hasClock = false; });
                                 }
                                 createShatterEffect(plat.x + 8, plat.y + 8);
                                 fg.platforms.splice(j, 1);
@@ -1207,7 +1205,7 @@ function handlePlayerDeath(deathType) {
     const cp = globalCheckpoints[currentLevelNum];
     let forceRestart = false;
 
-   // 4. UPDATED: TIMEOUT & END GATE RULES
+    // 4. UPDATED: TIMEOUT & END GATE RULES
     // Running out of time ALWAYS restarts the full level and strips special gear/triggers.
     // Dying by a boss while holding the weapon also triggers a full restart.
     if (deathType === 'timeout' || (collectedLevelWeapons[currentLevelNum] && deathType === 'boss')) {
