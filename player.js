@@ -53,6 +53,7 @@ class Player {
         this.shrinkScale = 1.0;
         this.targetPortalX = 0;
         this.targetPortalY = 0;
+        this.struggleTimer = 0;
 
         this.setupControls();
         this.keys = { left: false, right: false, up: false, down: false };
@@ -288,6 +289,7 @@ class Player {
                 this.velocityY = -3.0;  // NEW: Stronger upward momentum to fight gravity
                 this.velocityX = 0;     // NEW: Zero out friction
                 this.keys.up = false; // Force the player to tap again
+                this.struggleTimer = 20;
                 if (typeof playQuicksandSound === 'function') playQuicksandSound();
             }
 
@@ -750,6 +752,7 @@ class Player {
             this.walkCounter = 0;
             if (!this.isStunned) this.velocityX *= 0.7;
         }
+        if (this.struggleTimer > 0) this.struggleTimer--;
     }
 
     draw(ctx, cameraX) {

@@ -450,7 +450,7 @@ class Foreground {
         // 7. Generate Hazards
         for (let hx = 300; hx < this.portalX - 300; hx += 150) {
             if (Math.random() > 0.3) {
-                const hWidth = 30 + Math.random() * 48;
+                const hWidth = 35 + Math.random() * 48;
                 const rand = Math.random();
                 let hType = rand < 0.30 ? 'oil' : (rand < 0.30 ? 'ice' : 'quicksand');
 
@@ -1488,7 +1488,7 @@ class Foreground {
         //this.drawPortal(ctx, cameraX);
     }
 
-    drawQuicksand(ctx, cameraX) {
+    drawQuicksand(ctx, cameraX, player) {
         this.groundHazards.forEach(h => {
             if (h.type === 'quicksand') {
                 const screenX = h.x - cameraX;
@@ -1496,58 +1496,53 @@ class Foreground {
                     const sandTop = this.groundY;
                     const sandHeight = 224 - this.groundY;
 
-                    // 1. SAVE CONTEXT & CLIP
-                    // Ensures all particles stay perfectly within the quicksand area
                     ctx.save();
                     ctx.beginPath();
                     ctx.rect(screenX, sandTop, h.w, sandHeight);
                     ctx.clip();
 
-                    // 2. DEPTH GRADIENT
                     const grad = ctx.createLinearGradient(0, sandTop, 0, sandTop + sandHeight);
                     grad.addColorStop(0, this.groundColors.quicksand);
-                    grad.addColorStop(1, '#8b5e34'); // Deep muddy brown
+                    grad.addColorStop(1, '#8b5e34');
                     ctx.fillStyle = grad;
                     ctx.fillRect(screenX, sandTop, h.w, sandHeight);
 
-                    // 3. HIGH-DENSITY TINY STATIC GRAINS
-                    // We use coordinate-based offsets so the grains look random 
-                    // but do not move or flicker.
+                    // Pre-calculate struggle variables for performance
+                    const isStruggling = player && player.inQuicksand && player.struggleTimer > 0;
+                    const pCX = isStruggling ? (player.x + player.width / 2) - cameraX : 0;
+                    const pCY = isStruggling ? (player.y + player.height / 2) : 0;
+                    const time = Date.now() / 50;
 
-                    // Layer 1: Tiny Dark Grains (Very Dense)
-                    ctx.fillStyle = 'rgba(0,0,0,0.2)';
-                    for (let i = 0; i < h.w; i += 1.5) {
-                        for (let j = 0; j < sandHeight; j += 1.5) {
-                            // Fixed "random" shift based on coordinates instead of Time
-                            const rx = (i * 17 + j * 31) % 4;
-                            const ry = (i * 31 + j * 17) % 4;
-                            // Size is reduced to 0.5x0.5
-                            ctx.fillRect(screenX + i + rx, sandTop + j + ry, 0.5, 0.5);
+                    const drawLayer = (color, step, modX, modY) => {
+                        ctx.fillStyle = color;
+                        for (let i = 0; i < h.w; i += step) {
+                            for (let j = 0; j < sandHeight; j += step) {
+                                const rx = (i * 17 + j * 31) % modX;
+                                const ry = (i * 31 + j * 17) % modY;
+
+                                let sx = 0, sy = 0;
+                                if (isStruggling) {
+                                    const dx = (screenX + i) - pCX;
+                                    const dy = (sandTop + j) - pCY;
+                                    // Only move sand within 35px of player center
+                                    if (Math.abs(dx) < 35 && Math.abs(dy) < 35) {
+                                        const distSq = dx * dx + dy * dy;
+                                        if (distSq < 1225) {
+                                            const force = (1 - Math.sqrt(distSq) / 35) * (player.struggleTimer / 8);
+                                            sx = Math.sin(time + i) * 4 * force;
+                                            sy = Math.cos(time + j) * 4 * force;
+                                        }
+                                    }
+                                }
+                                ctx.fillRect(screenX + i + rx + sx, sandTop + j + ry + sy, 0.5, 0.5);
+                            }
                         }
-                    }
+                    };
 
-                    // Layer 2: Tiny Light Grains (Very Dense)
-                    ctx.fillStyle = 'rgba(255,255,255,0.35)';
-                    for (let i = 0; i < h.w; i += 1.5) {
-                        for (let j = 0; j < sandHeight; j += 1.5) {
-                            const rx = (i * 23 + j * 37) % 5;
-                            const ry = (i * 37 + j * 23) % 3;
-                            ctx.fillRect(screenX + i + rx, sandTop + j + ry, 0.5, 0.5);
-                        }
-                    }
+                    drawLayer('rgba(0,0,0,0.2)', 1.5, 4, 4);
+                    drawLayer('rgba(255,255,255,0.35)', 1.5, 5, 3);
 
-                    // 4. STATIC SURFACE TEXTURE
-                    // Replaces the moving waves with a jagged static top
-                    ctx.fillStyle = 'rgba(0,0,0,0.3)';
-                    for (let i = 0; i < h.w; i += 2) {
-                        const staticWave = (i * 13) % 3;
-                        ctx.fillRect(screenX + i, sandTop + staticWave, 1.5, 0.5);
-                    }
-
-                    // 5. RESTORE CONTEXT
                     ctx.restore();
-
-                    // Edge shading
                     ctx.fillStyle = 'rgba(0,0,0,0.15)';
                     ctx.fillRect(screenX, sandTop, 1, sandHeight);
                     ctx.fillRect(screenX + h.w - 1, sandTop, 1, sandHeight);

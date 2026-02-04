@@ -1089,7 +1089,7 @@ function draw() {
 
     // Only draw the player here if they are NOT in quicksand
     player.draw(ctx, cameraX);
-    fg.drawQuicksand(ctx, cameraX);
+    fg.drawQuicksand(ctx, cameraX, player);
 
     // 1. Calculate fade
     if (fadeOpacity < fadeTarget) fadeOpacity += fadeSpeed;
@@ -1189,6 +1189,7 @@ function handlePlayerDeath(deathType) {
     player.stunCooldown = 0;
     player.inBubble = false;
     player.bubbleTimer = 0;
+    player.struggleTimer = 0;
     player.onChain = null;        // Forces the player to let go of the vine
     player.inQuicksand = false;   // Ensures they aren't stuck in "sinking" mode
     projectiles = [];
