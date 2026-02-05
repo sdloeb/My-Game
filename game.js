@@ -804,8 +804,8 @@ function update() {
         if (fg.bird && !fg.bird.hit && !p.isEnemyBullet) {
             const pLeft = p.isArrow ? p.x - 8 : p.x;
             const pRight = p.isArrow ? p.x + 6 : p.x + 4;
-            if (pRight > fg.bird.x && pLeft < fg.bird.x + fg.bird.width &&
-                p.y > fg.bird.y && p.y < fg.bird.y + fg.bird.height) {
+            if (pRight > fg.bird.x - 10 && pLeft < fg.bird.x + fg.bird.width + 10 &&
+                p.y > fg.bird.y - 10 && p.y < fg.bird.y + fg.bird.height + 10) {
 
                 // Initialize health if it doesn't exist
                 if (fg.bird.health === undefined) fg.bird.health = 2;
