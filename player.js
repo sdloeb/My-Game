@@ -34,6 +34,7 @@ class Player {
         this.climbDist = 0;
         this.chainGraceTimer = 0;
         this.chainGrabCooldown = 0;
+        this.ignoreVine = false;
 
         // State Management
         this.isStunned = false;
@@ -43,6 +44,7 @@ class Player {
         this.stunCooldown = 0;
         this.hasBow = false;
         this.isSlamming = false; // Tracks if the player is currently ground-pounding
+
 
         // Squatting State
         this.isSquatting = false;
@@ -70,9 +72,13 @@ class Player {
             if (e.code === 'ArrowLeft' || e.code === 'KeyA') this.keys.left = true;
             if (e.code === 'ArrowRight' || e.code === 'KeyD') this.keys.right = true;
             if (e.code === 'ArrowUp') {
+                if (!this.hasBow && this.onGround) this.ignoreVine = true;
                 if (!this.hasBow) this.keys.up = true;
             }
-            if (e.code === 'KeyW') this.keys.up = true;
+            if (e.code === 'KeyW') {
+                if (this.onGround) this.ignoreVine = true; // ADDED
+                this.keys.up = true;
+            }
             if (e.code === 'ArrowDown' || e.code === 'KeyS') {
                 this.keys.down = true;
                 // NEW: Trigger Ground Pound if in the air
@@ -103,6 +109,7 @@ class Player {
             // --- 3. JUMPING LOGIC ---
             // Removed ArrowUp from here to prevent jumping while aiming
             if (e.code === 'Space' || e.code === 'KeyW') {
+                if (this.onGround) this.ignoreVine = true;
                 this.keys.up = true;
             }
 
@@ -125,7 +132,10 @@ class Player {
         window.addEventListener('keyup', (e) => {
             if (e.code === 'ArrowLeft' || e.code === 'KeyA') this.keys.left = false;
             if (e.code === 'ArrowRight' || e.code === 'KeyD') this.keys.right = false;
-            if (e.code === 'Space' || e.code === 'KeyW' || e.code === 'ArrowUp') this.keys.up = false;
+            if (e.code === 'Space' || e.code === 'KeyW' || e.code === 'ArrowUp') {
+                this.keys.up = false;
+                this.ignoreVine = false; // NEW: Re-enable vine grabbing when jump is released
+            }
             if (e.code === 'ArrowDown' || e.code === 'KeyS') this.keys.down = false;
         });
 
@@ -136,9 +146,10 @@ class Player {
 
             btn.addEventListener('touchstart', (e) => {
                 e.preventDefault();
+                // NEW: Ignore vine if jumping from ground via touch
+                if (key === 'up' && this.onGround) this.ignoreVine = true;
                 this.keys[key] = true;
 
-                // Specific logic for jumping/aiming with 'up'
                 if (key === 'up' && this.hasBow) {
                     this.aimAngle = Math.max(this.aimAngle - 0.1, -1.5);
                 }
@@ -146,6 +157,7 @@ class Player {
 
             btn.addEventListener('touchend', (e) => {
                 e.preventDefault();
+                if (key === 'up') this.ignoreVine = false; // NEW
                 this.keys[key] = false;
             }, { passive: false });
         };
@@ -391,33 +403,34 @@ class Player {
             return; // Skip standard physics while on vine
         }
 
-        // --- ATTACH TO VINE CHECK ---
-        // Added check for chainGrabCooldown to prevent instant re-grabbing
-        if (!this.onChain && this.chainGrabCooldown === 0 && !this.inBubble && !this.isSlamming && !this.isStunned) {
+        // --- ATTACH TO VINE CHECK (UPDATED) ---
+        // Requirement: Must NOT be ignoring vines (from initial jump) AND must be pressing Jump while touching
+        if (!this.onChain && this.chainGrabCooldown === 0 && !this.inBubble && !this.isSlamming && !this.isStunned && this.keys.up && !this.ignoreVine) {
             fg.chains.forEach(c => {
                 const playerCenterX = this.x + this.width / 2;
                 const playerCenterY = this.y + this.height / 2;
                 const relativeY = playerCenterY - c.y;
 
                 if (relativeY > 10 && relativeY < c.length) {
-                    // Match the visual swing position exactly
                     const vineXAtHeight = c.x - Math.sin(c.angle) * relativeY;
-                    // --- FIND THIS SECTION (around line 254) ---
+
                     if (Math.abs(playerCenterX - vineXAtHeight) < 15) {
                         this.onChain = c;
                         this.climbDist = relativeY;
                         this.chainGraceTimer = 15;
 
-                        // 1. Transfer momentum into the vine's rotation speed
-                        // We use a cap to keep it realistic
+                        // Transfer momentum into the vine's rotation speed
                         let kick = this.velocityX * 0.02;
                         const maxKick = 0.035;
                         c.angleVelocity -= Math.max(-maxKick, Math.min(maxKick, kick));
 
-                        // 2. SEAMLESS SNAP: Recalculate player position immediately
-                        // This removes the 1-frame jitter during the transition
+                        // SEAMLESS SNAP: Recalculate player position immediately
                         this.x = c.x - (Math.sin(c.angle) * this.climbDist) - (this.width / 2);
                         this.y = c.y + (Math.cos(c.angle) * this.climbDist) - (this.height / 2);
+
+                        // NEW: Set ignoreVine to true immediately upon grabbing. 
+                        // This helps ensure the "grab" feels like a distinct action.
+                        this.ignoreVine = true;
                     }
                 }
             });
