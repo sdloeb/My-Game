@@ -540,29 +540,49 @@ class Foreground {
             }
         }
 
-        // 10. Generate 9 Swinging Chains in sections
+        // 10. Generate 9 Swinging Chains in sections (UPDATED WITH CLEARANCE CHECK)
         const chainStart = 200;
         const chainEnd = this.portalX - 300;
-        const sectionWidth = (chainEnd - chainStart) / 6;
+        const sectionWidth = (chainEnd - chainStart) / 9;
 
-        for (let i = 0; i < 6; i++) {
+        for (let i = 0; i < 9; i++) {
             const sectionMin = chainStart + (i * sectionWidth);
-            const cx = sectionMin + Math.random() * (sectionWidth - 20);
+            let found = false;
+            let attempts = 0;
+            let cx;
 
-            // --- REPLACE THE .push BLOCK WITH THIS ---
-            const cOffset = Math.random() * Math.PI * 2;
-            // Pre-calculate the starting angle so it begins already in motion
-            // 0.12 matches the steady-state width of your 500-speed swing
-            const startAngle = Math.cos(Date.now() / 500 + cOffset) * 0.12;
+            // NEW: Attempt to find a location in this zone not blocked by high bricks
+            while (!found && attempts < 50) {
+                attempts++;
+                cx = sectionMin + Math.random() * (sectionWidth - 20);
 
-            this.chains.push({
-                x: cx,
-                y: 0,
-                length: this.groundY - 90,
-                angle: startAngle,      // Start at the correct position
-                angleVelocity: 0,       // Start with 0 velocity at the 'peak' of the swing
-                offset: cOffset         // Use the same offset for update()
-            });
+                // CLEARANCE CHECK: 
+                // 1. HorizOverlap: Checks if a brick is within 25px of the vine (accounts for swing).
+                // 2. IsUpHigh: Only blocks if the brick is in the upper half (y < 110).
+                // This allows bricks to exist safely below the vine's reach.
+                const isBlocked = this.platforms.some(p => {
+                    const horizOverlap = (p.x < cx + 25 && p.x + 16 > cx - 25);
+                    const isUpHigh = p.y < 110;
+                    return horizOverlap && isUpHigh;
+                });
+
+                if (!isBlocked) found = true;
+            }
+
+            // Only spawn if a clear spot was found in this section
+            if (found) {
+                const cOffset = Math.random() * Math.PI * 2;
+                const startAngle = Math.cos(Date.now() / 500 + cOffset) * 0.12;
+
+                this.chains.push({
+                    x: cx,
+                    y: 0,
+                    length: this.groundY - 90,
+                    angle: startAngle,
+                    angleVelocity: 0,
+                    offset: cOffset
+                });
+            }
         }
     } // Function finally ends here
 
