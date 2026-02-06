@@ -195,11 +195,11 @@ class Background {
 
         // --- FIXED: HIGH DENSITY PULSARS ---
         // We now generate 12 pulsars so there is almost always one near a secret brick
-        for (let i = 0; i < 12; i++) {
+        for (let i = 0; i < 25; i++) {
             this.scenery.push({
                 type: 'pulsar',
-                x: 40 + (i * 60) + Math.random() * 30, // Spaced every 50px in background coords
-                y: 20 + Math.random() * 70,
+                x: 20 + (i * 30) + Math.random() * 15,
+                y: 20 + Math.random() * 80,
                 signals: []
             });
         }
@@ -615,9 +615,10 @@ class Background {
         // Update timers for all active signals
         this.scenery.forEach(obj => {
             if (obj.signals) {
-                obj.signals.forEach(sig => {
+                obj.signals = obj.signals.filter(sig => {
                     sig.timer++;
-                    if (sig.timer >= 300) sig.timer = 0;
+                    // Remove the signal after one 200-frame cycle (approx 3 seconds)
+                    return sig.timer < 200;
                 });
             }
         });
