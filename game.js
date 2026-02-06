@@ -938,25 +938,42 @@ function update() {
     updateParticles();
     fg.update(player);
 
-    // --- ELECTRIC GATE COLLISION ---
+    // --- NEW: ELECTRIC GATE COLLISION & BOUNCE ---
     fg.electricGates.forEach(gate => {
         if (gate.active) {
-            // Check if player's hitbox overlaps the bolt area (between the stubs)
+            const gateCenterX = gate.x + gate.w / 2;
             const pCenterX = player.x + player.width / 2;
-            const pCenterY = player.y + player.height / 2;
 
-            if (pCenterX > gate.x && pCenterX < gate.x + gate.w &&
+            // Check if player is hitting the electrical arc
+            if (pCenterX > gateCenterX - 5 && pCenterX < gateCenterX + 5 &&
                 player.y + player.height > gate.y && player.y < gate.y + gate.h) {
 
                 if (player.zapCooldown <= 0 && !isGodMode) {
+                    // 1. DRAIN AMMO
                     player.bullets = 0;
                     player.heavyAmmo = 0;
                     player.updateUI();
-                    if (typeof playZapSound === 'function') playZapSound();
-                    player.zapCooldown = 60; // 1 second immunity to re-triggering
 
-                    // Add a small visual spark at player position
-                    createShatterEffect(pCenterX, pCenterY);
+                    // 2. BOUNCE BACK HORIZONTALLY
+                    const bounceForce = 4.5;
+                    // Push player away based on their current direction
+                    if (player.velocityX > 0.1) {
+                        player.velocityX = -bounceForce;
+                    } else if (player.velocityX < -0.1) {
+                        player.velocityX = bounceForce;
+                    } else {
+                        // If standing still, push away from the center of the bolt
+                        player.velocityX = (pCenterX < gateCenterX) ? -bounceForce : bounceForce;
+                    }
+
+                    // 3. ADD UPWARD POP (Gives that "knockback" feel)
+                    player.velocityY = -3.5;
+                    player.onGround = false;
+
+                    // 4. TRIGGER EFFECTS
+                    if (typeof playZapSound === 'function') playZapSound();
+                    player.zapCooldown = 45; // Wait 0.75 seconds before another zap
+                    createShatterEffect(pCenterX, player.y + player.height / 2);
                 }
             }
         }

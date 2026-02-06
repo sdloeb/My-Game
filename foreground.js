@@ -587,30 +587,19 @@ class Foreground {
 
         // 11. Generate Electric Gates (High-Voltage Cables)
         for (let gx = 600; gx < this.portalX - 500; gx += 800) {
-            // Check if there is already a ground hazard here to avoid clumping
             const isBlocked = this.groundHazards.some(h => gx > h.x && gx < h.x + h.w);
-
             if (!isBlocked) {
-                // CALCULATE RANDOM HEIGHT
-                // 1/8 of 224 is 28px, 1/2 of 224 is 112px
-                const minH = 40;
+                const minH = 60;
                 const maxH = 112;
                 const randH = minH + Math.random() * (maxH - minH);
 
-                // CALCULATE RANDOM Y (Floating Position)
-                // We ensure it stays between the top (30px) and the ground (this.groundY)
-                // We subtract randH so the bottom stub doesn't go below the ground
                 const minY = 30;
                 const maxY = this.groundY - randH - 10;
                 const randY = minY + Math.random() * (maxY - minY);
 
                 this.electricGates.push({
-                    x: gx,
-                    y: randY,             // Randomized floating start point
-                    w: 20,
-                    h: randH,             // Randomized height
-                    timer: Math.random() * 120,
-                    active: true
+                    x: gx, y: randY, w: 20, h: randH,
+                    timer: Math.random() * 120, active: true
                 });
             }
         }
@@ -781,6 +770,14 @@ class Foreground {
                 });
             }
         }
+
+        this.electricGates.forEach(g => {
+            g.timer++;
+            if (g.timer >= 120) { // Toggles every 2 seconds
+                g.active = !g.active;
+                g.timer = 0;
+            }
+        });
 
 
     }
