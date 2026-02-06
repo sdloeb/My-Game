@@ -593,7 +593,7 @@ class Foreground {
                 const maxH = 112;
                 const randH = minH + Math.random() * (maxH - minH);
 
-                const minY = 30;
+                const minY = 10;
                 const maxY = this.groundY - randH - 10;
                 const randY = minY + Math.random() * (maxY - minY);
 

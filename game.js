@@ -938,42 +938,42 @@ function update() {
     updateParticles();
     fg.update(player);
 
-    // --- NEW: ELECTRIC GATE COLLISION & BOUNCE ---
+    // --- UPDATED: ROBUST ELECTRIC GATE COLLISION ---
     fg.electricGates.forEach(gate => {
         if (gate.active) {
-            const gateCenterX = gate.x + gate.w / 2;
-            const pCenterX = player.x + player.width / 2;
+            // The bolt's horizontal world position (the center line)
+            const boltX = gate.x + (gate.w / 2);
 
-            // Check if player is hitting the electrical arc
-            if (pCenterX > gateCenterX - 5 && pCenterX < gateCenterX + 5 &&
-                player.y + player.height > gate.y && player.y < gate.y + gate.h) {
+            // 1. COLLISION CHECK: Check if bolt is between player's left and right sides
+            const isTouchingX = boltX >= player.x && boltX <= player.x + player.width;
 
+            // 2. COLLISION CHECK: Check if player's height overlaps the bolt's vertical span
+            const isTouchingY = player.y + player.height > gate.y && player.y < gate.y + gate.h;
+
+            if (isTouchingX && isTouchingY) {
                 if (player.zapCooldown <= 0 && !isGodMode) {
-                    // 1. DRAIN AMMO
+
+                    // A. DRAIN AMMO
                     player.bullets = 0;
                     player.heavyAmmo = 0;
                     player.updateUI();
 
-                    // 2. BOUNCE BACK HORIZONTALLY
-                    const bounceForce = 4.5;
-                    // Push player away based on their current direction
-                    if (player.velocityX > 0.1) {
-                        player.velocityX = -bounceForce;
-                    } else if (player.velocityX < -0.1) {
-                        player.velocityX = bounceForce;
-                    } else {
-                        // If standing still, push away from the center of the bolt
-                        player.velocityX = (pCenterX < gateCenterX) ? -bounceForce : bounceForce;
-                    }
+                    // B. STRONG BOUNCE LOGIC
+                    const bouncePower = 5.0;
+                    // Determine push direction: if player is to the left of bolt, push left (-1)
+                    const pushDir = (player.x + player.width / 2 < boltX) ? -1 : 1;
 
-                    // 3. ADD UPWARD POP (Gives that "knockback" feel)
-                    player.velocityY = -3.5;
+                    player.velocityX = pushDir * bouncePower;
+                    player.velocityY = -4.0;    // Upward knockback
                     player.onGround = false;
+                    player.knockbackTimer = 20; // Disable speed clamp for 20 frames
 
-                    // 4. TRIGGER EFFECTS
+                    // C. EFFECTS & COOLDOWN
                     if (typeof playZapSound === 'function') playZapSound();
-                    player.zapCooldown = 45; // Wait 0.75 seconds before another zap
-                    createShatterEffect(pCenterX, player.y + player.height / 2);
+                    player.zapCooldown = 50;
+                    createShatterEffect(boltX, player.y + player.height / 2);
+
+                    console.log("ZAPPED! Bullets drained and bouncing back.");
                 }
             }
         }
