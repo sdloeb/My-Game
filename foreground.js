@@ -999,6 +999,7 @@ class Foreground {
         });
 
         // DRAW SWINGING VINES
+
         this.chains.forEach(c => {
             const screenX = c.x - cameraX;
             if (screenX > -50 && screenX < CANVAS_WIDTH + 50) {
@@ -1006,32 +1007,63 @@ class Foreground {
                 ctx.translate(screenX, c.y);
                 ctx.rotate(c.angle);
 
-                // Draw the vine stem (Bright green)
-                ctx.strokeStyle = '#22c55e';
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.moveTo(0, 0);
-                ctx.lineTo(0, c.length);
-                ctx.stroke();
+                if (this.level === 2) {
+                    // --- TRAPEZE RINGS (Level 1-2 Carnival) ---
+                    // The Rope
+                    ctx.strokeStyle = '#000000'; // Tan rope color
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.lineTo(0, c.length - 8);
+                    ctx.stroke();
 
-                // Draw leaves along the vine (Dark green)
-                ctx.fillStyle = '#166534';
-                for (let i = 20; i < c.length; i += 20) {
+                    // The Gymnast Ring
+                    ctx.strokeStyle = '#94a3b8'; // Silver/Grey metal
+                    ctx.lineWidth = 3;
                     ctx.beginPath();
-                    ctx.ellipse(-2, i, 4, 2, -0.5, 0, Math.PI * 2);
-                    ctx.fill();
+                    ctx.arc(0, c.length - 4, 6, 0, Math.PI * 2);
+                    ctx.stroke();
+
+                } else if (this.level === 3) {
+                    // --- METAL CHAINS (Level 1-3 Space) ---
+                    ctx.strokeStyle = '#94a3b8'; // Light grey links
+                    ctx.lineWidth = 1.5;
+                    for (let i = 0; i < c.length; i += 8) {
+                        ctx.beginPath();
+                        // Draw an oval for each link
+                        ctx.ellipse(0, i + 4, 2, 4, 0, 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
+                } else {
+                    // --- LEAFY VINES (Level 1-1 & Default) ---
+                    // Draw the vine stem (Bright green)
+                    ctx.strokeStyle = '#22c55e';
+                    ctx.lineWidth = 2;
                     ctx.beginPath();
-                    ctx.ellipse(2, i + 10, 4, 2, 0.5, 0, Math.PI * 2);
+                    ctx.moveTo(0, 0);
+                    ctx.lineTo(0, c.length);
+                    ctx.stroke();
+
+                    // Draw leaves along the vine (Dark green)
+                    ctx.fillStyle = '#166534';
+                    for (let i = 20; i < c.length; i += 20) {
+                        ctx.beginPath();
+                        ctx.ellipse(-2, i, 4, 2, -0.5, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.beginPath();
+                        ctx.ellipse(2, i + 10, 4, 2, 0.5, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+
+                    // Add a small red flower/bulb at the bottom
+                    ctx.fillStyle = '#ef4444';
+                    ctx.beginPath();
+                    ctx.arc(0, c.length, 4, 0, Math.PI * 2);
                     ctx.fill();
                 }
-
-                // Add a small red flower/bulb at the bottom
-                ctx.fillStyle = '#ef4444';
-                ctx.beginPath();
-                ctx.arc(0, c.length, 4, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.restore();
             }
+
+            ctx.restore();
         });
 
         this.platforms.forEach(p => {
