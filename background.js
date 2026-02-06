@@ -192,8 +192,18 @@ class Background {
             px += 120 + Math.random() * 50;
             planetIndex++;
         }
-    }
 
+        // --- FIXED: HIGH DENSITY PULSARS ---
+        // We now generate 12 pulsars so there is almost always one near a secret brick
+        for (let i = 0; i < 12; i++) {
+            this.scenery.push({
+                type: 'pulsar',
+                x: 40 + (i * 60) + Math.random() * 30, // Spaced every 50px in background coords
+                y: 20 + Math.random() * 70,
+                signals: []
+            });
+        }
+    }
 
     draw(ctx, cameraX) {
         // 1. Draw Sky
@@ -243,7 +253,7 @@ class Background {
             else if (s.type === 'star') this.drawStar(ctx, drawX, s);
             else if (['jupiter', 'saturn', 'moon'].includes(s.type)) this.drawPlanet(ctx, drawX, s);
             else if (s.type === 'blackhole') this.drawBlackHole(ctx, drawX, s);
-
+            else if (s.type === 'pulsar') this.drawPulsar(ctx, drawX, s);
 
         });
     }
@@ -538,23 +548,27 @@ class Background {
         structures.forEach(s => {
             const structureScreenLeft = s.x - cameraX;
             const structureScreenRight = (s.x + s.width) - cameraX;
-            const isVisibleOnScreen = structureScreenLeft >= -10 && structureScreenRight <= this.canvasWidth + 10;
+            // Calculate where the brick is relative to the screen center (128)
+            const structureScreenCenter = structureScreenLeft + (s.width / 2);
+            // Trigger the signal assignment only when the brick is near the middle of your screen
+            const isVisibleOnScreen = structureScreenCenter > 100 && structureScreenCenter < 156;
 
             if (isVisibleOnScreen && s.secretCount > 0 && !s.isSignaled) {
                 const structureScreenCenter = structureScreenLeft + (s.width / 2);
 
                 const candidates = this.scenery
                     .filter(obj => {
-                        const parallax = (this.level === 2) ? 0.8 : 0.5;
+                        const parallax = (this.level === 3) ? 0.1 : (this.level === 2 ? 0.8 : 0.5);
                         const bSX = obj.x - (cameraX * parallax);
 
                         // UPDATED: Allow any building (skyscraper or brown) to be a candidate
                         if (this.level === 1) return obj.type === 'building' && bSX > -obj.w && bSX < this.canvasWidth;
                         if (this.level === 2) return !['child', 'star', 'jupiter', 'saturn', 'moon', 'blackhole'].includes(obj.type) && bSX > -100 && bSX < this.canvasWidth;
+                        if (this.level === 3) return obj.type === 'pulsar' && bSX > -50 && bSX < this.canvasWidth + 50;
                         return false;
                     })
                     .map(obj => {
-                        const parallax = (this.level === 2) ? 0.8 : 0.5;
+                        const parallax = (this.level === 3) ? 0.1 : (this.level === 2 ? 0.8 : 0.5);
                         const bSX = obj.x - (cameraX * parallax);
                         return { obj: obj, dist: Math.abs(bSX - structureScreenCenter) };
                     })
@@ -589,6 +603,10 @@ class Background {
                             target.signals.push({ count: s.secretCount, timer: 0, isAntenna: true });
                             s.isSignaled = true;
                         }
+                    } else if (this.level === 3) { // Add this block
+                        // Signal the pulsar for Level 1-3
+                        target.signals.push({ count: s.secretCount, timer: 0 });
+                        s.isSignaled = true;
                     }
                 }
             }
@@ -1005,6 +1023,45 @@ class Background {
         ctx.beginPath();
         ctx.arc(x, s.y, s.size + 5 + Math.sin(time) * 3, 0, Math.PI * 2);
         ctx.stroke();
+    }
+
+    drawPulsar(ctx, x, s) {
+        const isLit = s.signals && s.signals.some(sig => sig.timer < (sig.count * 40) && (sig.timer % 40 < 20));
+        const centerY = s.y;
+
+        // 1. Draw the Base Star
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(x - 1, centerY - 1, 2, 2);
+
+        // 2. Draw the Signal Rings (Only when lit)
+        if (isLit) {
+            const time = Date.now() / 500;
+            ctx.strokeStyle = '#38bdf8'; // Light Blue / Cyan
+            ctx.lineWidth = 1;
+
+            for (let i = 0; i < 2; i++) {
+                // Expanding rings
+                const radius = ((Date.now() / 10 + (i * 15)) % 30);
+                const opacity = 1 - (radius / 30);
+
+                ctx.globalAlpha = opacity;
+                ctx.beginPath();
+                ctx.arc(x, centerY, radius, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            // Central Glow
+            ctx.globalAlpha = 0.5 + Math.sin(time * 5) * 0.5;
+            ctx.fillStyle = '#ffffff';
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#38bdf8';
+            ctx.beginPath();
+            ctx.arc(x, centerY, 3, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.globalAlpha = 1.0;
+            ctx.shadowBlur = 0;
+        }
     }
 
 }
