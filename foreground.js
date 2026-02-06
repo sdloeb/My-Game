@@ -782,57 +782,7 @@ class Foreground {
             }
         }
 
-        // DRAW ELECTRIC GATES
-        this.electricGates.forEach(g => {
-            const screenX = g.x - cameraX;
-            // Only draw if the gate is within the visible camera bounds
-            if (screenX > -50 && screenX < CANVAS_WIDTH + 50) {
 
-                // 1. RED CIRCLES (Replacing the gray rectangles)
-                ctx.fillStyle = '#ff0000'; // Pure Red
-
-                // Top Circle - Centered on the gate
-                ctx.beginPath();
-                ctx.arc(screenX + g.w / 2, g.y, 6, 0, Math.PI * 2);
-                ctx.fill();
-
-                // Bottom Circle - Centered on the gate
-                ctx.beginPath();
-                ctx.arc(screenX + g.w / 2, g.y + g.h, 6, 0, Math.PI * 2);
-                ctx.fill();
-
-                // 2. THE ACTIVE BOLT
-                if (g.active) {
-                    ctx.strokeStyle = '#00ffff'; // Electric Cyan
-                    ctx.lineWidth = 2;
-                    ctx.shadowBlur = 8;
-                    ctx.shadowColor = '#ffffff';
-
-                    ctx.beginPath();
-                    ctx.moveTo(screenX + g.w / 2, g.y);
-
-                    // Jagged vibration effect
-                    const segments = 8;
-                    const segHeight = g.h / segments;
-                    for (let i = 1; i <= segments; i++) {
-                        const jitter = (Math.random() - 0.5) * 15;
-                        ctx.lineTo(screenX + g.w / 2 + jitter, g.y + (i * segHeight));
-                    }
-                    ctx.stroke();
-
-                    // White core for the bolt
-                    ctx.strokeStyle = '#ffffff';
-                    ctx.lineWidth = 1;
-                    ctx.stroke();
-
-                    ctx.shadowBlur = 0; // Clear the glow for other game objects
-                } else {
-                    // 3. CHARGING INDICATOR (Faint line when inactive)
-                    ctx.fillStyle = `rgba(0, 255, 255, ${g.timer / 240})`;
-                    ctx.fillRect(screenX + g.w / 2 - 1, g.y, 2, g.h);
-                }
-            }
-        });
     }
 
     drawBrick(ctx, x, y, isSecret, hasClock, isCheckpointCandidate, platformObj) {
@@ -1103,55 +1053,74 @@ class Foreground {
         // DRAW ELECTRIC GATES
         this.electricGates.forEach(g => {
             const screenX = g.x - cameraX;
-            // Only draw if the gate is within the visible camera bounds
+            // Only draw if within visible screen bounds
             if (screenX > -50 && screenX < CANVAS_WIDTH + 50) {
+                // Calculate a single stable center point
+                const centerX = screenX + (g.w / 2);
 
-                // 1. DARK BLUE CIRCLES (Connectors)
+                // 1. DRAW BLUE CIRCLES FIRST (Layered behind)
                 ctx.fillStyle = '#00008b'; // Dark Blue
-
-                // Top Circle - Centered on the horizontal axis
                 ctx.beginPath();
-                ctx.arc(screenX + g.w / 2, g.y, 3, 0, Math.PI * 2);
+                ctx.arc(centerX, g.y, 3, 0, Math.PI * 2); // Top Circle
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(centerX, g.y + g.h, 3, 0, Math.PI * 2); // Bottom Circle
                 ctx.fill();
 
-                // Bottom Circle - Centered on the horizontal axis
-                ctx.beginPath();
-                ctx.arc(screenX + g.w / 2, g.y + g.h, 3, 0, Math.PI * 2);
-                ctx.fill();
-
-                // 2. THE ACTIVE BOLT
                 if (g.active) {
-                    ctx.strokeStyle = '#00ffff'; // Electric Cyan
-                    ctx.lineWidth = 2;
-                    ctx.shadowBlur = 8;
-                    ctx.shadowColor = '#ffffff';
+                    // 2. PRE-CALCULATE THE PATH (The "Ghosting" Fix)
+                    // We save the points to an array so the Glow and Core match perfectly.
+                    const pts = [];
+                    const segs = 16; // Number of segments in the bolt
 
-                    ctx.beginPath();
-                    ctx.moveTo(screenX + g.w / 2, g.y);
+                    for (let i = 0; i <= segs; i++) {
+                        const ratio = i / segs;
+                        let jitter = 0;
 
-                    // Jagged vibration effect (calculated every frame)
-                    const segments = 8;
-                    const segHeight = g.h / segments;
-                    for (let i = 1; i <= segments; i++) {
-                        const jitter = (Math.random() - 0.5) * 15;
-                        ctx.lineTo(screenX + g.w / 2 + jitter, g.y + (i * segHeight));
+                        // HARD LOCK: No vibration for the first 3 and last 3 segments.
+                        // This forces a perfectly straight vertical line at both ends.
+                        if (i >= 1 && i <= segs - 1) {
+                            // Sine dampener makes the wave smooth in the middle
+                            const damp = Math.sin(ratio * Math.PI);
+                            jitter = (Math.random() - 0.5) * 20 * damp;
+                        }
+                        pts.push({ x: centerX + jitter, y: g.y + (ratio * g.h) });
                     }
+
+                    // 3. DRAW THE BOLT ON TOP
+                    ctx.save();
+                    ctx.lineJoin = 'round';
+                    ctx.lineCap = 'round';
+
+                    // Construct the Path (Only once!)
+                    ctx.beginPath();
+                    ctx.moveTo(pts[0].x, pts[0].y);
+                    for (let i = 1; i < pts.length; i++) {
+                        ctx.lineTo(pts[i].x, pts[i].y);
+                    }
+
+                    // --- STROKE A: Cyan Glow ---
+                    ctx.strokeStyle = '#00ffff';
+                    ctx.lineWidth = 2.5;
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = '#ffffff';
                     ctx.stroke();
 
-                    // White core for the high-voltage bolt
+                    // --- STROKE B: White Core ---
+                    // We DO NOT call beginPath() again. This restrokes the EXACT same line.
+                    ctx.shadowBlur = 0;
                     ctx.strokeStyle = '#ffffff';
                     ctx.lineWidth = 1;
                     ctx.stroke();
 
-                    ctx.shadowBlur = 0; // Clear glow for next elements
+                    ctx.restore();
                 } else {
-                    // 3. CHARGING INDICATOR (Faint line when inactive)
+                    // 4. INACTIVE CHARGING LINE
                     ctx.fillStyle = `rgba(0, 255, 255, ${g.timer / 240})`;
-                    ctx.fillRect(screenX + g.w / 2 - 1, g.y, 2, g.h);
+                    ctx.fillRect(centerX - 0.5, g.y, 1, g.h);
                 }
             }
         });
-
 
         // DRAW SWINGING VINES
 
