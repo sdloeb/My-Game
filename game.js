@@ -422,6 +422,26 @@ function playPopSound() {
     osc.stop(now + 0.04);
 }
 
+function playZapSound() {
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    // Harsh, vibrating sawtooth wave for electricity
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(400, now);
+    osc.frequency.exponentialRampToValueAtTime(50, now + 0.15);
+
+    gain.gain.setValueAtTime(0.1, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(now + 0.15);
+}
+
 
 let canvas, ctx, player, fg, bg;
 let projectiles = [];
@@ -917,6 +937,30 @@ function update() {
 
     updateParticles();
     fg.update(player);
+
+    // --- ELECTRIC GATE COLLISION ---
+    fg.electricGates.forEach(gate => {
+        if (gate.active) {
+            // Check if player's hitbox overlaps the bolt area (between the stubs)
+            const pCenterX = player.x + player.width / 2;
+            const pCenterY = player.y + player.height / 2;
+
+            if (pCenterX > gate.x && pCenterX < gate.x + gate.w &&
+                player.y + player.height > gate.y && player.y < gate.y + gate.h) {
+
+                if (player.zapCooldown <= 0 && !isGodMode) {
+                    player.bullets = 0;
+                    player.heavyAmmo = 0;
+                    player.updateUI();
+                    if (typeof playZapSound === 'function') playZapSound();
+                    player.zapCooldown = 60; // 1 second immunity to re-triggering
+
+                    // Add a small visual spark at player position
+                    createShatterEffect(pCenterX, pCenterY);
+                }
+            }
+        }
+    });
 
     // ADD THIS: Update building signals in Level 1
     // Update background signals for secret detection on all levels

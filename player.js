@@ -44,6 +44,7 @@ class Player {
         this.stunCooldown = 0;
         this.hasBow = false;
         this.isSlamming = false; // Tracks if the player is currently ground-pounding
+        this.zapCooldown = 0; // Prevents sound/UI spam when hit by electricity
 
 
         // Squatting State
@@ -271,7 +272,7 @@ class Player {
 
     update(groundY, platforms, elevators, groundHazards, coins, fg) {
 
-
+        if (this.zapCooldown > 0) this.zapCooldown--;
 
         if (this.inQuicksand) {
             this.quicksandTimer++;

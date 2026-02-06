@@ -23,8 +23,8 @@ class Foreground {
         this.hasKey = false;
         this.portalLocked = true;
         this.bow = { x: this.portalX - 195, y: this.groundY - 20, collected: false }; //bow location
-
         this.troll = { x: this.portalX + 40, y: this.groundY, width: 32, height: 40, health: 5, hit: false, flashTimer: 0, bubbleTimer: 0, bubblesPopped: 0 };
+        this.electricGates = [];
 
         this.portal = {
             x: this.portalX,
@@ -584,6 +584,37 @@ class Foreground {
                 });
             }
         }
+
+        // 11. Generate Electric Gates (High-Voltage Cables)
+        for (let gx = 600; gx < this.portalX - 500; gx += 800) {
+            // Check if there is already a ground hazard here to avoid clumping
+            const isBlocked = this.groundHazards.some(h => gx > h.x && gx < h.x + h.w);
+
+            if (!isBlocked) {
+                // CALCULATE RANDOM HEIGHT
+                // 1/8 of 224 is 28px, 1/2 of 224 is 112px
+                const minH = 40;
+                const maxH = 112;
+                const randH = minH + Math.random() * (maxH - minH);
+
+                // CALCULATE RANDOM Y (Floating Position)
+                // We ensure it stays between the top (30px) and the ground (this.groundY)
+                // We subtract randH so the bottom stub doesn't go below the ground
+                const minY = 30;
+                const maxY = this.groundY - randH - 10;
+                const randY = minY + Math.random() * (maxY - minY);
+
+                this.electricGates.push({
+                    x: gx,
+                    y: randY,             // Randomized floating start point
+                    w: 20,
+                    h: randH,             // Randomized height
+                    timer: Math.random() * 120,
+                    active: true
+                });
+            }
+        }
+
     } // Function finally ends here
 
 
@@ -751,6 +782,57 @@ class Foreground {
             }
         }
 
+        // DRAW ELECTRIC GATES
+        this.electricGates.forEach(g => {
+            const screenX = g.x - cameraX;
+            // Only draw if the gate is within the visible camera bounds
+            if (screenX > -50 && screenX < CANVAS_WIDTH + 50) {
+
+                // 1. RED CIRCLES (Replacing the gray rectangles)
+                ctx.fillStyle = '#ff0000'; // Pure Red
+
+                // Top Circle - Centered on the gate
+                ctx.beginPath();
+                ctx.arc(screenX + g.w / 2, g.y, 6, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Bottom Circle - Centered on the gate
+                ctx.beginPath();
+                ctx.arc(screenX + g.w / 2, g.y + g.h, 6, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 2. THE ACTIVE BOLT
+                if (g.active) {
+                    ctx.strokeStyle = '#00ffff'; // Electric Cyan
+                    ctx.lineWidth = 2;
+                    ctx.shadowBlur = 8;
+                    ctx.shadowColor = '#ffffff';
+
+                    ctx.beginPath();
+                    ctx.moveTo(screenX + g.w / 2, g.y);
+
+                    // Jagged vibration effect
+                    const segments = 8;
+                    const segHeight = g.h / segments;
+                    for (let i = 1; i <= segments; i++) {
+                        const jitter = (Math.random() - 0.5) * 15;
+                        ctx.lineTo(screenX + g.w / 2 + jitter, g.y + (i * segHeight));
+                    }
+                    ctx.stroke();
+
+                    // White core for the bolt
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+
+                    ctx.shadowBlur = 0; // Clear the glow for other game objects
+                } else {
+                    // 3. CHARGING INDICATOR (Faint line when inactive)
+                    ctx.fillStyle = `rgba(0, 255, 255, ${g.timer / 240})`;
+                    ctx.fillRect(screenX + g.w / 2 - 1, g.y, 2, g.h);
+                }
+            }
+        });
     }
 
     drawBrick(ctx, x, y, isSecret, hasClock, isCheckpointCandidate, platformObj) {
@@ -1017,6 +1099,59 @@ class Foreground {
                 ctx.fillRect(screenX + 14, e.y + 2, 1, 1);
             }
         });
+
+        // DRAW ELECTRIC GATES
+        this.electricGates.forEach(g => {
+            const screenX = g.x - cameraX;
+            // Only draw if the gate is within the visible camera bounds
+            if (screenX > -50 && screenX < CANVAS_WIDTH + 50) {
+
+                // 1. DARK BLUE CIRCLES (Connectors)
+                ctx.fillStyle = '#00008b'; // Dark Blue
+
+                // Top Circle - Centered on the horizontal axis
+                ctx.beginPath();
+                ctx.arc(screenX + g.w / 2, g.y, 3, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Bottom Circle - Centered on the horizontal axis
+                ctx.beginPath();
+                ctx.arc(screenX + g.w / 2, g.y + g.h, 3, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 2. THE ACTIVE BOLT
+                if (g.active) {
+                    ctx.strokeStyle = '#00ffff'; // Electric Cyan
+                    ctx.lineWidth = 2;
+                    ctx.shadowBlur = 8;
+                    ctx.shadowColor = '#ffffff';
+
+                    ctx.beginPath();
+                    ctx.moveTo(screenX + g.w / 2, g.y);
+
+                    // Jagged vibration effect (calculated every frame)
+                    const segments = 8;
+                    const segHeight = g.h / segments;
+                    for (let i = 1; i <= segments; i++) {
+                        const jitter = (Math.random() - 0.5) * 15;
+                        ctx.lineTo(screenX + g.w / 2 + jitter, g.y + (i * segHeight));
+                    }
+                    ctx.stroke();
+
+                    // White core for the high-voltage bolt
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+
+                    ctx.shadowBlur = 0; // Clear glow for next elements
+                } else {
+                    // 3. CHARGING INDICATOR (Faint line when inactive)
+                    ctx.fillStyle = `rgba(0, 255, 255, ${g.timer / 240})`;
+                    ctx.fillRect(screenX + g.w / 2 - 1, g.y, 2, g.h);
+                }
+            }
+        });
+
 
         // DRAW SWINGING VINES
 
