@@ -194,11 +194,13 @@ class Background {
         }
 
         // --- FIXED: HIGH DENSITY PULSARS ---
-        // We now generate 12 pulsars so there is almost always one near a secret brick
-        for (let i = 0; i < 12; i++) {
+        // We increase parallax to 0.8 for pulsars so they match foreground speed better.
+        // We spread 15 pulsars across the level (5000 * 0.8) to cover the walk.
+        const pulsarLimit = (5000 * 0.8) + 300;
+        for (let i = 0; i < 15; i++) {
             this.scenery.push({
                 type: 'pulsar',
-                x: 40 + (i * 60) + Math.random() * 30, // Spaced every 50px in background coords
+                x: 100 + (i * (pulsarLimit / 15)) + Math.random() * 40,
                 y: 20 + Math.random() * 70,
                 signals: []
             });
@@ -234,9 +236,16 @@ class Background {
         this.scenery.forEach(s => {
             if (s.type === 'child') return; // Skip children, we already drew them
 
-            const parallax = (this.level === 3) ? 0.1 : (this.level === 2 ? 0.8 : 0.5);
+            // 1. Calculate the correct parallax speed
+            let parallax = (this.level === 3) ? 0.1 : (this.level === 2 ? 0.8 : 0.5);
+
+            // Override: Pulsars move faster to match the foreground speed
+            if (this.level === 3 && s.type === 'pulsar') parallax = 0.8;
+
+            // 2. Calculate the position on the screen
             const drawX = s.x - (cameraX * parallax);
 
+            // 3. Skip drawing if it's off-screen
             if (drawX + 300 < 0 || drawX > this.canvasWidth) return;
 
             // DRAWING ROUTER
@@ -558,7 +567,8 @@ class Background {
 
                 const candidates = this.scenery
                     .filter(obj => {
-                        const parallax = (this.level === 3) ? 0.1 : (this.level === 2 ? 0.8 : 0.5);
+                        let parallax = (this.level === 3) ? 0.1 : (this.level === 2 ? 0.8 : 0.5);
+                        if (this.level === 3 && obj.type === 'pulsar') parallax = 0.8;
                         const bSX = obj.x - (cameraX * parallax);
 
                         // UPDATED: Allow any building (skyscraper or brown) to be a candidate
@@ -568,8 +578,14 @@ class Background {
                         return false;
                     })
                     .map(obj => {
-                        const parallax = (this.level === 3) ? 0.1 : (this.level === 2 ? 0.8 : 0.5);
+                        let parallax = (this.level === 3) ? 0.1 : (this.level === 2 ? 0.8 : 0.5);
+
+                        // Override for pulsars so they move at foreground speed
+                        if (this.level === 3 && obj.type === 'pulsar') parallax = 0.8;
+
+                        // YOU WERE MISSING THIS LINE:
                         const bSX = obj.x - (cameraX * parallax);
+
                         return { obj: obj, dist: Math.abs(bSX - structureScreenCenter) };
                     })
                     .sort((a, b) => a.dist - b.dist);
