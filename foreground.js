@@ -386,7 +386,7 @@ class Foreground {
             }
 
             // 3. Advance X based on the wider of the two structures
-            const gap = 80 + Math.random() * 140;
+            const gap = 70 + Math.random() * 90;
             const mainEnd = x + structureWidth;
             const secondaryEnd = floatX + secondaryWidth;
             const totalWidthReached = Math.max(mainEnd, secondaryEnd) - x;
