@@ -941,14 +941,12 @@ function update() {
     // --- UPDATED: ROBUST ELECTRIC GATE COLLISION ---
     fg.electricGates.forEach(gate => {
         if (gate.active) {
-            // The bolt's horizontal world position (the center line)
-            const boltX = gate.x + (gate.w / 2);
+            // NEW BOX-TO-BOX COLLISION: Check if the player's rectangle and gate's rectangle overlap
+            // 1. Horizontal Check: Does any part of the player (16px) overlap the gate width (20px)?
+            const isTouchingX = player.x < gate.x + gate.w && player.x + player.width > gate.x;
 
-            // 1. COLLISION CHECK: Check if bolt is between player's left and right sides
-            const isTouchingX = boltX >= player.x && boltX <= player.x + player.width;
-
-            // 2. COLLISION CHECK: Check if player's height overlaps the bolt's vertical span
-            const isTouchingY = player.y + player.height > gate.y && player.y < gate.y + gate.h;
+            // 2. Vertical Check: Does player height overlap the span of the bolt?
+            const isTouchingY = player.y < gate.y + gate.h && player.y + player.height > gate.y;
 
             if (isTouchingX && isTouchingY) {
                 if (player.zapCooldown <= 0 && !isGodMode) {
@@ -959,26 +957,27 @@ function update() {
                     player.updateUI();
 
                     // B. STRONG BOUNCE LOGIC
-                    const bouncePower = 5.0;
-                    // Determine push direction: if player is to the left of bolt, push left (-1)
-                    const pushDir = (player.x + player.width / 2 < boltX) ? -1 : 1;
+                    const bouncePower = 6.0;
+                    const gateCenterX = gate.x + (gate.w / 2);
+                    // Determine push direction based on center points
+                    const pushDir = (player.x + player.width / 2 < gateCenterX) ? -1 : 1;
 
                     player.velocityX = pushDir * bouncePower;
                     player.velocityY = -4.0;    // Upward knockback
                     player.onGround = false;
-                    player.knockbackTimer = 20; // Disable speed clamp for 20 frames
+                    player.knockbackTimer = 25; // Disable speed clamp for 25 frames
 
                     // C. EFFECTS & COOLDOWN
                     if (typeof playZapSound === 'function') playZapSound();
                     player.zapCooldown = 50;
-                    createShatterEffect(boltX, player.y + player.height / 2);
+                    createShatterEffect(gateCenterX, player.y + player.height / 2);
 
                     console.log("ZAPPED! Bullets drained and bouncing back.");
                 }
             }
         }
     });
-
+    
     // ADD THIS: Update building signals in Level 1
     // Update background signals for secret detection on all levels
     bg.updateSignals(cameraX, fg.structures);
