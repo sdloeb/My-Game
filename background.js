@@ -194,14 +194,6 @@ class Background {
         }
 
         // --- FIXED: HIGH DENSITY PULSARS ---
-<<<<<<< HEAD
-        // We now generate 12 pulsars so there is almost always one near a secret brick
-        for (let i = 0; i < 25; i++) {
-            this.scenery.push({
-                type: 'pulsar',
-                x: 20 + (i * 30) + Math.random() * 15,
-                y: 20 + Math.random() * 80,
-=======
         // We increase parallax to 0.8 for pulsars so they match foreground speed better.
         // We spread 15 pulsars across the level (5000 * 0.8) to cover the walk.
         const pulsarLimit = (5000 * 0.8) + 300;
@@ -210,7 +202,6 @@ class Background {
                 type: 'pulsar',
                 x: 100 + (i * (pulsarLimit / 15)) + Math.random() * 40,
                 y: 20 + Math.random() * 70,
->>>>>>> 564f1767a0261af7c0bba26d4dfb5d9636a8ce67
                 signals: []
             });
         }
@@ -638,17 +629,17 @@ class Background {
         });
 
         // Update timers for all active signals
+
         this.scenery.forEach(obj => {
             if (obj.signals) {
-                obj.signals = obj.signals.filter(sig => {
+                obj.signals.forEach(sig => {
                     sig.timer++;
-                    // Remove the signal after one 200-frame cycle (approx 3 seconds)
-                    return sig.timer < 200;
+                    if (sig.timer >= 300) sig.timer = 0; // Standard 300-frame loop
                 });
             }
         });
     }
-    // --- MISSING DRAWING METHODS FOR LEVELS 2 & 3 ---
+
 
     drawTent(ctx, x, s) {
         const isLit = s.signals && s.signals.some(sig => sig.timer < (sig.count * 40) && (sig.timer % 40 < 20));

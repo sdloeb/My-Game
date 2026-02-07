@@ -560,10 +560,16 @@ class Foreground {
                 // 1. HorizOverlap: Checks if a brick is within 25px of the vine (accounts for swing).
                 // 2. IsUpHigh: Only blocks if the brick is in the upper half (y < 110).
                 // This allows bricks to exist safely below the vine's reach.
+                // UPDATED CLEARANCE CHECK: 
                 const isBlocked = this.platforms.some(p => {
-                    const horizOverlap = (p.x < cx + 25 && p.x + 16 > cx - 25);
-                    const isUpHigh = p.y < 110;
+                    // Increased horizontal buffer to 50px and vertical to 140px
+                    const horizOverlap = (p.x < cx + 50 && p.x + 16 > cx - 50);
+                    const isUpHigh = p.y < 140;
                     return horizOverlap && isUpHigh;
+                }) || this.elevators.some(e => {
+                    // Prevents vines from spawning in the path of moving elevators
+                    const horizOverlap = (e.x < cx + 50 && e.x + e.w > cx - 50);
+                    return horizOverlap;
                 });
 
                 if (!isBlocked) found = true;
