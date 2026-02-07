@@ -187,7 +187,7 @@
         }
 
         .ins-section p {
-            margin: 1px 0;
+            margin: 3px 0;
         }
 
         /* Smaller Pixel Icons */
@@ -216,6 +216,26 @@
 
         .icon-ice {
             background: #a0d8f8;
+        }
+
+        .icon-electric {
+            background: #00ffff;
+            box-shadow: 0 0 3px #ffffff;
+            position: relative;
+        }
+
+
+        .icon-electric::after {
+            content: '⚡';
+            font-size: 8px;
+
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            /* This perfectly centers the content */
+            color: #000;
+            line-height: 1;
         }
 
         .icon-sonar {
@@ -322,8 +342,27 @@
         }
 
         .icon-ice {
-            background: #a0d8f8;
-            box-shadow: inset 2px 2px #fff;
+            background: linear-gradient(135deg, #a0d8f8 0%, #7dd3fc 100%);
+            position: relative;
+            overflow: hidden;
+            /* Keeps the cracks inside the square */
+            border: 1px solid #e0f2fe;
+        }
+
+        /* This adds the white "cracks" and shine effect */
+        .icon-ice::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            /* Creates diagonal white lines representing cracks */
+            background:
+                linear-gradient(45deg, transparent 40%, rgba(255, 255, 255, 0.8) 45%, transparent 50%),
+                linear-gradient(110deg, transparent 70%, rgba(255, 255, 255, 0.4) 75%, transparent 80%);
+            /* Adds a top-left shine */
+            box-shadow: inset 2px 2px 2px rgba(255, 255, 255, 0.5);
         }
 
         .icon-enemy {
@@ -338,23 +377,36 @@
         }
 
         .icon-sonar {
-            border: 1px solid #00ffff;
-            border-radius: 50%;
-            width: 10px;
-            height: 10px;
-            animation: pulse 1s infinite;
+            background: transparent !important;
+            border: 1px solid #000 !important;
+            /* Forces the border to stay black */
+            border-radius: 2px;
+            width: 12px;
+            height: 12px;
+            position: relative;
+            display: inline-block;
+            vertical-align: middle;
+            overflow: visible;
+            box-sizing: border-box;
+            animation: none !important;
+            /* This specifically kills the pulse on the square */
         }
 
-        @keyframes pulse {
-            0% {
-                transform: scale(0.8);
-                opacity: 1;
-            }
-
-            100% {
-                transform: scale(1.5);
-                opacity: 0;
-            }
+        /* This creates the blue circle - the ONLY part that pulses */
+        .icon-sonar::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 6px;
+            height: 6px;
+            margin-top: -3px;
+            margin-left: -3px;
+            border: 1px solid #00ffff;
+            border-radius: 50%;
+            box-sizing: border-box;
+            animation: pulse 1s infinite !important;
+            /* Forces the pulse onto ONLY the circle */
         }
     </style>
 </head>
@@ -381,7 +433,10 @@
                         <p><b>SHOOT:</b> B Key</p>
                         <p><b>Vine/Chain:</b> SPACEBAR to grab onto</p>
                         <p><b>SONAR:</b> SPACEBAR + ▼ (Costs 3 Bullets)</p>
-                        <p><span class="icon icon-sonar"></span> Reveals secret bricks</p>
+                        <p style="margin-left: 28px;">
+                            <span class="icon icon-sonar"></span> Reveals secret bricks
+                        </p>
+
                     </div>
                 </div>
 
@@ -389,8 +444,9 @@
                     <div class="ins-section">
                         <h2>HAZARDS</h2>
                         <p><span class="icon icon-sand"></span><b>SAND:</b> Tap Jump to escape.</p>
-                        <p><span class="icon icon-oil"></span><b>OIL:</b> Causes sliding.</p>
-                        <p><span class="icon icon-ice"></span><b>ICE:</b> Watch your footing.</p>
+                        <p><span class="icon icon-oil"></span><b>OIL:</b> Flip out of control.</p>
+                        <p><span class="icon icon-ice"></span><b>ICE:</b> Slip out of control.</p>
+                        <p><span class="icon icon-electric"></span><b>ELECTRICITY:</b> Empties bullets.</p>
                     </div>
                     <div class="ins-section">
                         <h2>OBJECTS</h2>
