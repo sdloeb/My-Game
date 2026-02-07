@@ -464,6 +464,26 @@ function playElectricBuzzSound(active) {
     }
 }
 
+function playPowerDrainSound() {
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    osc.type = 'sawtooth';
+    // Start at a high "power" pitch and rapidly slide down to a low "empty" hum
+    osc.frequency.setValueAtTime(800, now);
+    osc.frequency.exponentialRampToValueAtTime(80, now + 0.3);
+
+    gain.gain.setValueAtTime(0.1, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(now + 0.3);
+}
+
 let canvas, ctx, player, fg, bg;
 let projectiles = [];
 let enemies = [];
@@ -974,6 +994,7 @@ function update() {
                     player.bullets = 0;
                     player.heavyAmmo = 0;
                     player.updateUI();
+                    if (typeof playPowerDrainSound === 'function') playPowerDrainSound();
 
                     // B. STRONG BOUNCE LOGIC
                     const bouncePower = 6.0;
