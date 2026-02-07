@@ -23,8 +23,8 @@ class Foreground {
         this.hasKey = false;
         this.portalLocked = true;
         this.bow = { x: this.portalX - 195, y: this.groundY - 20, collected: false }; //bow location
-
         this.troll = { x: this.portalX + 40, y: this.groundY, width: 32, height: 40, health: 5, hit: false, flashTimer: 0, bubbleTimer: 0, bubblesPopped: 0 };
+        this.electricGates = [];
 
         this.portal = {
             x: this.portalX,
@@ -386,7 +386,7 @@ class Foreground {
             }
 
             // 3. Advance X based on the wider of the two structures
-            const gap = 80 + Math.random() * 140;
+            const gap = 70 + Math.random() * 90;
             const mainEnd = x + structureWidth;
             const secondaryEnd = floatX + secondaryWidth;
             const totalWidthReached = Math.max(mainEnd, secondaryEnd) - x;
@@ -540,30 +540,70 @@ class Foreground {
             }
         }
 
-        // 10. Generate 9 Swinging Chains in sections
+        // 10. Generate 9 Swinging Chains in sections (UPDATED WITH CLEARANCE CHECK)
         const chainStart = 200;
         const chainEnd = this.portalX - 300;
-        const sectionWidth = (chainEnd - chainStart) / 6;
+        const sectionWidth = (chainEnd - chainStart) / 9;
 
-        for (let i = 0; i < 6; i++) {
+        for (let i = 0; i < 9; i++) {
             const sectionMin = chainStart + (i * sectionWidth);
-            const cx = sectionMin + Math.random() * (sectionWidth - 20);
+            let found = false;
+            let attempts = 0;
+            let cx;
 
-            // --- REPLACE THE .push BLOCK WITH THIS ---
-            const cOffset = Math.random() * Math.PI * 2;
-            // Pre-calculate the starting angle so it begins already in motion
-            // 0.12 matches the steady-state width of your 500-speed swing
-            const startAngle = Math.cos(Date.now() / 500 + cOffset) * 0.12;
+            // NEW: Attempt to find a location in this zone not blocked by high bricks
+            while (!found && attempts < 50) {
+                attempts++;
+                cx = sectionMin + Math.random() * (sectionWidth - 20);
 
-            this.chains.push({
-                x: cx,
-                y: 0,
-                length: this.groundY - 90,
-                angle: startAngle,      // Start at the correct position
-                angleVelocity: 0,       // Start with 0 velocity at the 'peak' of the swing
-                offset: cOffset         // Use the same offset for update()
-            });
+                // CLEARANCE CHECK: 
+                // 1. HorizOverlap: Checks if a brick is within 25px of the vine (accounts for swing).
+                // 2. IsUpHigh: Only blocks if the brick is in the upper half (y < 110).
+                // This allows bricks to exist safely below the vine's reach.
+                const isBlocked = this.platforms.some(p => {
+                    const horizOverlap = (p.x < cx + 25 && p.x + 16 > cx - 25);
+                    const isUpHigh = p.y < 110;
+                    return horizOverlap && isUpHigh;
+                });
+
+                if (!isBlocked) found = true;
+            }
+
+            // Only spawn if a clear spot was found in this section
+            if (found) {
+                const cOffset = Math.random() * Math.PI * 2;
+                const startAngle = Math.cos(Date.now() / 500 + cOffset) * 0.12;
+
+                this.chains.push({
+                    x: cx,
+                    y: 0,
+                    length: this.groundY - 90,
+                    angle: startAngle,
+                    angleVelocity: 0,
+                    offset: cOffset
+                });
+            }
         }
+
+        // 11. Generate Electric Gates (High-Voltage Cables)
+        for (let gx = 600; gx < this.portalX - 500; gx += 800) {
+            const isBlocked = this.groundHazards.some(h => gx > h.x && gx < h.x + h.w);
+            if (!isBlocked) {
+                const minH = 60;
+                const maxH = 112;
+                const randH = minH + Math.random() * (maxH - minH);
+
+                const minY = 10;
+                const maxY = this.groundY - randH - 10;
+                const randY = minY + Math.random() * (maxY - minY);
+
+                this.electricGates.push({
+                    x: gx, y: randY, w: 20, h: randH,
+                    timer: Math.random() * 120, active: true
+                });
+            }
+        }
+
     } // Function finally ends here
 
 
@@ -730,6 +770,15 @@ class Foreground {
                 });
             }
         }
+
+        this.electricGates.forEach(g => {
+            g.timer++;
+            if (g.timer >= 120) { // Toggles every 2 seconds
+                g.active = !g.active;
+                g.timer = 0;
+            }
+        });
+
 
     }
 
@@ -995,6 +1044,78 @@ class Foreground {
                 ctx.fillRect(screenX + 5, e.y + 3, 2, 1);
                 ctx.fillRect(screenX + 22, e.y + 5, 1, 1);
                 ctx.fillRect(screenX + 14, e.y + 2, 1, 1);
+            }
+        });
+
+        // DRAW ELECTRIC GATES
+        this.electricGates.forEach(g => {
+            const screenX = g.x - cameraX;
+            // Only draw if within visible screen bounds
+            if (screenX > -50 && screenX < CANVAS_WIDTH + 50) {
+                // Calculate a single stable center point
+                const centerX = screenX + (g.w / 2);
+
+                // 1. DRAW BLUE CIRCLES FIRST (Layered behind)
+                ctx.fillStyle = '#00008b'; // Dark Blue
+                ctx.beginPath();
+                ctx.arc(centerX, g.y, 3, 0, Math.PI * 2); // Top Circle
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(centerX, g.y + g.h, 3, 0, Math.PI * 2); // Bottom Circle
+                ctx.fill();
+
+                if (g.active) {
+                    // 2. PRE-CALCULATE THE PATH (The "Ghosting" Fix)
+                    // We save the points to an array so the Glow and Core match perfectly.
+                    const pts = [];
+                    const segs = 16; // Number of segments in the bolt
+
+                    for (let i = 0; i <= segs; i++) {
+                        const ratio = i / segs;
+                        let jitter = 0;
+
+                        // HARD LOCK: No vibration for the first 3 and last 3 segments.
+                        // This forces a perfectly straight vertical line at both ends.
+                        if (i >= 1 && i <= segs - 1) {
+                            // Sine dampener makes the wave smooth in the middle
+                            const damp = Math.sin(ratio * Math.PI);
+                            jitter = (Math.random() - 0.5) * 20 * damp;
+                        }
+                        pts.push({ x: centerX + jitter, y: g.y + (ratio * g.h) });
+                    }
+
+                    // 3. DRAW THE BOLT ON TOP
+                    ctx.save();
+                    ctx.lineJoin = 'round';
+                    ctx.lineCap = 'round';
+
+                    // Construct the Path (Only once!)
+                    ctx.beginPath();
+                    ctx.moveTo(pts[0].x, pts[0].y);
+                    for (let i = 1; i < pts.length; i++) {
+                        ctx.lineTo(pts[i].x, pts[i].y);
+                    }
+
+                    // --- STROKE A: Cyan Glow ---
+                    ctx.strokeStyle = '#00ffff';
+                    ctx.lineWidth = 2.5;
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = '#ffffff';
+                    ctx.stroke();
+
+                    // --- STROKE B: White Core ---
+                    // We DO NOT call beginPath() again. This restrokes the EXACT same line.
+                    ctx.shadowBlur = 0;
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+
+                    ctx.restore();
+                } else {
+                    // 4. INACTIVE CHARGING LINE
+                    ctx.fillStyle = `rgba(0, 255, 255, ${g.timer / 240})`;
+                    ctx.fillRect(centerX - 0.5, g.y, 1, g.h);
+                }
             }
         });
 

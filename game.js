@@ -422,6 +422,26 @@ function playPopSound() {
     osc.stop(now + 0.04);
 }
 
+function playZapSound() {
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    // Harsh, vibrating sawtooth wave for electricity
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(400, now);
+    osc.frequency.exponentialRampToValueAtTime(50, now + 0.15);
+
+    gain.gain.setValueAtTime(0.1, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(now + 0.15);
+}
+
 
 let canvas, ctx, player, fg, bg;
 let projectiles = [];
@@ -917,6 +937,47 @@ function update() {
 
     updateParticles();
     fg.update(player);
+
+    // --- UPDATED: ROBUST ELECTRIC GATE COLLISION ---
+    fg.electricGates.forEach(gate => {
+        if (gate.active) {
+            // The bolt's horizontal world position (the center line)
+            const boltX = gate.x + (gate.w / 2);
+
+            // 1. COLLISION CHECK: Check if bolt is between player's left and right sides
+            const isTouchingX = boltX >= player.x && boltX <= player.x + player.width;
+
+            // 2. COLLISION CHECK: Check if player's height overlaps the bolt's vertical span
+            const isTouchingY = player.y + player.height > gate.y && player.y < gate.y + gate.h;
+
+            if (isTouchingX && isTouchingY) {
+                if (player.zapCooldown <= 0 && !isGodMode) {
+
+                    // A. DRAIN AMMO
+                    player.bullets = 0;
+                    player.heavyAmmo = 0;
+                    player.updateUI();
+
+                    // B. STRONG BOUNCE LOGIC
+                    const bouncePower = 5.0;
+                    // Determine push direction: if player is to the left of bolt, push left (-1)
+                    const pushDir = (player.x + player.width / 2 < boltX) ? -1 : 1;
+
+                    player.velocityX = pushDir * bouncePower;
+                    player.velocityY = -4.0;    // Upward knockback
+                    player.onGround = false;
+                    player.knockbackTimer = 20; // Disable speed clamp for 20 frames
+
+                    // C. EFFECTS & COOLDOWN
+                    if (typeof playZapSound === 'function') playZapSound();
+                    player.zapCooldown = 50;
+                    createShatterEffect(boltX, player.y + player.height / 2);
+
+                    console.log("ZAPPED! Bullets drained and bouncing back.");
+                }
+            }
+        }
+    });
 
     // ADD THIS: Update building signals in Level 1
     // Update background signals for secret detection on all levels

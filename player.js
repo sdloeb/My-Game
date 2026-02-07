@@ -44,6 +44,8 @@ class Player {
         this.stunCooldown = 0;
         this.hasBow = false;
         this.isSlamming = false; // Tracks if the player is currently ground-pounding
+        this.zapCooldown = 0; // Prevents sound/UI spam when hit by electricity
+        this.knockbackTimer = 0; // NEW: Allows the bounce to ignore speed limits
 
 
         // Squatting State
@@ -271,7 +273,7 @@ class Player {
 
     update(groundY, platforms, elevators, groundHazards, coins, fg) {
 
-
+        if (this.zapCooldown > 0) this.zapCooldown--;
 
         if (this.inQuicksand) {
             this.quicksandTimer++;
@@ -524,13 +526,17 @@ class Player {
         }
 
 
-
         this.velocityY += this.gravity;
         let finalFriction = this.isStunned ? 0.99 : (this.onGround ? 0.85 : 0.98);
         this.velocityX *= finalFriction;
 
-        if (this.velocityX > this.maxSpeed) this.velocityX = this.maxSpeed;
-        if (this.velocityX < -this.maxSpeed) this.velocityX = -this.maxSpeed;
+        // NEW: Only clamp speed if NOT currently being knocked back by electricity
+        if (this.knockbackTimer > 0) {
+            this.knockbackTimer--;
+        } else {
+            if (this.velocityX > this.maxSpeed) this.velocityX = this.maxSpeed;
+            if (this.velocityX < -this.maxSpeed) this.velocityX = -this.maxSpeed;
+        }
 
         this.x += this.velocityX;
         this.y += this.velocityY;
