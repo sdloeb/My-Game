@@ -248,6 +248,7 @@ function playJumpSound() {
 }
 
 let activeIceSound = null;
+let activeElectricSound = null;
 
 function playIceSlideSound(active) {
     if (!audioCtx) return;
@@ -442,6 +443,26 @@ function playZapSound() {
     osc.stop(now + 0.15);
 }
 
+
+function playElectricBuzzSound(active) {
+    if (!audioCtx) return;
+    if (active && audioCtx.state === 'suspended') audioCtx.resume();
+
+    if (active && !activeElectricSound) {
+        // Creates a constant low-frequency buzzing hum
+        activeElectricSound = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        activeElectricSound.type = 'sawtooth';
+        activeElectricSound.frequency.setValueAtTime(50, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+        activeElectricSound.connect(gain);
+        gain.connect(audioCtx.destination);
+        activeElectricSound.start();
+    } else if (!active && activeElectricSound) {
+        activeElectricSound.stop();
+        activeElectricSound = null;
+    }
+}
 
 let canvas, ctx, player, fg, bg;
 let projectiles = [];
@@ -941,15 +962,13 @@ function update() {
     // --- UPDATED: ROBUST ELECTRIC GATE COLLISION ---
     fg.electricGates.forEach(gate => {
         if (gate.active) {
-            // NEW BOX-TO-BOX COLLISION: Check if the player's rectangle and gate's rectangle overlap
-            // 1. Horizontal Check: Does any part of the player (16px) overlap the gate width (20px)?
+            // UPDATED: Box-to-Box collision (checks the full image width)
             const isTouchingX = player.x < gate.x + gate.w && player.x + player.width > gate.x;
-
-            // 2. Vertical Check: Does player height overlap the span of the bolt?
             const isTouchingY = player.y < gate.y + gate.h && player.y + player.height > gate.y;
 
             if (isTouchingX && isTouchingY) {
-                if (player.zapCooldown <= 0 && !isGodMode) {
+                // REMOVED: !isGodMode so you can test the bounce/ammo loss while invincible
+                if (player.zapCooldown <= 0) {
 
                     // A. DRAIN AMMO
                     player.bullets = 0;
@@ -959,26 +978,22 @@ function update() {
                     // B. STRONG BOUNCE LOGIC
                     const bouncePower = 6.0;
                     const gateCenterX = gate.x + (gate.w / 2);
-                    // Determine push direction based on center points
                     const pushDir = (player.x + player.width / 2 < gateCenterX) ? -1 : 1;
 
                     player.velocityX = pushDir * bouncePower;
-                    player.velocityY = -4.0;    // Upward knockback
+                    player.velocityY = -4.0;
                     player.onGround = false;
-                    player.knockbackTimer = 25; // Disable speed clamp for 25 frames
+                    player.knockbackTimer = 20;
 
-                    // C. EFFECTS & COOLDOWN
-                    if (typeof playZapSound === 'function') playZapSound();
+                    // C. EFFECTS & COOLDOWN (Removed playZapSound here)
                     player.zapCooldown = 50;
                     createShatterEffect(gateCenterX, player.y + player.height / 2);
-
-                    console.log("ZAPPED! Bullets drained and bouncing back.");
                 }
             }
         }
     });
-    
-    // ADD THIS: Update building signals in Level 1
+
+
     // Update background signals for secret detection on all levels
     bg.updateSignals(cameraX, fg.structures);
 
@@ -1003,8 +1018,15 @@ function update() {
         // Remove if it floats off top
         if (b.y < -20) activeBubbles.splice(i, 1);
     }
-
+    // Add these lines here:
+    // Check if any active electric bolt is currently visible on the screen
+    const anyActiveGateOnScreen = fg.electricGates.some(gate => {
+        const screenX = gate.x - cameraX;
+        return gate.active && screenX > -50 && screenX < CANVAS_WIDTH + 50;
+    });
+    playElectricBuzzSound(anyActiveGateOnScreen);
 }
+
 
 function nextLevel() {
     if (!pendingLevelChange) {
