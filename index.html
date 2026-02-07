@@ -144,23 +144,104 @@
             background: rgba(255, 255, 255, 0.3);
         }
 
-        /* The actual Instructions Screen overlay */
         #instructions-screen {
             position: absolute;
             inset: 0;
             background: rgba(0, 0, 0, 0.95);
             display: none;
-            /* Hidden by default */
             flex-direction: column;
             justify-content: center;
+            /* Centers the content block vertically */
             align-items: center;
             color: white;
             z-index: 40;
-            /* Ensure it is in front of the start-overlay (z-index 20) */
             cursor: pointer;
-            text-align: center;
-            padding: 20px;
+            padding: 5px;
             box-sizing: border-box;
+            overflow: hidden;
+            /* Disables scrolling */
+        }
+
+        .ins-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px;
+            width: 98%;
+        }
+
+        .ins-section {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 4px;
+            border: 1px solid #444;
+            font-size: 7px;
+            /* Very small to fit one screen */
+            line-height: 1.1;
+        }
+
+        .ins-section h2 {
+            font-size: 8px;
+            margin: 0 0 2px 0;
+            color: #fde047;
+            text-shadow: 1px 1px #000;
+        }
+
+        .ins-section p {
+            margin: 1px 0;
+        }
+
+        /* Smaller Pixel Icons */
+        .icon {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            vertical-align: middle;
+            margin-right: 3px;
+        }
+
+        .icon-brick {
+            background: #bc4a24;
+            border-top: 1px solid #f8b800;
+        }
+
+        .icon-sand {
+            background: #d4a373;
+            border: 1px solid #8b5e34;
+        }
+
+        .icon-oil {
+            background: #111111;
+            border-radius: 50%;
+        }
+
+        .icon-ice {
+            background: #a0d8f8;
+        }
+
+        .icon-sonar {
+            border: 1px solid #00ffff;
+            border-radius: 50%;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(0.7);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(1.2);
+                opacity: 0;
+            }
+        }
+
+        /* ADD: A wrapper to ensure the bottom text isn't cut off when scrolling */
+        .ins-content-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            padding-bottom: 20px;
         }
 
 
@@ -189,6 +270,91 @@
                 display: none;
             }
         }
+
+        /* Layout for the instructions grid */
+        .ins-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            max-width: 90%;
+            margin-top: 10px;
+            font-size: 10px;
+            text-align: left;
+        }
+
+        .ins-section {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 8px;
+            border: 1px solid #444;
+        }
+
+        .ins-section h2 {
+            font-size: 12px;
+            margin: 0 0 5px 0;
+            color: #fde047;
+            text-align: center;
+        }
+
+        /* Icon Styles */
+        .icon {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            vertical-align: middle;
+            margin-right: 5px;
+            border: 1px solid #000;
+        }
+
+        .icon-brick {
+            background: #bc4a24;
+            border-top: 2px solid #f8b800;
+        }
+
+        .icon-sand {
+            background: #d4a373;
+            border: 1px dashed #8b5e34;
+        }
+
+        .icon-oil {
+            background: #111111;
+            border-radius: 50%;
+        }
+
+        .icon-ice {
+            background: #a0d8f8;
+            box-shadow: inset 2px 2px #fff;
+        }
+
+        .icon-enemy {
+            background: #4d7c0f;
+            border-radius: 2px;
+        }
+
+        .icon-boss {
+            background: #ef4444;
+            border-radius: 50%;
+            box-shadow: 0 0 5px #ff0000;
+        }
+
+        .icon-sonar {
+            border: 1px solid #00ffff;
+            border-radius: 50%;
+            width: 10px;
+            height: 10px;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(0.8);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(1.5);
+                opacity: 0;
+            }
+        }
     </style>
 </head>
 
@@ -203,13 +369,44 @@
         </div>
 
         <div id="instructions-screen" onclick="hideInstructions()">
-            <h1>HOW TO PLAY</h1>
-            <div id="instructions-placeholder">
-                <p>-- Instructions content will go here --</p>
+            <h1 style="color: #fde047; margin: 0 0 4px 0; font-size: 12px;">HOW TO PLAY</h1>
+
+            <div class="ins-grid">
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <div class="ins-section" style="flex-grow: 1;">
+                        <h2>CONTROLS</h2>
+                        <p><b>WALK:</b> ◀ ▶</p>
+                        <p><b>JUMP:</b> SPACEBAR</p>
+                        <p><b>SHOOT:</b> B Key</p>
+                        <p><b>SONAR:</b> SPACEBAR + ▼ (Costs 3 Bullets)</p>
+                        <p><span class="icon icon-sonar"></span> Reveals secret bricks</p>
+                    </div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <div class="ins-section">
+                        <h2>HAZARDS</h2>
+                        <p><span class="icon icon-sand"></span><b>SAND:</b> Tap Jump to escape.</p>
+                        <p><span class="icon icon-oil"></span><b>OIL:</b> Causes sliding.</p>
+                        <p><span class="icon icon-ice"></span><b>ICE:</b> Watch your footing.</p>
+                    </div>
+                    <div class="ins-section">
+                        <h2>OBJECTS</h2>
+                        <p><span class="icon icon-brick"></span><b>BRICKS:</b> Head-bonk to break.</p>
+                        <p><b>KEY/STAR:</b> Required for Portal.</p>
+                    </div>
+                </div>
             </div>
-            <br>
-            <p style="color: #ffff00;">CLICK ANYWHERE TO CLOSE</p>
+
+            <div class="ins-section" style="width: 96%; margin-top: 4px;">
+                <h2>SECRETS</h2>
+                <p>Use Sonar to reveal hidden <b>Time</b> or <b>Checkpoints</b>.</p>
+            </div>
+
+            <p style="color: #ffff00; margin-top: 4px; font-size: 8px; font-weight: bold;">CLICK TO CLOSE</p>
         </div>
+
+
 
         <div id="ui-container">
             <div id="level-display">Level 1-1</div>
