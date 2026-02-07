@@ -334,8 +334,7 @@ class Foreground {
                 x: x,
                 width: structureWidth,
                 platforms: this.platforms.slice(startPlatformIndex),
-                secretCount: 0,
-                isSignaled: false
+
             });
 
             // 2. OVERLAP LOGIC: Check for a secondary floating structure
@@ -380,8 +379,7 @@ class Foreground {
                     x: floatX,
                     width: secondaryWidth,
                     platforms: this.platforms.slice(floatStartIdx),
-                    secretCount: 0,
-                    isSignaled: false
+
                 });
             }
 
@@ -423,10 +421,6 @@ class Foreground {
             }
         });
 
-        // 4. Calculate Secret Count for Building Signals
-        this.structures.forEach(s => {
-            s.secretCount = s.platforms.filter(p => p.hasClock || p.isCheckpointCandidate).length;
-        });
 
         // 5. Assign Flying Secret Bricks
         const flyingCandidates = this.platforms.filter(p => !p.hasClock && !p.isCheckpointCandidate && p.x > 150 && p.x < this.portalX - 600 && !this.platforms.some(other => other.x === p.x && other.y < p.y));
@@ -441,10 +435,7 @@ class Foreground {
             }
         }
 
-        // 4. UPDATED: Calculate Secret Count (Now includes isSecret and runs after assignment)
-        this.structures.forEach(s => {
-            s.secretCount = s.platforms.filter(p => p.hasClock || p.isCheckpointCandidate || p.isSecret).length;
-        });
+
 
 
         // 7. Generate Hazards

@@ -423,26 +423,6 @@ function playPopSound() {
     osc.stop(now + 0.04);
 }
 
-function playZapSound() {
-    if (!audioCtx) return;
-    const now = audioCtx.currentTime;
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-
-    // Harsh, vibrating sawtooth wave for electricity
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(400, now);
-    osc.frequency.exponentialRampToValueAtTime(50, now + 0.15);
-
-    gain.gain.setValueAtTime(0.1, now);
-    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
-
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.start();
-    osc.stop(now + 0.15);
-}
-
 
 function playElectricBuzzSound(active) {
     if (!audioCtx) return;
@@ -1083,9 +1063,6 @@ function update() {
         }
     });
 
-
-    // Update background signals for secret detection on all levels
-    bg.updateSignals(cameraX, fg.structures);
 
     for (let i = activeBubbles.length - 1; i >= 0; i--) {
         let b = activeBubbles[i];

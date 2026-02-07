@@ -88,7 +88,7 @@ class Background {
                 h: bHeight,
                 color: isSkyscraper ? '#4b5563' : '#7c2d12',
                 windows: isSkyscraper,
-                signals: []
+
             });
 
             // Spacing between buildings
@@ -126,7 +126,7 @@ class Background {
                 x: cx,
                 y: this.groundY,
                 color: Math.random() > 0.5 ? '#ef4444' : '#ffffff',
-                signals: []
+
             });
 
             // 3. Update lastType for the next iteration
@@ -202,7 +202,7 @@ class Background {
                 type: 'pulsar',
                 x: 100 + (i * (pulsarLimit / 15)) + Math.random() * 40,
                 y: 20 + Math.random() * 70,
-                signals: []
+
             });
         }
     }
@@ -272,7 +272,7 @@ class Background {
 
     drawFerrisWheel(ctx, x, s) {
         // 1. Logic for blinking based on secret count
-        const isLit = s.signals && s.signals.some(sig => sig.timer < (sig.count * 40) && (sig.timer % 40 < 20));
+
 
         const centerY = s.y - 60;
         const radius = 40;
@@ -299,21 +299,11 @@ class Background {
         }
         // --- Your original drawing code ends here ---
 
-        // 2. Added Hub Blink (identifies the secrets without changing the structure)
-        ctx.fillStyle = isLit ? '#fde047' : '#94a3b8';
-        if (isLit) {
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = '#ffffff';
-        }
-        ctx.beginPath();
-        ctx.arc(x + 30, centerY, 5, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.shadowBlur = 0; // Reset for performance
     }
 
 
     drawCarousel(ctx, x, s) {
-        const isLit = s.signals && s.signals.some(sig => sig.timer < (sig.count * 40) && (sig.timer % 40 < 20));
+
         const bottomY = s.y;
         const centerX = x + 30;
         const carouselWidth = 60;
@@ -382,17 +372,11 @@ class Background {
         ctx.fillStyle = '#ef4444';
         ctx.fillRect(x - 10, bottomY - 45, carouselWidth + 20, 4);
 
-        // Adds a blinking "light" to the very top of your existing roof
-        if (isLit) {
-            ctx.fillStyle = '#fde047';
-            ctx.shadowBlur = 15; ctx.shadowColor = '#ffffff';
-            ctx.fillRect(centerX - 2, bottomY - 68, 4, 4);
-            ctx.shadowBlur = 0;
-        }
+
     }
 
     drawSwingRide(ctx, x, s) {
-        const isLit = s.signals && s.signals.some(sig => sig.timer < (sig.count * 40) && (sig.timer % 40 < 20));
+
         const bottomY = s.y;
         const poleX = x + 25;
         const poleHeight = 70;
@@ -417,7 +401,7 @@ class Background {
         ctx.fill();
 
         // Yellow trim on the cap
-        ctx.fillStyle = isLit ? '#ffffff' : '#fde047';
+        ctx.fillStyle = '#fde047';
         if (isLit) { ctx.shadowBlur = 10; ctx.shadowColor = '#ffffff'; }
         ctx.fillRect(poleX - 25, topY - 2, 50, 4);
         ctx.shadowBlur = 0;
@@ -484,34 +468,15 @@ class Background {
                     ctx.fillRect(wx - 1, wy - 1, 5, 6);
 
                     const isNormallyLit = (Math.sin((wx - x) * wy + b.x) > 0);
-                    let blinkActive = false;
-                    const sig = b.signals ? b.signals.find(s => s.winIdx === winIdx) : null;
 
-                    if (sig) {
-                        if (sig.timer < (sig.count * 40) && (sig.timer % 40 < 20)) {
-                            blinkActive = true;
-                        }
-                    }
-
-                    if (blinkActive) {
-                        ctx.save();
-                        ctx.fillStyle = '#fde047';
-                        ctx.shadowBlur = 10;
-                        ctx.shadowColor = '#ffffff';
-                        ctx.fillRect(wx, wy, 3, 4);
-                        ctx.restore();
-                    } else if (isNormallyLit) {
-                        ctx.fillStyle = '#fde047';
-                        ctx.fillRect(wx, wy, 3, 4);
+                    // ADD THESE LINES BACK: This actually draws the window light
+                    if (isNormallyLit) {
+                        ctx.fillStyle = '#fde047'; // Lit Window
                     } else {
-                        ctx.fillStyle = '#374151'; // Dark
-                        ctx.fillRect(wx, wy, 3, 4);
+                        ctx.fillStyle = '#374151'; // Dark Window
                     }
+                    ctx.fillRect(wx, wy, 3, 4);
 
-                    if (isNormallyLit || blinkActive) {
-                        ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-                        ctx.fillRect(wx, wy, 1, 1);
-                    }
                     winIdx++;
                 }
             }
@@ -553,96 +518,9 @@ class Background {
         ctx.fillRect(x, b.y + b.h - 2, b.w, 2);
     }
 
-    updateSignals(cameraX, structures) {
-        structures.forEach(s => {
-            const structureScreenLeft = s.x - cameraX;
-            const structureScreenRight = (s.x + s.width) - cameraX;
-            // Calculate where the brick is relative to the screen center (128)
-            const structureScreenCenter = structureScreenLeft + (s.width / 2);
-            // Trigger the signal assignment only when the brick is near the middle of your screen
-            const isVisibleOnScreen = structureScreenCenter > 100 && structureScreenCenter < 156;
-
-            if (isVisibleOnScreen && s.secretCount > 0 && !s.isSignaled) {
-                const structureScreenCenter = structureScreenLeft + (s.width / 2);
-
-                const candidates = this.scenery
-                    .filter(obj => {
-                        let parallax = (this.level === 3) ? 0.1 : (this.level === 2 ? 0.8 : 0.5);
-                        if (this.level === 3 && obj.type === 'pulsar') parallax = 0.8;
-                        const bSX = obj.x - (cameraX * parallax);
-
-                        // UPDATED: Allow any building (skyscraper or brown) to be a candidate
-                        if (this.level === 1) return obj.type === 'building' && bSX > -obj.w && bSX < this.canvasWidth;
-                        if (this.level === 2) return !['child', 'star', 'jupiter', 'saturn', 'moon', 'blackhole'].includes(obj.type) && bSX > -100 && bSX < this.canvasWidth;
-                        if (this.level === 3) return obj.type === 'pulsar' && bSX > -50 && bSX < this.canvasWidth + 50;
-                        return false;
-                    })
-                    .map(obj => {
-                        let parallax = (this.level === 3) ? 0.1 : (this.level === 2 ? 0.8 : 0.5);
-
-                        // Override for pulsars so they move at foreground speed
-                        if (this.level === 3 && obj.type === 'pulsar') parallax = 0.8;
-
-                        // YOU WERE MISSING THIS LINE:
-                        const bSX = obj.x - (cameraX * parallax);
-
-                        return { obj: obj, dist: Math.abs(bSX - structureScreenCenter) };
-                    })
-                    .sort((a, b) => a.dist - b.dist);
-
-                if (candidates.length > 0) {
-                    const target = candidates[0].obj;
-                    if (this.level === 2) {
-                        target.signals.push({ count: s.secretCount, timer: 0 });
-                        s.isSignaled = true;
-                    } else if (this.level === 1) {
-                        if (target.windows) {
-                            // Existing logic for Skyscraper windows
-                            let foundWinIdx = -1;
-                            let currentIdx = 0;
-                            for (let wy = target.y + 10; wy < target.y + target.h - 10; wy += 15) {
-                                for (let wx = 5; wx < target.w - 8; wx += 10) {
-                                    if (!(Math.sin(wx * wy + target.x) > 0) && !target.signals.some(sig => sig.winIdx === currentIdx)) {
-                                        foundWinIdx = currentIdx;
-                                        break;
-                                    }
-                                    currentIdx++;
-                                }
-                                if (foundWinIdx !== -1) break;
-                            }
-                            if (foundWinIdx !== -1) {
-                                target.signals.push({ count: s.secretCount, timer: 0, winIdx: foundWinIdx });
-                                s.isSignaled = true;
-                            }
-                        } else if (target.w > 25 && !target.signals.some(sig => sig.isAntenna)) {
-                            // NEW: Assign signal to Antenna for brown buildings (if they have one)
-                            target.signals.push({ count: s.secretCount, timer: 0, isAntenna: true });
-                            s.isSignaled = true;
-                        }
-                    } else if (this.level === 3) { // Add this block
-                        // Signal the pulsar for Level 1-3
-                        target.signals.push({ count: s.secretCount, timer: 0 });
-                        s.isSignaled = true;
-                    }
-                }
-            }
-        });
-
-        // Update timers for all active signals
-
-        this.scenery.forEach(obj => {
-            if (obj.signals) {
-                obj.signals.forEach(sig => {
-                    sig.timer++;
-                    if (sig.timer >= 300) sig.timer = 0; // Standard 300-frame loop
-                });
-            }
-        });
-    }
-
 
     drawTent(ctx, x, s) {
-        const isLit = s.signals && s.signals.some(sig => sig.timer < (sig.count * 40) && (sig.timer % 40 < 20));
+
         const bottomY = s.y;
         ctx.fillStyle = s.color;
         ctx.beginPath();
@@ -652,15 +530,11 @@ class Background {
         ctx.fill();
         ctx.fillStyle = s.color === '#ffffff' ? '#ef4444' : '#ffffff';
         ctx.fillRect(x + 20, bottomY - 15, 10, 15);
-        if (isLit) {
-            ctx.fillStyle = '#fde047'; ctx.shadowBlur = 10; ctx.shadowColor = '#ffffff';
-            ctx.beginPath(); ctx.arc(x + 25, bottomY - 42, 4, 0, Math.PI * 2); ctx.fill();
-            ctx.shadowBlur = 0;
-        }
+
     }
 
     drawFoodStand(ctx, x, s) {
-        const isLit = s.signals && s.signals.some(sig => sig.timer < (sig.count * 40) && (sig.timer % 40 < 20));
+
         const bottomY = s.y;
 
         // 1. MAIN STRUCTURE (Wooden base)
@@ -698,7 +572,7 @@ class Background {
 
         // 5. OVERHEAD SIGN
         // White sign board
-        ctx.fillStyle = isLit ? '#fde047' : '#ffffff';
+        ctx.fillStyle = '#ffffff';
         if (isLit) { ctx.shadowBlur = 15; ctx.shadowColor = '#ffffff'; }
         ctx.fillRect(x + 10, bottomY - 48, 20, 10);
         ctx.shadowBlur = 0;
@@ -710,8 +584,6 @@ class Background {
     }
 
     drawRollercoaster(ctx, x, s) {
-        // 1. Detect if a secret is nearby to trigger the blink
-        const isLit = s.signals && s.signals.some(sig => sig.timer < (sig.count * 40) && (sig.timer % 40 < 20));
 
         const groundY = s.y;
         const loopR = 25; // Radius of the circular loop
@@ -809,14 +681,7 @@ class Background {
             // --- CAR BODY COLOR LOGIC (Blinking cars) ---
             const isLead = (!isReversing && i === 0) || (isReversing && i === 2);
 
-            if (isLit) {
-                ctx.fillStyle = '#ffffff'; // The car body flashes white
-                ctx.shadowBlur = 10;
-                ctx.shadowColor = '#ffffff';
-            } else {
-                ctx.fillStyle = isLead ? '#ef4444' : '#fde047'; // Normal Red/Yellow
-                ctx.shadowBlur = 0;
-            }
+
 
             ctx.fillRect(-4, -6, 8, 5); // Car Body
             ctx.shadowBlur = 0; // Reset shadow for passenger heads
@@ -835,7 +700,7 @@ class Background {
 
     drawGameStall(ctx, x, s) {
         const bottomY = s.y;
-        const isLit = s.signals && s.signals.some(sig => sig.timer < (sig.count * 40) && (sig.timer % 40 < 20));
+
 
         // 1. MAIN STRUCTURE
         ctx.fillStyle = '#4b5563'; // Slate grey base
@@ -869,13 +734,13 @@ class Background {
 
         // Draw "Bottles" (Game targets) on the counter
         // Bottles glow when blinking
-        ctx.fillStyle = isLit ? '#fde047' : '#ffffff';
-        if (isLit) { ctx.shadowBlur = 10; ctx.shadowColor = '#ffffff'; }
+        // Draw "Bottles" (Game targets) on the counter
+        ctx.fillStyle = '#ffffff';
         for (let i = 0; i < 3; i++) {
             ctx.fillRect(x + 10 + (i * 10), bottomY - 20, 3, 4);
             ctx.fillRect(x + 11 + (i * 10), bottomY - 22, 1, 2);
         }
-        ctx.shadowBlur = 0;
+
 
         // 4. BLUE STRIPED AWNING
         const awningY = bottomY - 38;
@@ -898,7 +763,7 @@ class Background {
     }
 
     drawElephant(ctx, x, s) {
-        const isLit = s.signals && s.signals.some(sig => sig.timer < (sig.count * 40) && (sig.timer % 40 < 20));
+
         const bottomY = s.y;
         const mainGrey = '#94a3b8';
         const darkGrey = '#64748b';
@@ -961,10 +826,8 @@ class Background {
 
         // 7. EYE
 
-        ctx.fillStyle = isLit ? '#fde047' : '#000000';
-        if (isLit) { ctx.shadowBlur = 10; ctx.shadowColor = '#ffffff'; }
-        ctx.fillRect(x + 44, bottomY - 34, 3, 3);
-        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#000000';
+
 
         // 8. TAIL
         ctx.strokeStyle = darkGrey;
@@ -976,8 +839,7 @@ class Background {
     }
 
     drawJuggler(ctx, x, s) {
-        const isLit = s.signals && s.signals.some(sig => sig.timer < (sig.count * 40) && (sig.timer % 40 < 20));
-        const bottomY = s.y;
+
         const bodyX = x + 10;
         const time = Date.now() / 400;
 
@@ -993,8 +855,8 @@ class Background {
         ctx.fillRect(bodyX + 8, bottomY - 18 - armWave, 4, 3);
 
         // 2. JUGGLING PINS (Blink yellow when secret is nearby)
-        ctx.fillStyle = isLit ? '#fde047' : '#ffffff';
-        if (isLit) { ctx.shadowBlur = 8; ctx.shadowColor = '#ffffff'; }
+        ctx.fillStyle = '#ffffff';
+
 
         for (let i = 0; i < 3; i++) {
             const t = (time + (i * (Math.PI * 2 / 3))) % (Math.PI * 2);
@@ -1043,42 +905,14 @@ class Background {
     }
 
     drawPulsar(ctx, x, s) {
-        const isLit = s.signals && s.signals.some(sig => sig.timer < (sig.count * 40) && (sig.timer % 40 < 20));
+
         const centerY = s.y;
 
         // 1. Draw the Base Star
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(x - 1, centerY - 1, 2, 2);
 
-        // 2. Draw the Signal Rings (Only when lit)
-        if (isLit) {
-            const time = Date.now() / 500;
-            ctx.strokeStyle = '#38bdf8'; // Light Blue / Cyan
-            ctx.lineWidth = 1;
 
-            for (let i = 0; i < 2; i++) {
-                // Expanding rings
-                const radius = ((Date.now() / 10 + (i * 15)) % 30);
-                const opacity = 1 - (radius / 30);
-
-                ctx.globalAlpha = opacity;
-                ctx.beginPath();
-                ctx.arc(x, centerY, radius, 0, Math.PI * 2);
-                ctx.stroke();
-            }
-
-            // Central Glow
-            ctx.globalAlpha = 0.5 + Math.sin(time * 5) * 0.5;
-            ctx.fillStyle = '#ffffff';
-            ctx.shadowBlur = 15;
-            ctx.shadowColor = '#38bdf8';
-            ctx.beginPath();
-            ctx.arc(x, centerY, 3, 0, Math.PI * 2);
-            ctx.fill();
-
-            ctx.globalAlpha = 1.0;
-            ctx.shadowBlur = 0;
-        }
     }
 
 }
