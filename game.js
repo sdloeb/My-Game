@@ -990,9 +990,8 @@ function update() {
                 // REMOVED: !isGodMode so you can test the bounce/ammo loss while invincible
                 if (player.zapCooldown <= 0) {
 
-                    // A. DRAIN AMMO
+                    // A. DRAIN AMMO (Updated: only standard bullets are lost)
                     player.bullets = 0;
-                    player.heavyAmmo = 0;
                     player.updateUI();
                     if (typeof playPowerDrainSound === 'function') playPowerDrainSound();
 
