@@ -439,19 +439,24 @@ class Foreground {
 
 
         // 7. Generate Hazards
+
         for (let hx = 300; hx < this.portalX - 300; hx += 150) {
             if (Math.random() > 0.3) {
                 const hWidth = 35 + Math.random() * 48;
                 const rand = Math.random();
-                let hType = rand < 0.30 ? 'oil' : (rand < 0.30 ? 'ice' : 'quicksand');
+                let hType = rand < 0.30 ? 'oil' : (rand < 0.60 ? 'ice' : 'quicksand');
 
+                // NEW: Increased safety buffer (60px) to prevent sticking to walls
+                const safetyBuffer = 60;
                 const hasLowBricks = this.platforms.some(p => {
-                    const horiz = (hx < p.x + 16 && hx + hWidth > p.x);
+                    const horiz = (hx - safetyBuffer < p.x + 16 && hx + hWidth + safetyBuffer > p.x);
                     const vert = this.groundY - (p.y + 16);
-                    return horiz && vert < 36;
+                    // Any brick lower than 48px from the ground is a collision risk
+                    return horiz && vert < 48;
                 });
 
                 const overlaps = groundOccupiedX.some(range => (hx < range.end && hx + hWidth > range.start));
+
                 if (!overlaps && !hasLowBricks && (hx + hWidth < lastScreenStart)) {
                     this.groundHazards.push({ x: hx, w: hWidth, type: hType });
                 }
