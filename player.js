@@ -603,7 +603,7 @@ class Player {
             if (Math.sqrt(clockDx * clockDx + clockDy * clockDy) < 15) {
                 fg.clock.collected = true;
                 if (typeof playSecretSound === 'function') playSecretSound();
-                fg.timeLeft += 10;
+                fg.timeLeft += 25; // Add 25 seconds to the timer
                 const timerElement = document.getElementById('timer-display');
                 if (timerElement) {
                     timerElement.style.color = "#00ff00";
