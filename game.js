@@ -484,6 +484,74 @@ function playPowerDrainSound() {
     osc.stop(now + 0.3);
 }
 
+function playSonarPingSound() {
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    osc.type = 'sine';
+    // A resonant high-frequency ping effect
+    osc.frequency.setValueAtTime(1200, now);
+    osc.frequency.exponentialRampToValueAtTime(800, now + 0.4);
+
+    gain.gain.setValueAtTime(0.12, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(now + 0.4);
+}
+
+class Shockwave {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.radius = 0;
+        this.maxRadius = 150; // The sonar range
+        this.speed = 5;       // How fast it expands
+        this.life = 1.0;      // Starts at 100% opacity
+        this.active = true;
+    }
+
+    update() {
+        this.radius += this.speed;
+        this.life = 1.0 - (this.radius / this.maxRadius);
+
+        if (this.radius >= this.maxRadius) {
+            this.active = false;
+        }
+
+        // NEW: Detection Logic (Checks for hidden bricks in the foreground)
+        if (fg && fg.platforms) {
+            fg.platforms.forEach(p => {
+                if (p.hasClock || p.isCheckpointCandidate || p.isSecret) {
+                    const dx = (p.x + 8) - this.x;
+                    const dy = (p.y + 8) - this.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    // If the sonar ring is currently passing over the brick
+                    if (Math.abs(dist - this.radius) < 10) {
+                        p.sonarDetectedTimer = 90; // Reveals for 1.5 seconds
+                    }
+                }
+            });
+        }
+    }
+
+    draw(ctx, cameraX) {
+        ctx.save();
+        ctx.beginPath();
+        // Set color to a cyan/white glow matching your electric gates
+        ctx.strokeStyle = `rgba(0, 255, 255, ${this.life})`;
+        ctx.lineWidth = 2;
+        ctx.arc(this.x - cameraX, this.y, this.radius, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+    }
+}
+
 let canvas, ctx, player, fg, bg;
 let projectiles = [];
 let enemies = [];
@@ -504,6 +572,8 @@ let lastKilledType = null;
 let currentKilledStreak = 0;
 let activeBubbles = [];
 let lastBrickSoundTime = 0;
+let activeShockwaves = []; // Tracks active sonar pulses
+
 
 // --- LEVEL DIFFICULTY CONFIGURATION ---
 const levelEnemies = {
@@ -1038,7 +1108,15 @@ function update() {
         // Remove if it floats off top
         if (b.y < -20) activeBubbles.splice(i, 1);
     }
-    // Add these lines here:
+
+    // Update active Sonar Shockwaves
+    for (let i = activeShockwaves.length - 1; i >= 0; i--) {
+        activeShockwaves[i].update();
+        if (!activeShockwaves[i].active) {
+            activeShockwaves.splice(i, 1);
+        }
+    }
+
     // Check if any active electric bolt is currently visible on the screen
     const anyActiveGateOnScreen = fg.electricGates.some(gate => {
         const screenX = gate.x - cameraX;
@@ -1104,6 +1182,9 @@ function draw() {
 
         ctx.restore();
     });
+
+    // Draw Sonar Shockwaves
+    activeShockwaves.forEach(sw => sw.draw(ctx, cameraX));
 
     if (player.inBubble) {
         ctx.strokeStyle = "rgba(173, 216, 230, 0.8)";

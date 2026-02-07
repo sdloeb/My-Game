@@ -784,7 +784,10 @@ class Foreground {
                 g.timer = 0;
             }
         });
-
+        // Update sonar detection timers for all platforms
+        this.platforms.forEach(p => {
+            if (p.sonarDetectedTimer > 0) p.sonarDetectedTimer--;
+        });
 
     }
 
@@ -797,28 +800,21 @@ class Foreground {
         // 1. Draw Main Body
         ctx.fillRect(x, y, 16, 16);
 
-        // --- WHITE LIGHT SHINE EFFECT (Only for Flying Bricks) ---
-        if (isSpecial) {
-            const cycleTime = 5000;
-            const shineDuration = 50;
-            const currentTime = Date.now() % cycleTime;
-
-            if (currentTime < shineDuration) {
-                const progress = currentTime / shineDuration;
-                ctx.save();
-                ctx.beginPath();
-                ctx.rect(x, y, 16, 16);
-                ctx.clip();
-                ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
-                ctx.lineWidth = 4;
-                ctx.beginPath();
-                const shineX = x - 10 + (progress * 36);
-                ctx.moveTo(shineX, y);
-                ctx.lineTo(shineX + 8, y + 16);
-                ctx.stroke();
-                ctx.restore();
-            }
-        }
+        // Simplified sonar shine effect
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(x, y, 16, 16);
+        ctx.clip();
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        // The shine sweeps across the brick based on the timer
+        const shineProgress = (platformObj.sonarDetectedTimer % 30) / 30;
+        const shineX = x - 10 + (shineProgress * 36);
+        ctx.moveTo(shineX, y);
+        ctx.lineTo(shineX + 8, y + 16);
+        ctx.stroke();
+        ctx.restore();
 
         // 2. Highlights & Shadows
         ctx.fillStyle = this.brickColors.highlight;

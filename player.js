@@ -89,6 +89,24 @@ class Player {
                     this.velocityY = 12; // High downward velocity
                     this.velocityX = 0;  // Stop horizontal momentum for a "precision" slam
                 }
+                // --- NEW: SONAR TRIGGER (Jump + Down Combo) ---
+                const isJumpKey = (e.code === 'Space' || e.code === 'KeyW' || e.code === 'ArrowUp');
+                const isDownKey = (e.code === 'ArrowDown' || e.code === 'KeyS');
+
+                if (this.onGround && !this.isStunned && ((isJumpKey && this.keys.down) || (isDownKey && this.keys.up))) {
+                    if (this.bullets >= 3) {
+                        this.bullets -= 3;
+                        this.updateUI();
+                        if (typeof activeShockwaves !== 'undefined') {
+                            activeShockwaves.push(new Shockwave(this.x + this.width / 2, this.y + this.height / 2));
+                        }
+                        if (typeof playSonarPingSound === 'function') playSonarPingSound();
+
+                        this.keys.up = false;
+                        this.keys.down = false;
+                        return; // Stops normal jumping/crouching on this specific frame
+                    }
+                }
             }
 
 
@@ -124,6 +142,30 @@ class Player {
                     this.squatTimer = 60;
                     this.y += (this.normalHeight - this.squatHeight);
                     this.height = this.squatHeight;
+                }
+            }
+
+            // --- SONAR TRIGGER (Jump + Down Combo) ---
+            // Triggered if both Jump (Up/W/Space) and Down (Down/S) are held while on ground
+            const isJumpPressed = this.keys.up;
+            const isDownPressed = this.keys.down;
+
+            if (this.onGround && isJumpPressed && isDownPressed && !this.isStunned) {
+                if (this.bullets >= 3) {
+                    this.bullets -= 3;
+                    this.updateUI();
+
+                    // Create the visual shockwave at the player's center
+                    if (typeof activeShockwaves !== 'undefined') {
+                        activeShockwaves.push(new Shockwave(this.x + this.width / 2, this.y + this.height / 2));
+                    }
+
+                    // Optional: Play a sound if we had a ping sound defined
+                    // if (typeof playPingSound === 'function') playPingSound();
+
+                    // Consume the inputs so the player doesn't accidentally jump or crouch
+                    this.keys.up = false;
+                    this.keys.down = false;
                 }
             }
 
@@ -489,8 +531,8 @@ class Player {
             }
         }
 
-        // Add this inside the update() method of player.js
-        if (!this.hasBow && this.keys.down && this.onGround && !this.isSquatting) {
+        // UPDATED: Only squat if NOT triggering the sonar (holding Jump)
+        if (!this.hasBow && this.keys.down && !this.keys.up && this.onGround && !this.isSquatting) {
             this.isSquatting = true;
             this.squatTimer = 60;
             this.y += (this.normalHeight - this.squatHeight);
