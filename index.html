@@ -184,7 +184,7 @@
             /* Two equal rows */
             gap: 4px;
             width: 100%;
-            height: 80%;
+            height: 130%;
             /* Limits height to ensure bottom isn't cut off */
             flex-grow: 1;
         }
@@ -206,9 +206,9 @@
             padding: 2px;
             /* Tightened padding */
             border: 1px solid #444;
-            font-size: 6px;
+            font-size: 8px;
             /* Smaller font to fit more text */
-            line-height: 1.0;
+            line-height: 1.5;
             overflow: hidden;
         }
 
@@ -463,20 +463,16 @@
             <div class="ins-grid">
                 <div class="ins-section">
                     <h2>CONTROLS</h2>
-                    <div style="display: grid; grid-template-columns: 1fr 1.1fr; gap: 4px;">
-                        <div>
-                            <p><b>WALK:</b> ◀ ▶</p>
-                            <p><b>JUMP:</b> SPACEBAR</p>
-                            <p><b>SHOOT:</b> B Key</p>
-                            <p><b>Vines:</b> SPACEBAR(Jump) to grab</p>
-                            <p><b>STOMP:</b> SPACEBAR(Jump) + ▼ (In air)</p>
-                        </div>
-                        <div style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 4px;">
-                            <p><b>SONAR:</b> SPACEBAR(Jump) + ▼ (3 Bullets)</p>
-                            <p><span class="icon icon-sonar"></span> Reveals secrets</p>
-                        </div>
-                    </div>
+                    <p><b>WALK:</b> [◀ ▶]</p>
+                    <p><b>JUMP:</b> [SPACEBAR]</p>
+                    <p><b>SHOOT:</b> [B Key]</p>
+                    <p><b>TETHER GRAB:</b> [SPACEBAR] (when in air)</p>
+                    <p><b>STOMP BRICK:</b> [SPACEBAR] + [▼] (when in air)</p>
+                    <p><b>SONAR:</b> [SPACEBAR] + ▼ (when touching ground)</p>
+                    <p style="padding-left: 0px;"><span class="icon icon-sonar"></span> (costs 3 bullets & reveals
+                        secret bricks)</p>
                 </div>
+
 
                 <div class="ins-section">
                     <h2>HAZARDS</h2>
