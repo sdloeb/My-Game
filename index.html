@@ -151,15 +151,29 @@
             display: none;
             flex-direction: column;
             justify-content: flex-start;
-            /* Aligned to top */
             align-items: center;
             color: white;
             z-index: 40;
-            cursor: pointer;
-            padding: 2px;
-            /* Minimal padding to save space */
+            /* cursor: pointer; */
+            /* Remove or comment this line */
+            padding: 10px;
+            /* Increased padding for better spacing */
             box-sizing: border-box;
-            overflow: hidden;
+            overflow-y: auto;
+            /* Add this to allow vertical scrolling */
+        }
+
+        /* Add this new button style right below the block above */
+        .ins-close-btn {
+            margin: 15px 0;
+            padding: 8px 20px;
+            background: #ef4444;
+            border: 2px solid #fff;
+            color: white;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+            pointer-events: auto;
         }
 
         .ins-grid {
