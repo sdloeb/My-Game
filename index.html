@@ -430,6 +430,108 @@
             animation: pulse 1s infinite !important;
             /* Forces the pulse onto ONLY the circle */
         }
+
+        /* Interlocking Chain Visual (12x12) */
+        .icon-chain {
+            width: 12px;
+            height: 12px;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 5px;
+            background: #0f172a;
+            /* Deep dark blue/black background */
+            border: 1px solid #334155;
+            position: relative;
+            box-sizing: border-box;
+            border-radius: 2px;
+        }
+
+        /* The Top-Left Link */
+        .icon-chain::before {
+            content: '';
+            position: absolute;
+            width: 4px;
+            height: 6px;
+            left: 2px;
+            top: 1px;
+            border: 1.5px solid #cbd5e1;
+            /* Silver link */
+            border-radius: 3px;
+            /* Makes it look like a loop, not a box */
+            box-sizing: border-box;
+        }
+
+        /* The Bottom-Right Link (Interlocked) */
+        .icon-chain::after {
+            content: '';
+            position: absolute;
+            width: 4px;
+            height: 6px;
+            right: 2px;
+            bottom: 1px;
+            border: 1.5px solid #94a3b8;
+            /* Slightly darker silver for depth */
+            border-radius: 3px;
+            box-sizing: border-box;
+        }
+
+        .icon-arrow {
+            width: 10px;
+            height: 10px;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 5px;
+            background: #7c2d12;
+            border: 1px solid #000;
+            position: relative;
+        }
+
+        .icon-arrow::after {
+            content: '';
+            width: 0;
+            height: 0;
+            border-top: 3px solid transparent;
+            border-bottom: 3px solid transparent;
+            border-left: 4px solid #d1d5db;
+            position: absolute;
+            right: 0;
+            top: 1px;
+        }
+
+        /* High-Detail Full Bow & Arrow SVG (12x12) */
+        .icon-arrow {
+            width: 12px !important;
+            height: 12px !important;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 5px;
+            border: 1px solid #444;
+            box-sizing: border-box;
+            border-radius: 2px;
+
+            /* SVG Drawing Details:
+               1. Grey diagonal line = Bow String
+               2. Thick Orange curve = Bow Wood Frame
+               3. White diagonal line + triangle = Arrow
+            */
+            background: #000 url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12"><line x1="2" y1="10" x2="10" y2="2" stroke="%23999" stroke-width="1"/><path d="M 2 10 C 0 6 4 2 10 2" stroke="%23f97316" stroke-width="2" fill="none" stroke-linecap="round"/><line x1="1" y1="1" x2="8" y2="8" stroke="%23fff" stroke-width="1"/><path d="M 8 8 L 10 8 L 8 10 Z" fill="%23fff"/></svg>') no-repeat center center;
+        }
+
+        /* Safety kill switches for pseudo-elements */
+        .icon-arrow::before,
+        .icon-arrow::after {
+            content: none !important;
+            display: none !important;
+        }
+
+        .ui-text-visual {
+            font-family: 'Courier New', monospace;
+            font-size: 8px;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 5px;
+            text-shadow: 1px 1px #000;
+        }
     </style>
 </head>
 
@@ -471,8 +573,14 @@
                 <div class="ins-section">
                     <h2>OBJECTS</h2>
                     <p><span class="icon icon-brick"></span><b>BRICKS:</b> Bonk to break</p>
-                    <p><b>KEY/STAR:</b> Level Exit</p>
-                    <p><b>CLOCK:</b> Extra Time</p>
+                    <p><span class="icon-chain"></span> <b>Tether</b></p>
+                    <p><span class="ui-text-visual" style="color: #ff0000; font-weight: bold;">TIME: 120</span> <b>Time
+                            count down</b></p>
+                    <p><span class="icon-arrow"></span> <b>Boss projectiles</b></p>
+                    <p><span class="ui-text-visual" style="color: white;">Level 1-1</span> <b>Current level</b></p>
+                    <p><span class="ui-text-visual" style="color: #ffd700;">0</span> <b>Bullet count</b></p>
+                    <p><span class="ui-text-visual" style="color: #00ffff;">0</span> <b>Projectile count</b></p>
+                    <p><span class="ui-text-visual" style="color: white;">昌</span> <b>Boss weapon collected</b></p>
                 </div>
 
                 <div class="ins-section">
