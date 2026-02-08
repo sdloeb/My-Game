@@ -148,46 +148,68 @@
             position: absolute;
             inset: 0;
             background: #4b5563;
-            /* This is a solid slate gray */
             display: none;
             flex-direction: column;
-            justify-content: center;
-            /* Centers the content block vertically */
+            justify-content: flex-start;
+            /* Aligned to top */
             align-items: center;
             color: white;
             z-index: 40;
             cursor: pointer;
-            padding: 5px;
+            padding: 2px;
+            /* Minimal padding to save space */
             box-sizing: border-box;
             overflow: hidden;
-            /* Disables scrolling */
         }
 
         .ins-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
+            /* Two equal columns */
+            grid-template-rows: 1fr 1fr;
+            /* Two equal rows */
             gap: 4px;
-            width: 98%;
+            width: 100%;
+            height: 80%;
+            /* Limits height to ensure bottom isn't cut off */
+            flex-grow: 1;
         }
+
+
+        /* --- Individual Section Size Controls --- */
+        /* Use 'grid-column: span 2;' to make a section full width */
+        /* Use 'grid-row: span 2;' to make a section double height */
+        .sec-1 {}
+
+        .sec-2 {}
+
+        .sec-3 {}
+
+        .sec-4 {}
 
         .ins-section {
             background: rgba(255, 255, 255, 0.05);
-            padding: 4px;
+            padding: 2px;
+            /* Tightened padding */
             border: 1px solid #444;
-            font-size: 7px;
-            /* Very small to fit one screen */
-            line-height: 1.1;
+            font-size: 6px;
+            /* Smaller font to fit more text */
+            line-height: 1.0;
+            overflow: hidden;
         }
 
         .ins-section h2 {
-            font-size: 8px;
-            margin: 0 0 2px 0;
+            font-size: 7px;
+            /* Smaller headers */
+            margin: 0 0 1px 0;
             color: #fde047;
             text-shadow: 1px 1px #000;
+            text-align: center;
         }
 
         .ins-section p {
-            margin: 3px 0;
+            margin: 1px 0;
+            /* Minimal spacing between lines */
         }
 
         /* Smaller Pixel Icons */
@@ -296,8 +318,8 @@
         .ins-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            max-width: 90%;
+            gap: 8px;
+            width: 100%;
             margin-top: 10px;
             font-size: 10px;
             text-align: left;
@@ -422,165 +444,168 @@
         </div>
 
         <div id="instructions-screen" onclick="hideInstructions()">
-            <h1 style="color: #fde047; margin: 0 0 4px 0; font-size: 12px;">HOW TO PLAY</h1>
+            <h1 style="color: #fde047; margin: 2px 0; font-size: 10px; text-align: center;">GAME INSTRUCTIONS</h1>
 
             <div class="ins-grid">
-                <div style="display: flex; flex-direction: column; gap: 4px;">
-                    <div class="ins-section" style="flex-grow: 1;">
-                        <h2>CONTROLS</h2>
-                        <p><b>WALK:</b> ◀ ▶</p>
-                        <p><b>JUMP:</b> SPACEBAR</p>
-                        <p><b>SHOOT:</b> B Key</p>
-                        <p><b>Vine/Chain:</b> SPACEBAR to grab onto</p>
-                        <p><b>SONAR:</b> SPACEBAR + ▼ (Costs 3 Bullets)</p>
-                        <p style="margin-left: 28px;">
-                            <span class="icon icon-sonar"></span> Reveals secret bricks
-                        </p>
-
+                <div class="ins-section">
+                    <h2>CONTROLS</h2>
+                    <div style="display: grid; grid-template-columns: 1fr 1.1fr; gap: 4px;">
+                        <div>
+                            <p><b>WALK:</b> ◀ ▶</p>
+                            <p><b>JUMP:</b> SPACEBAR</p>
+                            <p><b>SHOOT:</b> B Key</p>
+                            <p><b>Vines:</b> SPACEBAR(Jump) to grab</p>
+                            <p><b>STOMP:</b> SPACEBAR(Jump) + ▼ (In air)</p>
+                        </div>
+                        <div style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 4px;">
+                            <p><b>SONAR:</b> SPACEBAR(Jump) + ▼ (3 Bullets)</p>
+                            <p><span class="icon icon-sonar"></span> Reveals secrets</p>
+                        </div>
                     </div>
                 </div>
 
-                <div style="display: flex; flex-direction: column; gap: 4px;">
-                    <div class="ins-section">
-                        <h2>HAZARDS</h2>
-                        <p><span class="icon icon-sand"></span><b>SAND:</b> Tap Jump to escape.</p>
-                        <p><span class="icon icon-oil"></span><b>OIL:</b> Flip out of control.</p>
-                        <p><span class="icon icon-ice"></span><b>ICE:</b> Slip out of control.</p>
-                        <p><span class="icon icon-electric"></span><b>ELECTRICITY:</b> Empties bullets.</p>
-                    </div>
-                    <div class="ins-section">
-                        <h2>OBJECTS</h2>
-                        <p><span class="icon icon-brick"></span><b>BRICKS:</b> Head-bonk to break.</p>
-                        <p><b>KEY/STAR:</b> Required for Portal.</p>
-                    </div>
+                <div class="ins-section">
+                    <h2>HAZARDS</h2>
+                    <p><span class="icon icon-sand"></span><b>SAND:</b> Tap Jump</p>
+                    <p><span class="icon icon-oil"></span><b>OIL:</b> Spin out</p>
+                    <p><span class="icon icon-ice"></span><b>ICE:</b> Slip out</p>
+                    <p><span class="icon icon-electric"></span><b>ELECTRIC:</b> Drains Bullets</p>
+                </div>
+
+                <div class="ins-section">
+                    <h2>OBJECTS</h2>
+                    <p><span class="icon icon-brick"></span><b>BRICKS:</b> Bonk to break</p>
+                    <p><b>KEY/STAR:</b> Level Exit</p>
+                    <p><b>CLOCK:</b> Extra Time</p>
+                </div>
+
+                <div class="ins-section">
+                    <h2>TIPS</h2>
+                    <p>Checkpoints are hidden in bricks.</p>
+                    <p>Sonar reveals hidden paths.</p>
+                    <p>Don't run out of time!</p>
                 </div>
             </div>
 
-            <div class="ins-section" style="width: 96%; margin-top: 4px;">
-                <h2>SECRETS</h2>
-                <p>Use Sonar to reveal hidden <b>Time</b> or <b>Checkpoints</b>.</p>
+            <p style="color: #ffff00; margin: 2px 0; font-size: 7px; font-weight: bold;">CLICK TO CLOSE</p>
+
+
+
+            <div id="ui-container">
+                <div id="level-display">Level 1-1</div>
+                <div id="bullet-display">0</div>
+                <div id="heavy-ammo-display"></div>
+                <div id="timer-display">TIME: 120</div>
             </div>
 
-            <p style="color: #ffff00; margin-top: 4px; font-size: 8px; font-weight: bold;">CLICK TO CLOSE</p>
-        </div>
+            <div id="touch-controls">
+                <div style="display: flex; gap: 5px;"> <button id="btn-left">◀</button>
+                    <button id="btn-right">▶</button>
+                </div>
 
-
-
-        <div id="ui-container">
-            <div id="level-display">Level 1-1</div>
-            <div id="bullet-display">0</div>
-            <div id="heavy-ammo-display"></div>
-            <div id="timer-display">TIME: 120</div>
-        </div>
-
-        <div id="touch-controls">
-            <div style="display: flex; gap: 5px;"> <button id="btn-left">◀</button>
-                <button id="btn-right">▶</button>
+                <div style="display: flex; gap: 5px;">
+                    <button id="btn-down" style="margin-right: 40px;">▼</button>
+                    <button id="btn-shoot">B</button>
+                    <button id="btn-up">▲</button>
+                </div>
             </div>
 
-            <div style="display: flex; gap: 5px;">
-                <button id="btn-down" style="margin-right: 40px;">▼</button>
-                <button id="btn-shoot">B</button>
-                <button id="btn-up">▲</button>
-            </div>
+            <canvas id="gameCanvas"></canvas>
         </div>
 
-        <canvas id="gameCanvas"></canvas>
-    </div>
+        <script src="background.js"></script>
+        <script src="foreground.js"></script>
+        <script src="enemy.js"></script>
+        <script src="player.js"></script>
+        <script src="game.js"></script>
 
-    <script src="background.js"></script>
-    <script src="foreground.js"></script>
-    <script src="enemy.js"></script>
-    <script src="player.js"></script>
-    <script src="game.js"></script>
+        <script>
 
-    <script>
+            function toggleGodMode(e) {
+                e.stopPropagation(); // Stops the game from starting when you click this
 
-        function toggleGodMode(e) {
-            e.stopPropagation(); // Stops the game from starting when you click this
+                // Toggle the variable in game.js
+                isGodMode = !isGodMode;
 
-            // Toggle the variable in game.js
-            isGodMode = !isGodMode;
-
-            // Update the button text
-            const ui = document.getElementById('god-mode-ui');
-            ui.innerText = "GOD MODE: " + (isGodMode ? "ON" : "OFF");
-            ui.style.color = isGodMode ? "#00ff00" : "#ff0000";
-        }
-
-        function showInstructions(e) {
-            e.stopPropagation(); // Prevents the game from starting when you click the button
-            document.getElementById('instructions-screen').style.display = 'flex';
-        }
-
-        function hideInstructions() {
-            document.getElementById('instructions-screen').style.display = 'none';
-        }
-
-        function applyResponsiveScale() {
-            const container = document.getElementById('game-container');
-            const canvas = document.getElementById('gameCanvas');
-            if (!container || !canvas) return;
-
-            const winW = window.innerWidth;
-            const winH = window.innerHeight;
-
-            // 1. We keep the game height fixed at 224 pixels internally
-            const targetHeight = 224;
-
-            // 2. We calculate a width based on your ACTUAL screen shape
-            // This removes the "empty space" on the sides in landscape
-            const aspectRatio = winW / winH;
-            const targetWidth = Math.floor(targetHeight * aspectRatio);
-
-            // 3. Update the Canvas and Global Variables
-            canvas.width = targetWidth;
-            canvas.height = targetHeight;
-
-            if (typeof CANVAS_WIDTH !== 'undefined') {
-                CANVAS_WIDTH = targetWidth; // Updates the let CANVAS_WIDTH in game.js
+                // Update the button text
+                const ui = document.getElementById('god-mode-ui');
+                ui.innerText = "GOD MODE: " + (isGodMode ? "ON" : "OFF");
+                ui.style.color = isGodMode ? "#00ff00" : "#ff0000";
             }
 
-            if (bg) bg.canvasWidth = targetWidth;
-
-            // 4. Position the container exactly in the center
-            container.style.width = targetWidth + "px";
-            container.style.height = targetHeight + "px";
-            container.style.marginLeft = -(targetWidth / 2) + "px";
-            container.style.marginTop = -(targetHeight / 2) + "px";
-
-            // 5. THE BIG FIX: Scale to fill the ENTIRE window height
-            // We multiply by 0.98 just to keep a tiny border visible
-            const finalScale = (winH / targetHeight) * 0.98;
-            container.style.transform = `scale(${finalScale})`;
-        }
-
-        function startFullScreen() {
-            const overlay = document.getElementById('start-overlay');
-            overlay.style.display = 'none';
-
-            // Start logic from game.js
-            if (typeof init === "function") {
-                init();
+            function showInstructions(e) {
+                e.stopPropagation(); // Prevents the game from starting when you click the button
+                document.getElementById('instructions-screen').style.display = 'flex';
             }
 
-            // Attempt Fullscreen for mobile users
-            if (document.documentElement.requestFullscreen) {
-                document.documentElement.requestFullscreen();
-            } else if (document.documentElement.webkitRequestFullscreen) {
-                document.documentElement.webkitRequestFullscreen();
+            function hideInstructions() {
+                document.getElementById('instructions-screen').style.display = 'none';
             }
 
+            function applyResponsiveScale() {
+                const container = document.getElementById('game-container');
+                const canvas = document.getElementById('gameCanvas');
+                if (!container || !canvas) return;
+
+                const winW = window.innerWidth;
+                const winH = window.innerHeight;
+
+                // 1. We keep the game height fixed at 224 pixels internally
+                const targetHeight = 224;
+
+                // 2. We calculate a width based on your ACTUAL screen shape
+                // This removes the "empty space" on the sides in landscape
+                const aspectRatio = winW / winH;
+                const targetWidth = Math.floor(targetHeight * aspectRatio);
+
+                // 3. Update the Canvas and Global Variables
+                canvas.width = targetWidth;
+                canvas.height = targetHeight;
+
+                if (typeof CANVAS_WIDTH !== 'undefined') {
+                    CANVAS_WIDTH = targetWidth; // Updates the let CANVAS_WIDTH in game.js
+                }
+
+                if (bg) bg.canvasWidth = targetWidth;
+
+                // 4. Position the container exactly in the center
+                container.style.width = targetWidth + "px";
+                container.style.height = targetHeight + "px";
+                container.style.marginLeft = -(targetWidth / 2) + "px";
+                container.style.marginTop = -(targetHeight / 2) + "px";
+
+                // 5. THE BIG FIX: Scale to fill the ENTIRE window height
+                // We multiply by 0.98 just to keep a tiny border visible
+                const finalScale = (winH / targetHeight) * 0.98;
+                container.style.transform = `scale(${finalScale})`;
+            }
+
+            function startFullScreen() {
+                const overlay = document.getElementById('start-overlay');
+                overlay.style.display = 'none';
+
+                // Start logic from game.js
+                if (typeof init === "function") {
+                    init();
+                }
+
+                // Attempt Fullscreen for mobile users
+                if (document.documentElement.requestFullscreen) {
+                    document.documentElement.requestFullscreen();
+                } else if (document.documentElement.webkitRequestFullscreen) {
+                    document.documentElement.webkitRequestFullscreen();
+                }
+
+                applyResponsiveScale();
+            }
+
+            // Handle rotations and window resizing
+            window.addEventListener('resize', applyResponsiveScale);
+            document.addEventListener('fullscreenchange', applyResponsiveScale);
+
+            // Initial call to set size
             applyResponsiveScale();
-        }
-
-        // Handle rotations and window resizing
-        window.addEventListener('resize', applyResponsiveScale);
-        document.addEventListener('fullscreenchange', applyResponsiveScale);
-
-        // Initial call to set size
-        applyResponsiveScale();
-    </script>
+        </script>
 </body>
 
 </html>
