@@ -184,7 +184,7 @@
             /* Two equal rows */
             gap: 4px;
             width: 100%;
-            height: 140%;
+            height: 155%;
             /* Limits height to ensure bottom isn't cut off */
             flex-grow: 1;
         }
@@ -524,13 +524,62 @@
             display: none !important;
         }
 
+        /* Text-based icons with borders */
         .ui-text-visual {
             font-family: 'Courier New', monospace;
             font-size: 8px;
             display: inline-block;
             vertical-align: middle;
             margin-right: 5px;
+
+            /* Border and Background to match 12px icons */
+            background: #000;
+            border: 1px solid #444;
+            height: 12px;
+            line-height: 10px;
+            /* Centers text vertically */
+            padding: 0 3px;
+            /* Gives text some space from the border */
+            box-sizing: border-box;
+            border-radius: 2px;
             text-shadow: 1px 1px #000;
+        }
+
+        /* High-Detail Grenade Icon (12x12) */
+        .icon-projectile {
+            width: 12px !important;
+            height: 12px !important;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 5px;
+            background-color: #000 !important;
+            border: 1px solid #444;
+            box-sizing: border-box;
+            border-radius: 2px;
+
+            /* SVG Drawing with URL-encoded colors:
+               %23aaaaaa = Silver pin
+               %23556b2f = Olive drab body
+               %232a3617 = Dark shadow/texture
+            */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M4 2h3l1 1' stroke='%23aaaaaa' stroke-width='1' fill='none'/%3E%3Crect x='3' y='3' width='6' height='8' rx='2' fill='%23556b2f'/%3E%3Cpath d='M3 6h6M3 8h6M6 3v8' stroke='%232a3617' stroke-width='1'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: center center;
+            background-size: 10px 10px;
+            /* Fits perfectly inside the borders */
+
+            /* Kill switches to prevent white bars/ghost text */
+            overflow: hidden !important;
+            font-size: 0 !important;
+            line-height: 0 !important;
+            text-indent: -9999px !important;
+        }
+
+        /* Ensure no old pseudo-elements interfere */
+        .icon-projectile::before,
+        .icon-projectile::after {
+            content: none !important;
+            display: none !important;
         }
     </style>
 </head>
@@ -574,9 +623,10 @@
                     <h2>OBJECTS</h2>
                     <p><span class="icon icon-brick"></span><b>BRICKS:</b> Bonk to break</p>
                     <p><span class="icon-chain"></span> <b>Tether</b></p>
-                    <p><span class="ui-text-visual" style="color: #ff0000; font-weight: bold;">TIME: 120</span> <b>Time
+                    <p><span class="icon-arrow"></span> <b>Boss weapon</b></p>
+                    <p><span class="icon-projectile"></span> <b>Projectiles for boss</b></p>
+                    <p><span class="ui-text-visual" style="color: #ff0000; font-weight: bold;">TIME: 120</span> <b>Timer
                             count down</b></p>
-                    <p><span class="icon-arrow"></span> <b>Boss projectiles</b></p>
                     <p><span class="ui-text-visual" style="color: white;">Level 1-1</span> <b>Current level</b></p>
                     <p><span class="ui-text-visual" style="color: #ffd700;">0</span> <b>Bullet count</b></p>
                     <p><span class="ui-text-visual" style="color: #00ffff;">0</span> <b>Projectile count</b></p>
