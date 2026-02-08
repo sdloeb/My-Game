@@ -163,9 +163,22 @@
             /* Add this to allow vertical scrolling */
         }
 
-        /* Add this new button style right below the block above */
+        .ins-header {
+            display: flex;
+            justify-content: space-between;
+            /* This pushes them to opposite ends */
+            align-items: center;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
         .ins-close-btn {
-            margin: 15px 0;
+            /* This pins it to the top right corner */
+            position: absolute;
+            top: .5px;
+            right: 10px;
+
+            /* Your existing styles */
             padding: 8px 20px;
             background: #ef4444;
             border: 2px solid #fff;
@@ -174,6 +187,8 @@
             font-family: 'Courier New', monospace;
             font-size: 10px;
             pointer-events: auto;
+            z-index: 100;
+            /* Ensures it stays on top of text */
         }
 
         .ins-grid {
@@ -314,20 +329,24 @@
             }
         }
 
-        /* Layout for the instructions grid */
         .ins-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 8px;
+            /* Adjust these two numbers to change row heights */
+            /* 160px is the top row, 480px is the bottom row */
+            grid-template-rows: auto auto;
+            gap: 12px;
             width: 100%;
-            margin-top: 10px;
-            font-size: 10px;
-            text-align: left;
+            /* Percentage height is removed to allow fixed pixel heights */
+            flex-grow: 1;
         }
 
         .ins-section {
             background: rgba(255, 255, 255, 0.05);
             padding: 2px;
+            /* Added these two lines below */
+            padding-bottom: 10px;
+            overflow-y: auto;
             border: 1px solid #444;
         }
 
@@ -581,6 +600,60 @@
             content: none !important;
             display: none !important;
         }
+
+        /* Base Style for 12px Graphical Icons */
+        .icon-clock,
+        .icon-plane,
+        .icon-flag {
+            width: 12px !important;
+            height: 12px !important;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 5px;
+            background-color: #000 !important;
+            border: 1px solid #444;
+            box-sizing: border-box;
+            border-radius: 2px;
+            background-repeat: no-repeat;
+            background-position: center center;
+            background-size: 10px 10px;
+            overflow: hidden !important;
+        }
+
+        /* Clock Drawing: White circle with hands */
+        .icon-clock {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Ccircle cx='6' cy='6' r='4' stroke='%23ffffff' stroke-width='1' fill='none'/%3E%3Cpath d='M6 3v3h2' stroke='%23ffffff' stroke-width='1' fill='none'/%3E%3C/svg%3E");
+        }
+
+        /* Plane Drawing: White wings and fuselage */
+        .icon-plane {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 6h8M4 3l4 3-4 3M3 5v2' stroke='%23ffffff' stroke-width='1' fill='none'/%3E%3C/svg%3E");
+        }
+
+        /* Flag Drawing: Silver pole and Red flag */
+        .icon-flag {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cline x1='4' y1='2' x2='4' y2='10' stroke='%23aaaaaa' stroke-width='1'/%3E%3Cpath d='M4 2l5 2-5 2z' fill='%23ef4444'/%3E%3C/svg%3E");
+        }
+
+        /* 1. Top Left (MOVEMENT) */
+        .ins-section:nth-child(1) {
+            height: 135px;
+        }
+
+        /* 2. Top Right (POWERUPS) */
+        .ins-section:nth-child(2) {
+            height: 135px;
+        }
+
+        /* 3. Bottom Left (OBJECTS) */
+        .ins-section:nth-child(3) {
+            height: 220px;
+        }
+
+        /* 4. Bottom Right (BOSS) */
+        .ins-section:nth-child(4) {
+            height: 185px;
+        }
     </style>
 </head>
 
@@ -621,7 +694,7 @@
 
                 <div class="ins-section">
                     <h2>OBJECTS</h2>
-                    <p><span class="icon icon-brick"></span><b>BRICKS:</b> Bonk to break</p>
+                    <p><span class="icon icon-brick"></span><b>BRICKS:</b> Bonk, stomp, or shoot 2x to break</p>
                     <p><span class="icon-chain"></span> <b>Tether</b></p>
                     <p><span class="icon-arrow"></span> <b>Boss weapon</b></p>
                     <p><span class="icon-projectile"></span> <b>Projectiles for boss</b></p>
@@ -631,13 +704,14 @@
                     <p><span class="ui-text-visual" style="color: #ffd700;">0</span> <b>Bullet count</b></p>
                     <p><span class="ui-text-visual" style="color: #00ffff;">0</span> <b>Projectile count</b></p>
                     <p><span class="ui-text-visual" style="color: white;">昌</span> <b>Boss weapon collected</b></p>
+                    <p><span class="icon-clock"></span> <b>Secret clock brick</b> (adds 25 seconds)</p>
+                    <p><span class="icon-plane"></span> <b>Secret flying brick</b> (ride a flying brick)</p>
+                    <p><span class="icon-flag"></span> <b>Secret Checkpoint brick</b></p>
                 </div>
 
                 <div class="ins-section">
-                    <h2>TIPS</h2>
-                    <p>Checkpoints are hidden in bricks.</p>
-                    <p>Sonar reveals hidden paths.</p>
-                    <p>Don't run out of time!</p>
+                    <h2>ENEMIES</h2>
+
                 </div>
             </div>
 
