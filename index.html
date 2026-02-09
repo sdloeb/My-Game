@@ -231,6 +231,10 @@
 
         .ins-section p {
             margin: 4px 0;
+            margin-left: 20px;
+            /* Add this line: moves the block right */
+            text-indent: -20px;
+            /* Add this line: pulls the first line back left */
             /* Minimal spacing between lines */
         }
 
@@ -419,15 +423,44 @@
             box-shadow: inset 2px 2px 2px rgba(255, 255, 255, 0.5);
         }
 
-        .icon-enemy {
-            background: #4d7c0f;
+        /* Detailed Enemy Icons */
+        .icon-zombie,
+        .icon-skeleton,
+        .icon-spider,
+        .icon-firemonster,
+        .icon-trollboss {
+            width: 12px !important;
+            height: 12px !important;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 5px;
+            background-color: #000 !important;
+            border: 1px solid #444;
+            box-sizing: border-box;
             border-radius: 2px;
+            background-repeat: no-repeat;
+            background-position: center center;
+            background-size: 10px 10px;
         }
 
-        .icon-boss {
-            background: #ef4444;
-            border-radius: 50%;
-            box-shadow: 0 0 5px #ff0000;
+        .icon-zombie {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Crect x='3' y='1' width='6' height='4' fill='%234d7c0f'/%3E%3Crect x='2' y='5' width='8' height='6' fill='%231e3a8a'/%3E%3Crect x='7' y='2' width='1' height='1' fill='black'/%3E%3C/svg%3E");
+        }
+
+        .icon-skeleton {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Crect x='3' y='1' width='6' height='4' rx='1' fill='%23f3f4f6'/%3E%3Crect x='5' y='5' width='2' height='6' fill='%23f3f4f6'/%3E%3Crect x='3' y='6' width='6' height='1' fill='%23f3f4f6'/%3E%3Crect x='3' y='8' width='6' height='1' fill='%23f3f4f6'/%3E%3Crect x='7' y='2' width='1' height='1' fill='black'/%3E%3C/svg%3E");
+        }
+
+        .icon-spider {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Ccircle cx='6' cy='7' r='3' fill='%2318181b'/%3E%3Ccircle cx='6' cy='4' r='2' fill='%2318181b'/%3E%3Crect x='5' y='3' width='1' height='1' fill='%23ef4444'/%3E%3Crect x='6' y='3' width='1' height='1' fill='%23ef4444'/%3E%3Cpath d='M3 4l-2 2M3 7l-2 0M3 10l-2-2M9 4l2 2M9 7l2 0M9 10l2-2' stroke='%2318181b' stroke-width='1'/%3E%3C/svg%3E");
+        }
+
+        .icon-firemonster {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M6 1 C 8 5, 10 8, 6 11 C 2 8, 4 5, 6 1' fill='%23ea580c'/%3E%3Cpath d='M6 4 C 7 6, 8 8, 6 10 C 4 8, 5 6, 6 4' fill='%23fde047'/%3E%3C/svg%3E");
+        }
+
+        .icon-trollboss {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Crect x='2' y='2' width='8' height='8' rx='1' fill='%2315803d'/%3E%3Crect x='3' y='4' width='2' height='1' fill='%23fde047'/%3E%3Crect x='7' y='4' width='2' height='1' fill='%23fde047'/%3E%3Cpath d='M3 8l1 2M8 8l-1 2' stroke='%23fefce8' stroke-width='1.5'/%3E%3C/svg%3E");
         }
 
         .icon-sonar {
@@ -709,8 +742,7 @@
                     <p><b>TETHER GRAB:</b> [SPACEBAR] (when in air)</p>
                     <p><b>STOMP BRICK:</b> [SPACEBAR] + [▼] (when in air)</p>
                     <p><b>SONAR:</b> [SPACEBAR] + ▼ (when touching ground)</p>
-                    <p style="padding-left: 0px;"><span class="icon icon-sonar"></span> (costs 3 bullets & reveals
-                        secret bricks)</p>
+                    <p><span class="icon icon-sonar"></span> (costs 3 bullets & reveals secret bricks)</p>
                 </div>
 
 
@@ -729,11 +761,16 @@
                     <p><span class="icon-chain"></span> <b>TETHER:</b> Hang or swing from vines and ropes</p>
                     <p><span class="icon-arrow"></span> <b>WEAPON:</b> Obtain weapon to defeat boss</p>
                     <p><span class="icon-projectile"></span> <b>PROJECTILES:</b> Collect to defeat boss</p>
-                    <p><span class="ui-text-visual" style="color: #ff0000; font-weight: bold;">TIME: 120</span> <b>Timer
+                    <p style="text-indent: 0;"><span class="ui-text-visual"
+                            style="color: #ff0000; font-weight: bold; margin-left: -20px;">TIME: 120</span> <b>Timer
                             count down</b></p>
-                    <p><span class="ui-text-visual" style="color: white;">Level 1-1</span> <b>Current level</b></p>
-                    <p><span class="ui-text-visual" style="color: #ffd700;">0</span> <b>Bullet count</b></p>
-                    <p><span class="ui-text-visual" style="color: #00ffff;">0</span> <b>Projectile count</b></p>
+                    <p style="text-indent: 0;"><span class="ui-text-visual"
+                            style="color: white; margin-left: -20px;">Level 1-1</span> <b>Current level</b></p>
+                    <p style="text-indent: 0;"><span class="ui-text-visual"
+                            style="color: #ffd700; margin-left: -20px;">0</span> <b>Bullet count</b></p>
+                    <p style="text-indent: 0;"><span class="ui-text-visual"
+                            style="color: #00ffff; margin-left: -20px;">0</span> <b>Projectile count</b></p>
+                    </p>
                     <p><span class="icon-clock"></span> <b>Secret clock brick</b> (adds 25 seconds)</p>
                     <p><span class="icon-plane"></span> <b>Secret flying brick</b> (ride a flying brick)</p>
                     <p><span class="icon-flag"></span> <b>Secret Checkpoint brick</b></p>
@@ -741,7 +778,16 @@
 
                 <div class="ins-section">
                     <h2>ENEMIES</h2>
-
+                    <p><span class="icon-zombie"></span> <b>ZOMBIE:</b> Shoot zombies to collect projectiles and avoid
+                        death.</p>
+                    <p><span class="icon-skeleton"></span> <b>SKELETON:</b> Shoot Skeletons to collect projectiles and
+                        avoid death.</p>
+                    <p><span class="icon-spider"></span> <b>SPIDER:</b> Shoot spiders to collect projectiles and avoid
+                        death.</p>
+                    <p><span class="icon-firemonster"></span> <b>MINI BOSS:</b> Shoot mini boss to collect boss weapon
+                        and avoid death.</p>
+                    <p><span class="icon-trollboss"></span> <b>TROLL BOSS:</b> Defeat the boss with your weapon and
+                        projectiles to complete level.</p>
                 </div>
             </div>
 
