@@ -32,6 +32,14 @@
             transform-origin: center;
         }
 
+        #start-overlay h1 {
+            margin: 10px 0 5px 0;
+        }
+
+        #start-overlay p {
+            margin: 0 0 5px 0;
+        }
+
         canvas {
             display: block;
             width: 100%;
@@ -39,7 +47,8 @@
         }
 
         /* 2. UI ELEMENTS */
-        #ui-container {
+        #ui-container,
+        #hud-display {
             position: absolute;
             top: 0;
             left: 0;
@@ -115,7 +124,7 @@
 
 
         #god-mode-ui {
-            margin-top: 20px;
+            margin-top: 10px;
             padding: 8px 16px;
             background: rgba(255, 255, 255, 0.1);
             border: 2px solid #fff;
@@ -131,7 +140,7 @@
 
         /* Style for the "Instructions" words/button */
         #instructions-btn {
-            margin-top: 10px;
+            margin-top: 5px;
             padding: 8px 16px;
             background: rgba(255, 255, 255, 0.1);
             border: 2px solid #fff;
@@ -276,20 +285,21 @@
             background: #00ffff;
             box-shadow: 0 0 3px #ffffff;
             position: relative;
+            /* Fix: Ensures the bolt doesn't get cut off if it's slightly too big */
+            overflow: visible !important;
         }
-
 
         .icon-electric::after {
             content: '⚡';
             font-size: 8px;
-
             position: absolute;
-            top: 50%;
+            /* Fix: 45% centers the bolt better than 50% because bolts are bottom-heavy */
+            top: 45%;
             left: 50%;
             transform: translate(-50%, -50%);
-            /* This perfectly centers the content */
             color: #000;
-            line-height: 1;
+            /* Fix: line-height 0 prevents the browser from pushing the bolt down */
+            line-height: 0;
         }
 
         .icon-sonar {
@@ -797,7 +807,7 @@
 
 
 
-            <div id="ui-container">
+            <div id="hud-display" style="display: none;">
                 <div id="level-display">Level 1-1</div>
                 <div id="bullet-display">0</div>
                 <div id="heavy-ammo-display"></div>
@@ -889,7 +899,7 @@
             function startFullScreen() {
                 const overlay = document.getElementById('start-overlay');
                 overlay.style.display = 'none';
-
+                document.getElementById('hud-display').style.display = 'block';
                 // Start logic from game.js
                 if (typeof init === "function") {
                     init();
