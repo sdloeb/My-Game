@@ -238,7 +238,20 @@
 
         .icon-brick {
             background: #bc4a24;
-            border-top: 1px solid #f8b800;
+            border-top: 1.5px solid #f8b800;
+        }
+
+        /* High-Detail Coin Icon (Matches game logic) */
+        .icon-coin {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            vertical-align: middle;
+            margin-right: 5px;
+            /* Draws the darker outline, gold body, gleam, and sparkle */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Ccircle cx='5' cy='5' r='5' fill='%238a6508'/%3E%3Ccircle cx='5' cy='5' r='4' fill='%23ffd700'/%3E%3Cpath d='M5 5 L5 2 A3 3 0 0 1 8 5 Z' fill='%23fff4ad'/%3E%3Crect x='4' y='2' width='2' height='2' fill='white'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: center center;
         }
 
         .icon-sand {
@@ -369,7 +382,7 @@
 
         .icon-brick {
             background: #bc4a24;
-            border-top: 2px solid #f8b800;
+            border-top: 1.5px solid #f8b800;
         }
 
         .icon-sand {
@@ -603,7 +616,7 @@
 
         /* Base Style for 12px Graphical Icons */
         .icon-clock,
-        .icon-plane,
+        .icon-coin,
         .icon-flag {
             width: 12px !important;
             height: 12px !important;
@@ -620,14 +633,31 @@
             overflow: hidden !important;
         }
 
-        /* Clock Drawing: White circle with hands */
+
+        /* Clock Drawing: Yellow circle with black hands matching the game clock */
         .icon-clock {
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Ccircle cx='6' cy='6' r='4' stroke='%23ffffff' stroke-width='1' fill='none'/%3E%3Cpath d='M6 3v3h2' stroke='%23ffffff' stroke-width='1' fill='none'/%3E%3C/svg%3E");
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Ccircle cx='6' cy='6' r='5' fill='%23ffff00'/%3E%3Cpath d='M6 2v4h3' stroke='%23000000' stroke-width='1' fill='none'/%3E%3C/svg%3E");
         }
 
-        /* Plane Drawing: White wings and fuselage */
+        /* Flying Brick: Matches standard brick icon (10px) with 3 feathered wings */
         .icon-plane {
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 6h8M4 3l4 3-4 3M3 5v2' stroke='%23ffffff' stroke-width='1' fill='none'/%3E%3C/svg%3E");
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            vertical-align: middle;
+            margin-right: 5px;
+            border: 1px solid #000;
+            /* Black border from .icon class */
+            background-color: #bc4a24;
+            /* Main Brick Color */
+            border-top: 1.5px solid #f8b800;
+            /* Yellow Brick Highlight */
+            box-sizing: content-box;
+
+            /* Simple white up arrow inside the brick */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath d='M5 2v6M2 5l3-3 3 3' stroke='white' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: center center;
         }
 
         /* Flag Drawing: Silver pole and Red flag */
@@ -694,16 +724,16 @@
 
                 <div class="ins-section">
                     <h2>OBJECTS</h2>
-                    <p><span class="icon icon-brick"></span><b>BRICKS:</b> Bonk, stomp, or shoot 2x to break</p>
-                    <p><span class="icon-chain"></span> <b>Tether</b></p>
-                    <p><span class="icon-arrow"></span> <b>Boss weapon</b></p>
-                    <p><span class="icon-projectile"></span> <b>Projectiles for boss</b></p>
+                    <p><span class="icon icon-brick"></span><b> BRICKS:</b> Bonk, stomp, or shoot 2x to break</p>
+                    <p><span class="icon-coin"></span> <b>COINS:</b> Collect coins to shoot bullets</p>
+                    <p><span class="icon-chain"></span> <b>TETHER:</b> Hang or swing from vines and ropes</p>
+                    <p><span class="icon-arrow"></span> <b>WEAPON:</b> Obtain weapon to defeat boss</p>
+                    <p><span class="icon-projectile"></span> <b>PROJECTILES:</b> Collect to defeat boss</p>
                     <p><span class="ui-text-visual" style="color: #ff0000; font-weight: bold;">TIME: 120</span> <b>Timer
                             count down</b></p>
                     <p><span class="ui-text-visual" style="color: white;">Level 1-1</span> <b>Current level</b></p>
                     <p><span class="ui-text-visual" style="color: #ffd700;">0</span> <b>Bullet count</b></p>
                     <p><span class="ui-text-visual" style="color: #00ffff;">0</span> <b>Projectile count</b></p>
-                    <p><span class="ui-text-visual" style="color: white;">昌</span> <b>Boss weapon collected</b></p>
                     <p><span class="icon-clock"></span> <b>Secret clock brick</b> (adds 25 seconds)</p>
                     <p><span class="icon-plane"></span> <b>Secret flying brick</b> (ride a flying brick)</p>
                     <p><span class="icon-flag"></span> <b>Secret Checkpoint brick</b></p>
