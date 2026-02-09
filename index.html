@@ -225,29 +225,71 @@
 
         .sec-4 {}
 
+        /* 1. The Container */
         .ins-section {
             background: rgba(255, 255, 255, 0.05);
-            padding: 2px;
-            /* Tightened padding */
+            padding: 2px 4px;
+            padding-bottom: 10px;
+            overflow-y: auto;
             border: 1px solid #444;
-            font-size: 8px;
-            /* Smaller font to fit more text */
-            line-height: 1.5;
-            overflow: hidden;
+            /* Defined as the reference for shrinking text */
+            container-type: inline-size;
+            overflow-x: hidden;
         }
 
+        .ins-section {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 2px 4px;
+            padding-bottom: 10px;
+            overflow-y: auto;
+            border: 1px solid #444;
+            container-type: inline-size;
+            overflow-x: hidden;
+            /* Ensures the section itself doesn't push the grid wide */
+            min-width: 0;
+        }
 
+        .ins-section {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 2px 4px;
+            padding-bottom: 10px;
+            overflow-y: auto;
+            border: 1px solid #444;
+            /* This tells the text how much room it has */
+            container-type: inline-size;
+            overflow-x: hidden;
+            min-width: 0;
+        }
 
         .ins-section p {
-            margin: 4px 0;
-            margin-left: 20px;
-            /* Add this line: moves the block right */
-            text-indent: -20px;
-            /* Add this line: pulls the first line back left */
-            /* Minimal spacing between lines */
+            margin: 6px 0;
+            display: flex;
+            align-items: flex-start;
+            /* Aligns icon to the top of the text block */
+
+            /* ALLOW WRAPPING: This is the fix for the Enemies section */
+            white-space: normal;
+            overflow-wrap: break-word;
+
+            /* DYNAMIC FONT: Still shrinks to fit more on a line before wrapping */
+            font-size: clamp(5px, 3.5cqw, 8px);
+            line-height: 1.2;
+
+            text-indent: 0 !important;
+            margin-left: 0 !important;
         }
 
-
+        /* Keep icons and titles from shrinking or moving */
+        .ins-section p .icon,
+        .ins-section p [class^="icon-"],
+        .ins-section p [class*=" icon-"],
+        .ins-section p .ui-text-visual,
+        .ins-section p b {
+            flex-shrink: 0;
+            margin-right: 6px;
+            /* Ensures icons don't drift if text wraps */
+            margin-top: 1px;
+        }
 
         .icon-brick {
             background: #bc4a24;
@@ -358,13 +400,11 @@
 
         .ins-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            /* Adjust these two numbers to change row heights */
-            /* 160px is the top row, 480px is the bottom row */
+            /* Force both columns to stay exactly half-width */
+            grid-template-columns: repeat(2, minmax(0, 1fr));
             grid-template-rows: auto auto;
             gap: 12px;
             width: 100%;
-            /* Percentage height is removed to allow fixed pixel heights */
             flex-grow: 1;
         }
 
@@ -720,7 +760,7 @@
 
         /* 3. Bottom Left (OBJECTS) */
         .ins-section:nth-child(3) {
-            height: 220px;
+            height: 260px;
         }
 
         /* 4. Bottom Right (BOSS) */
@@ -771,15 +811,11 @@
                     <p><span class="icon-chain"></span> <b>TETHER:</b> Hang or swing from vines and ropes</p>
                     <p><span class="icon-arrow"></span> <b>WEAPON:</b> Obtain weapon to defeat boss</p>
                     <p><span class="icon-projectile"></span> <b>PROJECTILES:</b> Collect to defeat boss</p>
-                    <p style="text-indent: 0;"><span class="ui-text-visual"
-                            style="color: #ff0000; font-weight: bold; margin-left: -20px;">TIME: 120</span> <b>Timer
+                    <p><span class="ui-text-visual" style="color: #ff0000; font-weight: bold;">TIME: 120</span> <b>Timer
                             count down</b></p>
-                    <p style="text-indent: 0;"><span class="ui-text-visual"
-                            style="color: white; margin-left: -20px;">Level 1-1</span> <b>Current level</b></p>
-                    <p style="text-indent: 0;"><span class="ui-text-visual"
-                            style="color: #ffd700; margin-left: -20px;">0</span> <b>Bullet count</b></p>
-                    <p style="text-indent: 0;"><span class="ui-text-visual"
-                            style="color: #00ffff; margin-left: -20px;">0</span> <b>Projectile count</b></p>
+                    <p><span class="ui-text-visual" style="color: white;">Level 1-1</span> <b>Current level</b></p>
+                    <p><span class="ui-text-visual" style="color: #ffd700;">0</span> <b>Bullet count</b></p>
+                    <p><span class="ui-text-visual" style="color: #00ffff;">0</span> <b>Projectile count</b></p>
                     </p>
                     <p><span class="icon-clock"></span> <b>Secret clock brick</b> (adds 25 seconds)</p>
                     <p><span class="icon-plane"></span> <b>Secret flying brick</b> (ride a flying brick)</p>
