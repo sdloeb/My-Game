@@ -1332,13 +1332,17 @@ function updateParticles() {
 }
 
 function handlePlayerDeath(deathType) {
+    // 0. PREVENT MULTIPLE TRIGGERS
+    if (player.isDying) return;
+    player.isDying = true;
+
     if (typeof playIceSlideSound === 'function') playIceSlideSound(false);
     if (typeof playDeathSound === 'function') playDeathSound();
 
-    // 1. STORE CURRENT RESOURCES (Bullets are always kept)
+    // 1. STORE CURRENT RESOURCES
     const currentBullets = player.bullets;
 
-    // 2. RESET PHYSICAL STATES
+    // 2. RESET PHYSICAL & LEVEL STATES
     player.isEndingLevel = false;
     player.shrinkScale = 1.0;
     player.rotation = 0;
@@ -1348,15 +1352,17 @@ function handlePlayerDeath(deathType) {
     player.inBubble = false;
     player.bubbleTimer = 0;
     player.struggleTimer = 0;
-    player.onChain = null;        // Forces the player to let go of the vine
-    player.inQuicksand = false;   // Ensures they aren't stuck in "sinking" mode
-    projectiles = [];
+    player.onChain = null;
+    player.inQuicksand = false;
 
-    // Default: Clear active weapon states; Section 5 will restore them if valid
+    // Clear Level 2/3 specific active entities to prevent "ghost" collisions
+    projectiles = [];
+    activeBubbles = []; // NEW: Clean up bubbles on death
+    activeShockwaves = []; // NEW: Clean up sonar on death
+
     player.hasBow = false;
     if (fg) fg.hasKey = false;
 
-    // 3. STAR PERMANENCE
     if (fg && collectedStars[currentLevelNum]) {
         fg.hasStar = true;
         fg.star = null;
@@ -1365,53 +1371,43 @@ function handlePlayerDeath(deathType) {
     const cp = globalCheckpoints[currentLevelNum];
     let forceRestart = false;
 
-    // 4. UPDATED: TIMEOUT & END GATE RULES
-    // Running out of time ALWAYS restarts the full level and strips special gear/triggers.
-    // Dying by a boss while holding the weapon also triggers a full restart.
     if (deathType === 'timeout' || (collectedLevelWeapons[currentLevelNum] && deathType === 'boss')) {
-        collectedLevelItems[currentLevelNum] = false;   // Strip weapon trigger (Arrow/Dart/Grenade)
-        collectedLevelWeapons[currentLevelNum] = false;  // Strip weapon visual (Bow/Gun)
-        player.heavyAmmo = 0;                           // Lose all special ammo
-        forceRestart = true;                            // Skip checkpoints, go to Section 6
+        collectedLevelItems[currentLevelNum] = false;
+        collectedLevelWeapons[currentLevelNum] = false;
+        player.heavyAmmo = 0;
+        forceRestart = true;
     }
 
-    // 5. CHECKPOINT LOGIC (Current Level Only - No fallback to previous levels)
+    // 3. CHECKPOINT RESPAWN
     if (!forceRestart && cp) {
         player.x = cp.x;
         player.y = cp.y - player.height;
         player.velocityX = 0;
         player.velocityY = 0;
-
         player.bullets = currentBullets;
-        player.heavyAmmo = 0; // "Lose projectiles" (ammo count) on standard death
+        player.heavyAmmo = 0;
 
-        if (deathType === 'timeout' && fg) {
-            fg.resetTimer();
-        }
-
-        // --- RESTORE PERSISTENT TRIGGER STATES ---
-        // Restore Fire Monster ability if earned and not stripped by the rule in Section 4
         if (collectedLevelItems[currentLevelNum]) {
             if (fg) fg.hasKey = true;
         }
-
-        // Restore Bow visual if not lost
         if (collectedLevelWeapons[currentLevelNum]) {
             player.hasBow = true;
         }
 
         player.updateUI();
+        // Reset the dying flag so the player can move again
+        setTimeout(() => { player.isDying = false; }, 100);
         return;
     }
 
-    // 6. FULL LEVEL RESTART (Restart current level from beginning)
-    // Used if no checkpoint exists on the current level or forceRestart is true.
+    // 4. FULL LEVEL RESTART
     player.heavyAmmo = 0;
-
     loadLevel(currentLevelNum);
-
-    player.bullets = currentBullets; // Ensure bullets are kept across the level reload
+    player.bullets = currentBullets;
     player.updateUI();
+
+    // Reset the dying flag after level load
+    setTimeout(() => { player.isDying = false; }, 100);
 }
 
 function loadLevel(num, keepTimer = false) {
