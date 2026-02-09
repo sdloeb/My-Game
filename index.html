@@ -743,6 +743,25 @@
             background-position: center center;
         }
 
+        /* Bubble Icon: Clear circle with a white highlight shimmer */
+        .icon-bubble {
+            width: 12px !important;
+            height: 12px !important;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 5px;
+            background-color: rgba(255, 255, 255, 0.1) !important;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-sizing: border-box;
+            border-radius: 50%;
+            /* SVG shimmer to match game logic */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Ccircle cx='4' cy='4' r='1.5' fill='rgba(255, 255, 255, 0.4)'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: center center;
+            overflow: hidden !important;
+            flex-shrink: 0;
+        }
+
         /* Flag Drawing: Silver pole and Red flag */
         .icon-flag {
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cline x1='4' y1='2' x2='4' y2='10' stroke='%23aaaaaa' stroke-width='1'/%3E%3Cpath d='M4 2l5 2-5 2z' fill='%23ef4444'/%3E%3C/svg%3E");
@@ -750,7 +769,7 @@
 
         /* 1. Top Left (MOVEMENT) */
         .ins-section:nth-child(1) {
-            height: 135px;
+            height: 145px;
         }
 
         /* 2. Top Right (POWERUPS) */
@@ -760,12 +779,34 @@
 
         /* 3. Bottom Left (OBJECTS) */
         .ins-section:nth-child(3) {
-            height: 260px;
+            height: 280px;
         }
 
         /* 4. Bottom Right (BOSS) */
         .ins-section:nth-child(4) {
             height: 185px;
+        }
+
+        /* Graphical Spacebar Key */
+        .ui-key-space {
+            font-family: 'Courier New', monospace;
+            background: #222;
+            border: 1px solid #555;
+            border-bottom: 2px solid #000;
+            /* Gives it a 3D key look */
+            border-radius: 2px;
+            padding: 0 5px;
+            height: 12px;
+            line-height: 10px;
+            display: inline-flex;
+            align-items: center;
+            color: white;
+            /* Font scales relative to the parent p tag's clamp() size */
+            font-size: 0.85em;
+            text-shadow: 1px 1px #000;
+            flex-shrink: 0;
+            margin: 0 2px;
+            box-sizing: border-box;
         }
     </style>
 </head>
@@ -787,12 +828,14 @@
                 <div class="ins-section">
                     <h2>CONTROLS</h2>
                     <p><b>WALK:</b> [◀ ▶]</p>
-                    <p><b>JUMP:</b> [SPACEBAR]</p>
-                    <p><b>SHOOT:</b> [B Key]</p>
-                    <p><b>TETHER GRAB:</b> [SPACEBAR] (when in air)</p>
-                    <p><b>STOMP BRICK:</b> [SPACEBAR] + [▼] (when in air)</p>
-                    <p><b>SONAR:</b> [SPACEBAR] + ▼ (when touching ground)</p>
-                    <p><span class="icon icon-sonar"></span> (costs 3 bullets & reveals secret bricks)</p>
+                    <p><b>JUMP:</b> <span class="ui-key-space">SPACEBAR</span></p>
+                    <p><b>SHOOT:</b> <span class="ui-key-space" style="padding: 0 3px;">B</span></p>
+                    <p><b>TETHER GRAB:</b> <span class="ui-key-space">SPACEBAR</span> (in air)</p>
+                    <p><b>STOMP BRICK:</b> <span class="ui-key-space">SPACEBAR</span> + <span class="ui-key-space"
+                            style="padding: 0 3px;">▼</span> (in air) </p>
+                    <p><b>SONAR:</b> <span class="ui-key-space">SPACEBAR</span> + <span class="ui-key-space"
+                            style="padding: 0 3px;">▼</span> (on ground)</p>
+                    <p><span class="icon icon-sonar"></span> (costs 3 bullets & reveals secrets)</p>
                 </div>
 
 
@@ -820,6 +863,8 @@
                     <p><span class="icon-clock"></span> <b>Secret clock brick</b> (adds 25 seconds)</p>
                     <p><span class="icon-plane"></span> <b>Secret flying brick</b> (ride a flying brick)</p>
                     <p><span class="icon-flag"></span> <b>Secret Checkpoint brick</b></p>
+                    <p><span class="icon-bubble"></span> <b>FLYING BUBBLE:</b> Kill 3 identical enemies in a row
+                    </p>
                 </div>
 
                 <div class="ins-section">
