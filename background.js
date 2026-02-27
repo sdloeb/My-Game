@@ -402,7 +402,6 @@ class Background {
 
         // Yellow trim on the cap
         ctx.fillStyle = '#fde047';
-        if (isLit) { ctx.shadowBlur = 10; ctx.shadowColor = '#ffffff'; }
         ctx.fillRect(poleX - 25, topY - 2, 50, 4);
         ctx.shadowBlur = 0;
 
@@ -573,7 +572,6 @@ class Background {
         // 5. OVERHEAD SIGN
         // White sign board
         ctx.fillStyle = '#ffffff';
-        if (isLit) { ctx.shadowBlur = 15; ctx.shadowColor = '#ffffff'; }
         ctx.fillRect(x + 10, bottomY - 48, 20, 10);
         ctx.shadowBlur = 0;
 
@@ -839,7 +837,7 @@ class Background {
     }
 
     drawJuggler(ctx, x, s) {
-
+        const bottomY = s.y;
         const bodyX = x + 10;
         const time = Date.now() / 400;
 
