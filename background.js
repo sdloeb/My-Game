@@ -401,10 +401,9 @@ class Background {
         ctx.fill();
 
         // Yellow trim on the cap
+        // Yellow trim on the cap
         ctx.fillStyle = '#fde047';
-        if (isLit) { ctx.shadowBlur = 10; ctx.shadowColor = '#ffffff'; }
         ctx.fillRect(poleX - 25, topY - 2, 50, 4);
-        ctx.shadowBlur = 0;
 
         // 3. THE SWINGING SEATS
         const swingRange = 25; // How far they swing out
@@ -491,28 +490,11 @@ class Background {
             ctx.fillStyle = '#4b5563';
             ctx.fillRect(x + 6, b.y - 4, 3, 3);
 
-            // --- ANTENNA BLINK LOGIC ---
-            const antennaSig = b.signals ? b.signals.find(sig => sig.isAntenna) : null;
-            const isAntennaLit = antennaSig && (antennaSig.timer < (antennaSig.count * 40) && (antennaSig.timer % 40 < 20));
-
-            // Set color: Yellow when blinking, original Dark Grey (#1f2937) otherwise
-            ctx.fillStyle = isAntennaLit ? '#fde047' : '#1f2937';
-
-            if (isAntennaLit) {
-                ctx.save();
-                ctx.shadowBlur = 10;
-                ctx.shadowColor = '#ffffff';
-            }
-
-            // Your original antenna drawing code
+            // Antenna drawing code
+            ctx.fillStyle = '#1f2937';
             ctx.fillRect(x + b.w - 10, b.y - 15, 1, 15);
             ctx.fillRect(x + b.w - 12, b.y - 12, 5, 1);
 
-            if (isAntennaLit) {
-                // Add a small 3x3 glowing tip at the top of your antenna pole
-                ctx.fillRect(x + b.w - 11, b.y - 18, 3, 3);
-                ctx.restore();
-            }
         }
         ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
         ctx.fillRect(x, b.y + b.h - 2, b.w, 2);
@@ -572,10 +554,10 @@ class Background {
 
         // 5. OVERHEAD SIGN
         // White sign board
+        // 5. OVERHEAD SIGN
+        // White sign board
         ctx.fillStyle = '#ffffff';
-        if (isLit) { ctx.shadowBlur = 15; ctx.shadowColor = '#ffffff'; }
         ctx.fillRect(x + 10, bottomY - 48, 20, 10);
-        ctx.shadowBlur = 0;
 
         // Red "Text" simulation
         ctx.fillStyle = '#ef4444';
@@ -684,7 +666,7 @@ class Background {
 
 
             ctx.fillRect(-4, -6, 8, 5); // Car Body
-            ctx.shadowBlur = 0; // Reset shadow for passenger heads
+
 
             // Tiny Passenger Heads
             ctx.fillStyle = '#ffdbac';
@@ -839,7 +821,7 @@ class Background {
     }
 
     drawJuggler(ctx, x, s) {
-
+        const bottomY = s.y;
         const bodyX = x + 10;
         const time = Date.now() / 400;
 
@@ -869,7 +851,7 @@ class Background {
             ctx.beginPath(); ctx.arc(0, -3, 2, 0, Math.PI * 2); ctx.fill();
             ctx.restore();
         }
-        ctx.shadowBlur = 0;
+
     }
     drawStar(ctx, x, s) {
         const opacity = s.twinkle ? (0.3 + Math.abs(Math.sin(Date.now() / 500)) * 0.7) : 1;
