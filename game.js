@@ -581,7 +581,7 @@ function init() {
     player = new Player(CANVAS_HEIGHT);
 
     // Use loadLevel to ensure all global states are synced from start
-    loadLevel(2);
+    loadLevel(1);
 
     // Listen for oil events
     window.addEventListener('oilSplash', (e) => {
@@ -1029,6 +1029,39 @@ function update() {
     updateParticles();
     fg.update(player);
 
+    // REVISED Lethal Boss Check - Triggers if defenseless in the boss area
+    // This now checks for the Bird (Lvl 1), Troll (Lvl 2), and Anaconda (Lvl 3)
+    if (!player.isEndingLevel && !player.isDying && !player.bossFired && player.x >= fg.bow.x) {
+        let bossRef = null;
+        if (currentLevelNum === 1) bossRef = fg.bird;
+        else if (currentLevelNum === 2) bossRef = fg.troll;
+        else if (currentLevelNum === 3) bossRef = enemies.find(en => en.isBoss);
+
+        // If the boss exists, isn't defeated, and player is out of heavy ammo
+        if (bossRef && !bossRef.hit && (!player.hasBow || player.heavyAmmo <= 0)) {
+            player.bossFired = true; // Flag to prevent multiple shots
+            if (typeof playEnemyShootSound === 'function') playEnemyShootSound();
+
+            // Spawn a high-speed lethal red projectile
+            projectiles.push({
+                x: (currentLevelNum === 2) ? bossRef.x + 16 : bossRef.x + 8,
+                y: (currentLevelNum === 2) ? bossRef.y - 20 : bossRef.y,
+                spawnX: bossRef.x,
+                vx: (player.x - bossRef.x) * 0.05,
+                vy: -2,
+                isEnemyBullet: true, isGrenade: true, fromBoss: true,
+                color: '#ff0000'
+            });
+
+            // 800ms delay so the player SEES the shot before the level resets
+            setTimeout(() => {
+                handlePlayerDeath('boss');
+                player.bossFired = false; // Reset flag for next life
+            }, 800);
+        }
+    }
+
+
     // --- UPDATED: ROBUST ELECTRIC GATE COLLISION ---
     fg.electricGates.forEach(gate => {
         if (gate.active) {
@@ -1371,8 +1404,7 @@ function handlePlayerDeath(deathType) {
     const cp = globalCheckpoints[currentLevelNum];
     let forceRestart = false;
 
-    if (deathType === 'timeout' || (collectedLevelWeapons[currentLevelNum] && deathType === 'boss')) {
-        collectedLevelItems[currentLevelNum] = false;
+    if (deathType === 'timeout' || deathType === 'boss') {
         collectedLevelWeapons[currentLevelNum] = false;
         player.heavyAmmo = 0;
         forceRestart = true;
