@@ -433,6 +433,17 @@ class Player {
                 if (this.keys.down) this.climbDist = Math.min(this.onChain.length - 10, this.climbDist + 2);
             }
 
+            // --- // --- ADDED: MANUAL SWINGING & ACTIVE FRICTION ---
+            if (this.keys.left) {
+                this.onChain.angleVelocity += 0.00032;
+                this.onChain.angleVelocity *= 0.996; // Weak friction while pumping
+            } else if (this.keys.right) {
+                this.onChain.angleVelocity -= 0.00032;
+                this.onChain.angleVelocity *= 0.996; // Weak friction while pumping
+            } else {
+                this.onChain.angleVelocity *= 0.985; // STRONG friction when player is idle
+            }
+
             // 2. SNAP TO VINE POSITION (World Coordinates following the arc)
             // Using "- Math.sin" correctly aligns the player with Canvas's clockwise rotation
             this.x = this.onChain.x - (Math.sin(this.onChain.angle) * this.climbDist) - (this.width / 2);
@@ -463,9 +474,9 @@ class Player {
                         this.climbDist = relativeY;
                         this.chainGraceTimer = 15;
 
-                        // Transfer momentum into the vine's rotation speed
-                        let kick = this.velocityX * 0.02;
-                        const maxKick = 0.035;
+                        // Reduced initial kick so the player must build momentum manually
+                        let kick = this.velocityX * 0.015; // Small nudge on grab
+                        const maxKick = 0.04; // Low cap for the initial impact
                         c.angleVelocity -= Math.max(-maxKick, Math.min(maxKick, kick));
 
                         // SEAMLESS SNAP: Recalculate player position immediately

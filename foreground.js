@@ -574,8 +574,7 @@ class Foreground {
             // Only spawn if a clear spot was found in this section
             if (found) {
                 const cOffset = Math.random() * Math.PI * 2;
-                const startAngle = Math.cos(Date.now() / 500 + cOffset) * 0.12;
-
+                const startAngle = 0
                 this.chains.push({
                     x: cx,
                     y: 0,
@@ -619,30 +618,28 @@ class Foreground {
     }
 
     update(player) {
-        // --- WITH THIS PHYSICS VERSION ---
+        // --- UPDATED VINE PHYSICS (NO AUTO-SWING) ---
         this.chains.forEach(c => {
-            // 1. GRAVITY: A force that always pulls the vine back toward center (0)
-            // This is the "stiffness" of the vine.
-            const gravity = -c.angle * 0.012;
+            // Apply strong friction to vines the player is NOT currently holding
+            if (player.onChain !== c) {
+                c.angleVelocity *= 0.985;
+            }
+            // 1. GRAVITY: Pulls the vine back toward center
+            const gravity = -c.angle * 0.003;
 
-            // 2. DYNAMIC IDLE FADE (The Smooth Transition):
-            // We calculate the current speed. If the vine is swinging fast from a jump, 
-            // we set 'idleFade' to 0 so the auto-motor stays off.
-            // As the speed drops below 0.05, the auto-swing gradually fades back in.
-            const speed = Math.abs(c.angleVelocity);
-            const idleFade = Math.max(0, 1 - (speed * 12));
 
-            // Apply the fade to the idle force
-            const idleForce = Math.cos(Date.now() / 500 + c.offset) * 0.0015 * idleFade;
+            // 2. APPLY PHYSICS
+            c.angleVelocity += gravity;
 
-            // 3. APPLY PHYSICS
-            // The vine now moves based on its own momentum + gravity + idle nudge
-            c.angleVelocity += gravity + idleForce;
+            // 3. FRICTION
+            //c.angleVelocity *= 0.996;
 
-            // 4. FRICTION: 0.95 ensures momentum fades out smoothly
-            c.angleVelocity *= 0.95;
+            // 4. STOPPING LOGIC: Thresholds lowered so they don't fight the player
+            if (Math.abs(c.angle) < 0.001 && Math.abs(c.angleVelocity) < 0.0001) {
+                c.angle = 0;
+                c.angleVelocity = 0;
+            }
 
-            // 5. UPDATE ANGLE
             c.angle += c.angleVelocity;
         });
 
