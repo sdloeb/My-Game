@@ -208,7 +208,7 @@ class Background {
     }
 
     draw(ctx, cameraX) {
-        // 1. Draw Sky
+        // 1. Draw Sky (Fixed to screen)
         ctx.fillStyle = this.skyColor;
         ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
 

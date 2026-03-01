@@ -891,11 +891,12 @@ class Foreground {
     }
 
     draw(ctx, cameraX) {
-        // Draw Ground as solid blocks to prevent vertical seam lines
+        // Draw Ground as solid blocks
         ctx.fillStyle = this.groundColors.grass;
-        ctx.fillRect(0, this.groundY, CANVAS_WIDTH, 4);
+        // We use -cameraX and levelWidth so the ground is a physical object in the world
+        ctx.fillRect(-500, this.groundY, this.levelWidth + 1000, 4);
         ctx.fillStyle = this.groundColors.dirt;
-        ctx.fillRect(0, this.groundY + 4, CANVAS_WIDTH, 32);
+        ctx.fillRect(-500, this.groundY + 4, this.levelWidth + 1000, 32);
 
 
         // --- ADDED: LUNAR CRATERS (Level 1-3 Only) ---

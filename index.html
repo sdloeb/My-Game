@@ -947,39 +947,29 @@
                 const winW = window.innerWidth;
                 const winH = window.innerHeight;
 
-                // --- MOBILE ZOOM DETECTION ---
-                // Detects touch screens to apply zoom only on mobile/iPhone
                 const isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-                const zoomFactor = isMobile ? 1.5 : 1.0; // 1.5x zoom for mobile, normal for desktop
 
-                // Adjust the internal target height based on the zoom
-                const targetHeight = Math.floor(224 / zoomFactor);
-                // -----------------------------
+                // 1. FIXED HEIGHT: Always 224 so you see the whole world design
+                const targetHeight = 224;
 
+                // 2. WIDTH ZOOM: On mobile, we use a narrower width (e.g., 280) 
+                // to make the player look larger. On desktop, we use the full aspect ratio.
                 const aspectRatio = winW / winH;
-                const targetWidth = Math.floor(targetHeight * aspectRatio);
+                const targetWidth = isMobile ? 280 : Math.floor(targetHeight * aspectRatio);
 
-                // 3. Update the Canvas and Global Variables
                 canvas.width = targetWidth;
                 canvas.height = targetHeight;
 
-                if (typeof CANVAS_WIDTH !== 'undefined') {
-                    CANVAS_WIDTH = targetWidth;
-                }
-                // Update CANVAS_HEIGHT so game.js and others stay in sync
-                if (typeof CANVAS_HEIGHT !== 'undefined') {
-                    CANVAS_HEIGHT = targetHeight;
-                }
-
+                if (typeof CANVAS_WIDTH !== 'undefined') { CANVAS_WIDTH = targetWidth; }
+                if (typeof CANVAS_HEIGHT !== 'undefined') { CANVAS_HEIGHT = targetHeight; }
                 if (bg) bg.canvasWidth = targetWidth;
 
-                // 4. Position the container
                 container.style.width = targetWidth + "px";
                 container.style.height = targetHeight + "px";
                 container.style.marginLeft = -(targetWidth / 2) + "px";
                 container.style.marginTop = -(targetHeight / 2) + "px";
 
-                // 5. Scale to fill the window height
+                // 3. PHYSICAL SCALE: Scale based on height to fill the screen
                 const finalScale = (winH / targetHeight) * 0.98;
                 container.style.transform = `scale(${finalScale})`;
             }

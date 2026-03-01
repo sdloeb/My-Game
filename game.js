@@ -537,6 +537,7 @@ let projectiles = [];
 let enemies = [];
 let particles = [];
 let cameraX = 0;
+let cameraY = 0;
 let isInitialized = false;
 let globalCheckpoints = {}; // Stores { level: { x, y } }
 let collectedStars = {};    // Stores { level: true }
@@ -1021,10 +1022,17 @@ function update() {
     }
 
     // Camera follow
-    // Safety check: only calculate camera if player is defined
     let targetX = (player && typeof player.x !== 'undefined') ? player.x - (CANVAS_WIDTH / 2) : cameraX;
     const maxX = fg.portalX - (CANVAS_WIDTH / 2);
     cameraX = Math.max(0, Math.min(targetX, maxX));
+
+    // --- STABLE VERTICAL CAMERA ---
+    // If the screen is the default 224 height, we keep cameraY at 0 while on ground
+    let targetY = player.y - (CANVAS_HEIGHT * 0.5);
+    let maxY = (fg.groundY + 32) - CANVAS_HEIGHT;
+
+    // We only let cameraY move if the player is high up or the screen is very small
+    cameraY = Math.max(0, Math.min(targetY, maxY));
 
     updateParticles();
     fg.update(player);
@@ -1149,6 +1157,8 @@ function draw() {
 
     // 1. Draw Background
     bg.draw(ctx, cameraX);
+    ctx.save();
+    ctx.translate(0, -cameraY); // Add this line - Shifts the world up/down
 
     // 2. Draw the Portal (Now at the back of the "middle" layer)
     fg.drawPortal(ctx, cameraX);
@@ -1281,6 +1291,8 @@ function draw() {
     // Only draw the player here if they are NOT in quicksand
     player.draw(ctx, cameraX);
     fg.drawQuicksand(ctx, cameraX, player);
+
+    ctx.restore();
 
     // 1. Calculate fade
     if (fadeOpacity < fadeTarget) fadeOpacity += fadeSpeed;
