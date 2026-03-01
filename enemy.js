@@ -35,8 +35,8 @@ class Enemy {
         this.y += this.velocityY;
 
         // Ground collision
-        if (this.y + this.height > 192) { // 192 is 224 - 32
-            this.y = 192 - this.height;
+        if (this.y + this.height > CANVAS_HEIGHT - 32) {
+            this.y = (CANVAS_HEIGHT - 32) - this.height;
             this.velocityY = 0;
             this.onGround = true;
         } else {

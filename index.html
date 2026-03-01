@@ -947,11 +947,15 @@
                 const winW = window.innerWidth;
                 const winH = window.innerHeight;
 
-                // 1. We keep the game height fixed at 224 pixels internally
-                const targetHeight = 224;
+                // --- MOBILE ZOOM DETECTION ---
+                // Detects touch screens to apply zoom only on mobile/iPhone
+                const isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+                const zoomFactor = isMobile ? 1.5 : 1.0; // 1.5x zoom for mobile, normal for desktop
 
-                // 2. We calculate a width based on your ACTUAL screen shape
-                // This removes the "empty space" on the sides in landscape
+                // Adjust the internal target height based on the zoom
+                const targetHeight = Math.floor(224 / zoomFactor);
+                // -----------------------------
+
                 const aspectRatio = winW / winH;
                 const targetWidth = Math.floor(targetHeight * aspectRatio);
 
@@ -960,19 +964,22 @@
                 canvas.height = targetHeight;
 
                 if (typeof CANVAS_WIDTH !== 'undefined') {
-                    CANVAS_WIDTH = targetWidth; // Updates the let CANVAS_WIDTH in game.js
+                    CANVAS_WIDTH = targetWidth;
+                }
+                // Update CANVAS_HEIGHT so game.js and others stay in sync
+                if (typeof CANVAS_HEIGHT !== 'undefined') {
+                    CANVAS_HEIGHT = targetHeight;
                 }
 
                 if (bg) bg.canvasWidth = targetWidth;
 
-                // 4. Position the container exactly in the center
+                // 4. Position the container
                 container.style.width = targetWidth + "px";
                 container.style.height = targetHeight + "px";
                 container.style.marginLeft = -(targetWidth / 2) + "px";
                 container.style.marginTop = -(targetHeight / 2) + "px";
 
-                // 5. THE BIG FIX: Scale to fill the ENTIRE window height
-                // We multiply by 0.98 just to keep a tiny border visible
+                // 5. Scale to fill the window height
                 const finalScale = (winH / targetHeight) * 0.98;
                 container.style.transform = `scale(${finalScale})`;
             }

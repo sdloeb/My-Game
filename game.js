@@ -1,6 +1,6 @@
 // 1. GLOBAL CONSTANTS & VARIABLES
 let CANVAS_WIDTH = 256;
-const CANVAS_HEIGHT = 224;
+let CANVAS_HEIGHT = 224;
 
 let audioCtx;
 let activeJumpOsc = null;
@@ -834,7 +834,7 @@ function update() {
                     // 3. Trigger Bubble (3 in a row of the same standard enemy)
                     if (currentKilledStreak === 3) {
                         activeBubbles.push({
-                            x: cameraX + 220, y: 224, radius: 18, vx: -0.5, vy: -0.8
+                            x: cameraX + 220, y: CANVAS_HEIGHT, radius: 18, vx: -0.5, vy: -0.8
                         });
                         currentKilledStreak = 0; // Reset after success
                         lastKilledType = null;
@@ -1022,7 +1022,7 @@ function update() {
 
     // Camera follow
     // Safety check: only calculate camera if player is defined
-    let targetX = (player && typeof player.x !== 'undefined') ? player.x - 125 : cameraX;
+    let targetX = (player && typeof player.x !== 'undefined') ? player.x - (CANVAS_WIDTH / 2) : cameraX;
     const maxX = fg.portalX - (CANVAS_WIDTH / 2);
     cameraX = Math.max(0, Math.min(targetX, maxX));
 

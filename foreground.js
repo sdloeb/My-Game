@@ -6,7 +6,7 @@
 class Foreground {
     constructor(level = 1) {
         this.tileSize = 16;
-        this.groundY = 224 - 32;
+        this.groundY = CANVAS_HEIGHT - 32;
         this.portalX = 5000; this.portalGoalX = 5000;
         this.levelWidth = this.portalX + (CANVAS_WIDTH / 2);
         this.chains = [];
@@ -1642,7 +1642,7 @@ class Foreground {
                 const screenX = h.x - cameraX;
                 if (screenX + h.w > 0 && screenX < CANVAS_WIDTH) {
                     const sandTop = this.groundY;
-                    const sandHeight = 224 - this.groundY;
+                    const sandHeight = CANVAS_HEIGHT - this.groundY;
 
                     ctx.save();
                     ctx.beginPath();
