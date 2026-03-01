@@ -950,7 +950,7 @@
                 // --- MOBILE ZOOM DETECTION ---
                 // Detects touch screens to apply zoom only on mobile/iPhone
                 const isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-                const zoomFactor = isMobile ? 1.0 : 1.0; // 1.5x zoom for mobile, normal for desktop
+                const zoomFactor = isMobile ? 0.5 : 1.0; // 1.5x zoom for mobile, normal for desktop
 
                 // Adjust the internal target height based on the zoom
                 const targetHeight = Math.floor(224 / zoomFactor);
