@@ -952,10 +952,18 @@
                 // 1. FIXED HEIGHT: Always 224 so you see the whole world design
                 const targetHeight = 224;
 
-                // 2. WIDTH ZOOM: On mobile, we use a narrower width (e.g., 280) 
-                // to make the player look larger. On desktop, we use the full aspect ratio.
+                // 2. WIDTH ZOOM: We cap the width on mobile landscape to "zoom in"
                 const aspectRatio = winW / winH;
-                const targetWidth = isMobile ? 280 : Math.floor(targetHeight * aspectRatio);
+                // We force mobile to a tighter width (256-300) so elements look larger.
+                // Desktop continues to use the full screen width.
+                let targetWidth;
+                if (isMobile) {
+                    // This caps the viewable area to a max of 300px width on mobile, 
+                    // effectively zooming in on wide screens.
+                    targetWidth = Math.min(300, Math.floor(targetHeight * aspectRatio));
+                } else {
+                    targetWidth = Math.floor(targetHeight * aspectRatio);
+                }
 
                 canvas.width = targetWidth;
                 canvas.height = targetHeight;
@@ -978,16 +986,21 @@
                 const overlay = document.getElementById('start-overlay');
                 overlay.style.display = 'none';
                 document.getElementById('hud-display').style.display = 'block';
-                // Start logic from game.js
                 if (typeof init === "function") {
                     init();
                 }
 
-                // Attempt Fullscreen for mobile users
                 if (document.documentElement.requestFullscreen) {
                     document.documentElement.requestFullscreen();
                 } else if (document.documentElement.webkitRequestFullscreen) {
                     document.documentElement.webkitRequestFullscreen();
+                }
+
+                // Add these lines to lock orientation to landscape
+                if (screen.orientation && screen.orientation.lock) {
+                    screen.orientation.lock('landscape').catch(err => {
+                        console.log("Orientation lock failed or not supported: ", err);
+                    });
                 }
 
                 applyResponsiveScale();
