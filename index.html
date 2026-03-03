@@ -2,11 +2,42 @@
 <html lang="en">
 
 <head>
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="icon.png">
+
+
     <meta charset="UTF-8">
     <meta name="viewport"
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>8-Bit Side Scroller</title>
     <style>
+        /* Add this below your body styles */
+        #rotate-warning {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: #1a1a1a;
+            color: #62fd47;
+            z-index: 9999;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        /* Show only on mobile when in portrait mode */
+        @media (orientation: portrait) and (max-width: 1024px) {
+            #rotate-warning {
+                display: flex;
+            }
+
+            #game-container {
+                display: none;
+            }
+        }
+
         /* 1. LAYOUT & BACKGROUND */
         body {
             margin: 0;
@@ -17,6 +48,28 @@
             height: 100vh;
             overflow: hidden;
             font-family: 'Courier New', monospace;
+        }
+
+        /* Add this to handle orientation warnings */
+        #rotate-overlay {
+            position: fixed;
+            inset: 0;
+            background: #1a1a1a;
+            color: white;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        /* Show overlay only on mobile when in portrait */
+        @media screen and (orientation: portrait) {
+            body.is-mobile #rotate-overlay {
+                display: flex;
+            }
         }
 
         #game-container {
@@ -813,6 +866,16 @@
 
 <body>
 
+    <div id="rotate-warning">
+        <h1>PLEASE ROTATE DEVICE</h1>
+        <p>Landscape mode required for adventure.</p>
+    </div>
+
+    <div id="rotate-overlay">
+        <h1>PLEASE ROTATE DEVICE</h1>
+        <p>This adventure requires Landscape Mode</p>
+    </div>
+
     <div id="game-container">
         <div id="start-overlay" onclick="startFullScreen()">
             <h1>8-BIT ADVENTURE</h1>
@@ -948,37 +1011,21 @@
                 const winH = window.innerHeight;
 
                 const isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+                // Add this line to enable the rotate overlay check
+                if (isMobile) document.body.classList.add('is-mobile');
 
                 // 1. FIXED HEIGHT: Always 224 so you see the whole world design
                 const targetHeight = 224;
 
-                // 2. WIDTH ZOOM: We cap the width on mobile landscape to "zoom in"
+                // 2. FULL WIDTH: Use actual aspect ratio so it fills the screen
                 const aspectRatio = winW / winH;
-                // We force mobile to a tighter width (256-300) so elements look larger.
-                // Desktop continues to use the full screen width.
-                let targetWidth;
-                if (isMobile) {
-                    // This caps the viewable area to a max of 300px width on mobile, 
-                    // effectively zooming in on wide screens.
-                    targetWidth = Math.min(300, Math.floor(targetHeight * aspectRatio));
-                } else {
-                    targetWidth = Math.floor(targetHeight * aspectRatio);
-                }
+                // Update this line: Removed the '280' cap so it fills the full width
+                const targetWidth = Math.floor(targetHeight * aspectRatio);
 
                 canvas.width = targetWidth;
-                canvas.height = targetHeight;
-
-                if (typeof CANVAS_WIDTH !== 'undefined') { CANVAS_WIDTH = targetWidth; }
-                if (typeof CANVAS_HEIGHT !== 'undefined') { CANVAS_HEIGHT = targetHeight; }
-                if (bg) bg.canvasWidth = targetWidth;
-
-                container.style.width = targetWidth + "px";
-                container.style.height = targetHeight + "px";
-                container.style.marginLeft = -(targetWidth / 2) + "px";
-                container.style.marginTop = -(targetHeight / 2) + "px";
 
                 // 3. PHYSICAL SCALE: Scale based on height to fill the screen
-                const finalScale = (winH / targetHeight) * 0.98;
+                const finalScale = (winH / targetHeight);
                 container.style.transform = `scale(${finalScale})`;
             }
 
