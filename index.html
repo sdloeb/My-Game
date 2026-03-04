@@ -904,9 +904,13 @@
         }
 
         #btn-down {
-            /* Pushes BOTH 'B' and 'Jump' further to the right */
-            margin-right: 40px;
-        }
+    /* A negative margin pulls the button to the left */
+    margin-left: -20px; 
+
+    /* Note: If you still have margin-right: 50px, 
+       it is pushing the 'B' and 'Jump' buttons away to the right. */
+    margin-right: 50px; 
+}
 
         /* LEFT GROUP (Left, Right) */
         #btn-right {
@@ -917,6 +921,7 @@
         #btn-left {
             /* Pushes the whole pair away from the left edge */
             margin-left: 5px;
+            margin-right: 5px
         }
     </style>
 </head>
