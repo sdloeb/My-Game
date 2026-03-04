@@ -177,10 +177,11 @@
         #touch-controls {
             position: absolute;
             bottom: 0;
+            /* Pins buttons to the bottom edge */
             width: 100%;
             display: flex;
-            /* Changed to flex-start to allow manual margin spacing from the left */
             justify-content: flex-start;
+            /* Aligns starting from the left */
             align-items: flex-end;
             padding: 0;
             box-sizing: border-box;
@@ -191,6 +192,7 @@
         #touch-controls button {
             pointer-events: auto;
             width: 28px;
+            /* Matches dirt height */
             height: 28px;
             font-size: 14px;
             padding: 0;
@@ -202,31 +204,31 @@
             user-select: none;
         }
 
-        /* --- INDIVIDUAL POSITIONING --- */
+        /* --- INDIVIDUAL SPACING --- */
 
         #btn-left {
             margin-left: 28px;
-            /* One button width in from the left edge */
+            /* 1 button width in from left edge */
         }
 
         #btn-right {
             margin-left: 4px;
-            /* Small space between ◀ and ▶ */
+            /* Small space between arrows */
         }
 
         #btn-down {
             margin-left: 28px;
-            /* Full button width away from the right arrow */
+            /* 1 full button width from right arrow */
         }
 
         #btn-shoot {
             margin-left: 196px;
-            /* 7 button widths away (7 * 28px = 196px) */
+            /* 7 button widths away (7 * 28px) */
         }
 
         #btn-up {
             margin-left: 28px;
-            /* One button width away from the B button */
+            /* 1 button width away from B button */
         }
 
         /* Hides buttons on Desktop */
