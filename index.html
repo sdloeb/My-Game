@@ -173,62 +173,68 @@
             text-align: center;
         }
 
-       /* 3. TOUCH CONTROLS - FIXED MARGINS */
-#touch-controls {
-    position: absolute;
-    bottom: 0;
-    width: 100%;
-    display: flex;
-    justify-content: flex-start; 
-    align-items: flex-end;
-    padding: 0;
-    box-sizing: border-box;
-    pointer-events: none;
-    z-index: 30;
-}
+        /* 3. TOUCH CONTROLS - FIXED MARGINS */
+        #touch-controls {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            display: flex;
+            justify-content: flex-start;
+            align-items: flex-end;
+            padding: 0;
+            box-sizing: border-box;
+            pointer-events: none;
+            z-index: 30;
+        }
 
-#touch-controls button {
-    pointer-events: auto;
-    width: 28px;  /* This is the actual size of the button */
-    height: 28px; 
-    font-size: 14px;
-    padding: 0;
-    line-height: 28px;
-    background: rgba(255, 255, 255, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    color: white;
-    border-radius: 0;
-    user-select: none;
-}
+        #touch-controls button {
+            pointer-events: auto;
+            width: 28px;
+            /* This is the actual size of the button */
+            height: 28px;
+            font-size: 14px;
+            padding: 0;
+            line-height: 28px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            border-radius: 0;
+            user-select: none;
+        }
 
-/* --- INDIVIDUAL POSITIONING --- */
+        /* --- INDIVIDUAL POSITIONING --- */
 
-#btn-left {
-    /* DECREASE this to move the button closer to the screen edge */
-    margin-left: 5px; 
-}
+        #btn-left {
+            /* DECREASE this to move the button closer to the screen edge */
+            margin-left: 5px;
+        }
 
-#btn-right {
-    /* INCREASE this to push the right arrow AWAY from the left arrow */
-    margin-left: 20px; 
-}
+        #btn-right {
+            /* INCREASE this to push the right arrow AWAY from the left arrow */
+            margin-left: 17px;
+        }
 
-#btn-down {
-    margin-left: 28px; /* Gap after the right arrow */
-}
+        #btn-down {
+            margin-left: 24px;
+            /* Gap after the right arrow */
+        }
 
-#btn-shoot {
-    margin-left: 150px; /* Moves B and Up closer to the center */
-}
+        #btn-shoot {
+            margin-left: 150px;
+            /* Moves B and Up closer to the center */
+        }
 
-#btn-up {
-    margin-left: 28px; /* Gap between B and Jump */
-}
+        #btn-up {
+            margin-left: 28px;
+            /* Gap between B and Jump */
+        }
 
-/* Hides buttons on Desktop */
-@media (hover: hover) {
-    #touch-controls { display: none; }
-}
+        /* Hides buttons on Desktop */
+        @media (hover: hover) {
+            #touch-controls {
+                display: none;
+            }
+        }
 
         /* Hides buttons on Desktop */
         @media (hover: hover) {
