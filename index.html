@@ -75,6 +75,8 @@
         #game-container {
             position: absolute;
             border: 2px solid #fff;
+            box-sizing: border-box;
+            /* Fixes top/bottom cutoff */
             display: flex;
             justify-content: center;
             align-items: center;
@@ -82,8 +84,10 @@
             image-rendering: pixelated;
             top: 50%;
             left: 50%;
-            transform-origin: center;
+            transform: translate(-50%, -50%);
+            /* Keeps it perfectly centered */
         }
+
 
         #start-overlay h1 {
             margin: 10px 0 5px 0;
@@ -1011,22 +1015,28 @@
                 const winH = window.innerHeight;
 
                 const isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-                // Add this line to enable the rotate overlay check
                 if (isMobile) document.body.classList.add('is-mobile');
 
-                // 1. FIXED HEIGHT: Always 224 so you see the whole world design
-                const targetHeight = 224;
-
-                // 2. FULL WIDTH: Use actual aspect ratio so it fills the screen
+                // 1. ZOOM: Lowering this to 180 makes the player/enemies look significantly bigger
+                const targetHeight = 180;
                 const aspectRatio = winW / winH;
-                // Update this line: Removed the '280' cap so it fills the full width
                 const targetWidth = Math.floor(targetHeight * aspectRatio);
 
+                // 2. PHYSICAL BOUNDS: Sets the container size so the Menu isn't black/empty
+                container.style.width = targetWidth + "px";
+                container.style.height = targetHeight + "px";
                 canvas.width = targetWidth;
+                canvas.height = targetHeight;
 
-                // 3. PHYSICAL SCALE: Scale based on height to fill the screen
-                const finalScale = (winH / targetHeight);
-                container.style.transform = `scale(${finalScale})`;
+                // 3. SYNC GLOBALS: Updates game.js variables
+                if (typeof CANVAS_WIDTH !== 'undefined') {
+                    CANVAS_WIDTH = targetWidth;
+                    CANVAS_HEIGHT = targetHeight;
+                }
+
+                // 4. SCALE: Fits to screen height. We subtract 4px to account for the border.
+                const finalScale = (winH - 4) / targetHeight;
+                container.style.transform = `translate(-50%, -50%) scale(${finalScale})`;
             }
 
             function startFullScreen() {

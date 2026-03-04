@@ -577,8 +577,6 @@ function init() {
 
     canvas = document.getElementById('gameCanvas');
     ctx = canvas.getContext('2d');
-    canvas.width = CANVAS_WIDTH;
-    canvas.height = CANVAS_HEIGHT;
     player = new Player(CANVAS_HEIGHT);
 
     // Use loadLevel to ensure all global states are synced from start
