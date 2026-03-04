@@ -903,11 +903,15 @@
             margin-right: 15px;
         }
 
-        #btn-down {
-            /* A negative margin pulls the button to the left */
-            margin-left: -220px;
-
-        }
+       #btn-down {
+    /* Negative moves it LEFT, positive moves it RIGHT */
+    /* Adjust this number (e.g., -150px or -200px) until it is near the Right arrow */
+    transform: translateX(-180px); 
+    
+    /* Keep these reset so they don't fight the transform */
+    margin-left: 0;
+    margin-right: 0;
+}
 
         /* LEFT GROUP (Left, Right) */
         #btn-right {
