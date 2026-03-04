@@ -927,7 +927,7 @@
     </div>
 
     <div id="game-container">
-        <div id="start-overlay" onclick="startFullScreen()">
+        <div id="start-overlay" onclick="startFullScreen()" ontouchstart="startFullScreen()">
             <h1>8-BIT ADVENTURE</h1>
             <p>CLICK TO START</p>
             <div id="god-mode-ui" onclick="toggleGodMode(event)">GOD MODE: OFF</div>
@@ -1083,23 +1083,27 @@
 
             function startFullScreen() {
                 const overlay = document.getElementById('start-overlay');
+                if (!overlay || overlay.style.display === 'none') return; // Prevent double-triggering
+
                 overlay.style.display = 'none';
                 document.getElementById('hud-display').style.display = 'block';
+
+                // Start the game first
                 if (typeof init === "function") {
                     init();
                 }
 
-                if (document.documentElement.requestFullscreen) {
-                    document.documentElement.requestFullscreen();
-                } else if (document.documentElement.webkitRequestFullscreen) {
-                    document.documentElement.webkitRequestFullscreen();
-                }
+                // Attempt Fullscreen separately so it doesn't crash the game if it fails
+                try {
+                    const doc = document.documentElement;
+                    if (doc.requestFullscreen) doc.requestFullscreen();
+                    else if (doc.webkitRequestFullscreen) doc.webkitRequestFullscreen();
 
-                // Add these lines to lock orientation to landscape
-                if (screen.orientation && screen.orientation.lock) {
-                    screen.orientation.lock('landscape').catch(err => {
-                        console.log("Orientation lock failed or not supported: ", err);
-                    });
+                    if (screen.orientation && screen.orientation.lock) {
+                        screen.orientation.lock('landscape').catch(() => { });
+                    }
+                } catch (err) {
+                    console.warn("Fullscreen blocked, but game starting anyway.");
                 }
 
                 applyResponsiveScale();
