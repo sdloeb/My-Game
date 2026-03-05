@@ -50,7 +50,7 @@ class Foreground {
 
         this.setTheme();
         this.init();
-        this.setupInput();
+       
     }
 
     resetTimer() {
@@ -608,19 +608,16 @@ class Foreground {
     } // Function finally ends here
 
 
-    setupInput() {
-        const startTimer = () => {
-            if (!this.timerStarted) {
+
+
+    update(player) {
+        if (!this.timerStarted) {
+            // Check if any movement keys are currently active
+            if (player.keys.left || player.keys.right || player.keys.up || player.keys.down) {
                 this.timerStarted = true;
                 this.lastTick = Date.now();
             }
-        };
-        // Listen for both keyboard and touch to start the level timer
-        window.addEventListener('keydown', startTimer, { once: true });
-        window.addEventListener('touchstart', startTimer, { once: true });
-    }
-
-    update(player) {
+        }
         // --- UPDATED VINE PHYSICS (NO AUTO-SWING) ---
         this.chains.forEach(c => {
             // Apply strong friction to vines the player is NOT currently holding

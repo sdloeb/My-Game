@@ -927,7 +927,7 @@
     </div>
 
     <div id="game-container">
-        <div id="start-overlay" onclick="startFullScreen()">
+        <div id="start-overlay" onclick="startFullScreen(event)">
             <h1>8-BIT ADVENTURE</h1>
             <p>CLICK TO START</p>
             <div id="god-mode-ui" onclick="toggleGodMode(event)">GOD MODE: OFF</div>
@@ -1082,19 +1082,24 @@
                 container.style.transform = `translate(-50%, -50%) scale(${finalScale})`;
             }
 
-            function startFullScreen() {
+            // REPLACE THE ENTIRE startFullScreen FUNCTION WITH THIS:
+            function startFullScreen(e) {
+                // NEW: Stop the game from starting if the user touched a menu button
+                if (e && e.target.closest('#god-mode-ui, #instructions-btn')) {
+                    return;
+                }
+
                 const overlay = document.getElementById('start-overlay');
-                if (!overlay || overlay.style.display === 'none') return; // Prevent double-triggering
+                if (!overlay || overlay.style.display === 'none') return;
+
                 applyResponsiveScale();
                 overlay.style.display = 'none';
                 document.getElementById('hud-display').style.display = 'block';
 
-                // Start the game first
                 if (typeof init === "function") {
                     init();
                 }
 
-                // Attempt Fullscreen separately so it doesn't crash the game if it fails
                 try {
                     const doc = document.documentElement;
                     if (doc.requestFullscreen) doc.requestFullscreen();
@@ -1106,8 +1111,6 @@
                 } catch (err) {
                     console.warn("Fullscreen blocked, but game starting anyway.");
                 }
-
-
             }
 
             // Handle rotations and window resizing
