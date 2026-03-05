@@ -609,12 +609,15 @@ class Foreground {
 
 
     setupInput() {
-        window.addEventListener('keydown', () => {
+        const startTimer = () => {
             if (!this.timerStarted) {
                 this.timerStarted = true;
                 this.lastTick = Date.now();
             }
-        }, { once: true });
+        };
+        // Listen for both keyboard and touch to start the level timer
+        window.addEventListener('keydown', startTimer, { once: true });
+        window.addEventListener('touchstart', startTimer, { once: true });
     }
 
     update(player) {
