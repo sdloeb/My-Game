@@ -314,7 +314,24 @@ class Player {
     }
 
     update(groundY, platforms, elevators, groundHazards, coins, fg) {
+        // --- MOBILE & DESKTOP SONAR CHECK ---
+        // Checks every frame if BOTH Jump (Up) and Down are held while on ground
+        if (this.onGround && this.keys.up && this.keys.down && !this.isStunned) {
+            if (this.bullets >= 3) {
+                this.bullets -= 3;
+                this.updateUI();
 
+                if (typeof activeShockwaves !== 'undefined') {
+                    activeShockwaves.push(new Shockwave(this.x + this.width / 2, this.y + this.height / 2));
+                }
+                if (typeof playSonarPingSound === 'function') playSonarPingSound();
+
+                // Reset keys so it doesn't trigger 60 times a second
+                this.keys.up = false;
+                this.keys.down = false;
+                return; // Stop further movement processing for this frame
+            }
+        }
         if (this.zapCooldown > 0) this.zapCooldown--;
 
         if (this.inQuicksand) {
