@@ -1059,8 +1059,9 @@
                 const isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
                 if (isMobile) document.body.classList.add('is-mobile');
 
-                // 1. ZOOM: Lowering this to 180 makes the player/enemies look significantly bigger
-                const targetHeight = 180;
+                // --- FIX: Conditional height for Desktop vs Mobile ---
+                // We use 180 for mobile to stay zoomed in, and 224 for desktop to restore the original view.
+                const targetHeight = isMobile ? 180 : 224;
                 const aspectRatio = winW / winH;
                 const targetWidth = Math.floor(targetHeight * aspectRatio);
 
@@ -1084,7 +1085,7 @@
             function startFullScreen() {
                 const overlay = document.getElementById('start-overlay');
                 if (!overlay || overlay.style.display === 'none') return; // Prevent double-triggering
-
+                applyResponsiveScale();
                 overlay.style.display = 'none';
                 document.getElementById('hud-display').style.display = 'block';
 
@@ -1106,7 +1107,7 @@
                     console.warn("Fullscreen blocked, but game starting anyway.");
                 }
 
-                applyResponsiveScale();
+
             }
 
             // Handle rotations and window resizing
