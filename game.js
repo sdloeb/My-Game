@@ -539,7 +539,6 @@ let particles = [];
 let cameraX = 0;
 let cameraY = 0;
 let isInitialized = false;
-let globalCheckpoints = {}; // Stores { level: { x, y } }
 let collectedStars = {};    // Stores { level: true }
 let currentLevelNum; // Declared here; initialized in loadLevel(1)
 let isGodMode = false; // Set to true for testing, false for normal gameplay
@@ -639,10 +638,10 @@ function init() {
             return;
         }
 
-        // 4. DESTRUCTION LOGIC: (The "Pop" on the 2nd hit)
-        if (plat.isCheckpointCandidate) {
-            fg.activeFlag = { x: plat.x, y: plat.y - 40, collected: false };
+        if (plat.isCoinClusterCandidate) {
+            fg.activeCoinCluster = { x: plat.x, y: plat.y - 20, collected: false };
         }
+
         if (!plat.isSecret) {
             const index = fg.platforms.indexOf(plat);
             if (index > -1) {
@@ -971,9 +970,8 @@ function update() {
                     // Only play sound if it's the Player (!p.isEnemyBullet) or the Fire Monster (p.isFireball)
                     if (typeof playBrickSound === 'function' && (!p.isEnemyBullet || p.isFireball)) playBrickSound();
 
-                    // Only trigger the flag if the Player (!p.isEnemyBullet) or a Fireball (p.isFireball) hits the brick
-                    if (plat.isCheckpointCandidate && (!p.isEnemyBullet || p.isFireball)) {
-                        fg.activeFlag = { x: plat.x, y: plat.y - 40, collected: false };
+                    if (plat.isCoinClusterCandidate && (!p.isEnemyBullet || p.isFireball)) {
+                        fg.activeCoinCluster = { x: plat.x, y: plat.y - 20, collected: false };
                     }
 
                     // UPDATED: Bullet Hit Logic with Cooldown and 2-hit destruction
@@ -991,9 +989,8 @@ function update() {
                                 plat.hits--;
                                 createShatterEffect(p.x, p.y);
                             } else {
-                                // Final Hit Destruction
-                                if (plat.isCheckpointCandidate) {
-                                    fg.activeFlag = { x: plat.x, y: plat.y - 40, collected: false };
+                                if (plat.isCoinClusterCandidate) {
+                                    fg.activeCoinCluster = { x: plat.x, y: plat.y - 20, collected: false };
                                 }
                                 if (plat.hasClock) {
                                     fg.clock = { x: plat.x, y: plat.y, collected: false };
@@ -1420,27 +1417,7 @@ function handlePlayerDeath(deathType) {
         forceRestart = true;
     }
 
-    // 3. CHECKPOINT RESPAWN
-    if (!forceRestart && cp) {
-        player.x = cp.x;
-        player.y = cp.y - player.height;
-        player.velocityX = 0;
-        player.velocityY = 0;
-        player.bullets = currentBullets;
-        player.heavyAmmo = 0;
 
-        if (collectedLevelItems[currentLevelNum]) {
-            if (fg) fg.hasKey = true;
-        }
-        if (collectedLevelWeapons[currentLevelNum]) {
-            player.hasBow = true;
-        }
-
-        player.updateUI();
-        // Reset the dying flag so the player can move again
-        setTimeout(() => { player.isDying = false; }, 100);
-        return;
-    }
 
     // 4. FULL LEVEL RESTART
     player.heavyAmmo = 0;

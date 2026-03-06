@@ -15,7 +15,7 @@ class Foreground {
         this.elevators = [];
         this.coins = [];
         this.level = level;
-        this.checkpointTextTimer = 0;
+        this.activeCoinCluster = null;
         this.timeLeft = 120;
         this.timerStarted = false;
         this.lastTick = 0;
@@ -36,7 +36,6 @@ class Foreground {
         this.hasStar = false;
         this.star = null;
         this.clock = null;
-        this.activeFlag = null;
         this.ammoDrops = []; // Track dropped ammunition
         this.fireAmmoCollectedX = -1;
 
@@ -50,7 +49,7 @@ class Foreground {
 
         this.setTheme();
         this.init();
-       
+
     }
 
     resetTimer() {
@@ -403,20 +402,19 @@ class Foreground {
             }
         }
 
-        // 3. Assign Checkpoint Secrets across 5 zones
-        // Added two more zones to spread checkpoints across the longer 5000px level
-        const checkpointZones = [
+        // 3. Assign Coin Cluster Secrets across 5 zones
+        const clusterZones = [
             { min: 500, max: 1200 },
             { min: 1400, max: 2100 },
             { min: 2300, max: 3000 },
             { min: 3200, max: 3900 },
             { min: 4100, max: 4800 }
         ];
-        checkpointZones.forEach(zone => {
+        clusterZones.forEach(zone => {
             const zoneCandidates = this.platforms.filter(p => !p.hasClock && !p.isSecret && p.x >= zone.min && p.x <= zone.max && !this.platforms.some(other => other.x === p.x && other.y < p.y));
             if (zoneCandidates.length > 0) {
                 const idx = Math.floor(Math.random() * zoneCandidates.length);
-                zoneCandidates[idx].isCheckpointCandidate = true;
+                zoneCandidates[idx].isCoinClusterCandidate = true;
                 zoneCandidates[idx].hits = 2;
             }
         });
@@ -697,14 +695,14 @@ class Foreground {
         });
 
 
-        if (this.activeFlag && !this.activeFlag.collected) {
-            const dx = (player.x + player.width / 2) - this.activeFlag.x;
-            const dy = (player.y + player.height / 2) - (this.activeFlag.y + 14);
+        if (this.activeCoinCluster && !this.activeCoinCluster.collected) {
+            const dx = (player.x + player.width / 2) - this.activeCoinCluster.x;
+            const dy = (player.y + player.height / 2) - this.activeCoinCluster.y;
             if (Math.sqrt(dx * dx + dy * dy) < 25) {
-                this.activeFlag.collected = true;
-                if (typeof playSecretSound === 'function') playSecretSound();
-                globalCheckpoints[this.level] = { x: this.activeFlag.x, y: this.activeFlag.y + 16 };
-                this.checkpointTextTimer = 90;
+                this.activeCoinCluster.collected = true;
+                if (typeof playCoinSound === 'function') playCoinSound();
+                player.bullets += 5;
+                player.updateUI();
             }
         }
 
@@ -784,11 +782,9 @@ class Foreground {
 
     }
 
-    drawBrick(ctx, x, y, isSecret, hasClock, isCheckpointCandidate, platformObj) {
+    drawBrick(ctx, x, y, isSecret, hasClock, isCoinClusterCandidate, platformObj) {
         ctx.fillStyle = this.brickColors.main;
-        // Only the flying secret brick should twinkle now
-        const isSpecial = isSecret || hasClock || isCheckpointCandidate;
-
+        const isSpecial = isSecret || hasClock || isCoinClusterCandidate;
         ctx.save();
         // 1. Draw Main Body
         ctx.fillRect(x, y, 16, 16);
@@ -819,15 +815,13 @@ class Foreground {
 
         // 3. MULTI-STAGE CRACK DRAWING
         if (!isSecret) {
-            const isSpecial = hasClock || isCheckpointCandidate;
+            // We change isCheckpointCandidate to isCoinClusterCandidate
+            const isSpecialBrick = hasClock || isCoinClusterCandidate;
             let crackType = 'none';
 
-            // Corrected logic: 
-            // If it's a special brick and has been hit once (hits is 1), show a crack.
-            // If it's a normal brick and has been hit once (hits is 1), show a crack.
             if (platformObj.hits === 1) {
-                // Special bricks show a heavier crack before breaking on the next hit
-                crackType = isSpecial ? 'heavy' : 'light';
+                // Use the new local variable isSpecialBrick here
+                crackType = isSpecialBrick ? 'heavy' : 'light';
             }
 
             if (crackType !== 'none') {
@@ -930,13 +924,7 @@ class Foreground {
 
 
 
-        if (this.checkpointTextTimer > 0) {
-            ctx.fillStyle = "#ffffff";
-            ctx.font = "bold 12px 'Courier New'";
-            ctx.textAlign = "center";
-            ctx.fillText("CHECKPOINT!", CANVAS_WIDTH / 2, 50);
-            this.checkpointTextTimer--;
-        }
+
 
         this.groundHazards.forEach(h => {
             const screenX = h.x - cameraX;
@@ -1186,7 +1174,7 @@ class Foreground {
         this.platforms.forEach(p => {
             const screenX = p.x - cameraX;
             if (screenX + 16 > 0 && screenX < CANVAS_WIDTH)
-                this.drawBrick(ctx, screenX, p.y, p.isSecret, p.hasClock, p.isCheckpointCandidate, p);
+                this.drawBrick(ctx, screenX, p.y, p.isSecret, p.hasClock, p.isCoinClusterCandidate, p);
         });
 
         // DRAW WEAPON PICKUP (Bow/Dart Gun)
@@ -1407,12 +1395,13 @@ class Foreground {
             }
         });
 
-        if (this.activeFlag && !this.activeFlag.collected) {
-            const fx = this.activeFlag.x - cameraX;
-            if (fx > -20 && fx < (CANVAS_WIDTH + 20)) {
-                ctx.fillStyle = '#ffffff'; ctx.fillRect(fx + 7, this.activeFlag.y - 15, 2, 31);
-                ctx.fillStyle = '#ff0000'; ctx.fillRect(fx + 9, this.activeFlag.y - 15, 12, 8);
+        if (this.activeCoinCluster && !this.activeCoinCluster.collected) {
+            const cx = this.activeCoinCluster.x - cameraX;
+            if (cx > -20 && cx < (CANVAS_WIDTH + 20)) {
+                // This calls the helper function to draw the 5-coin cluster
+                this.drawCoinCluster(ctx, cx, this.activeCoinCluster.y);
             }
+
         }
 
 
@@ -1740,6 +1729,21 @@ class Foreground {
                 this.ammoDrops.splice(i, 1);
             }
         }
+    }
+    drawCoinCluster(ctx, x, y) {
+        // Relative positions for a cluster of 5 coins
+        const positions = [
+            { dx: 0, dy: 0 }, { dx: 8, dy: -4 }, { dx: 16, dy: 0 },
+            { dx: 4, dy: 6 }, { dx: 12, dy: 6 }
+        ];
+        positions.forEach(pos => {
+            const cx = x + pos.dx;
+            const cy = y + pos.dy;
+            // Draw individual mini-coins using your coin colors
+            ctx.fillStyle = '#8a6508'; ctx.beginPath(); ctx.arc(cx, cy, 3, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#ffd700'; ctx.beginPath(); ctx.arc(cx, cy, 2.5, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#ffffff'; ctx.fillRect(cx - 0.5, cy - 1.5, 1, 1);
+        });
     }
 
 }
