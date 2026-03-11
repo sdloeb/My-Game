@@ -265,7 +265,7 @@ class Foreground {
                     const smallFloatHeight = 80 + Math.floor(Math.random() * 40);
                     structureHeight = smallFloatHeight;
                     for (let col = 0; col < smallFloatWidth; col++) {
-                        this.platforms.push({ x: x + (col * 16), y: this.groundY - smallFloatHeight, w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 1});
+                        this.platforms.push({ x: x + (col * 16), y: this.groundY - smallFloatHeight, w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 1 });
                     }
                     structureWidth = smallFloatWidth * this.tileSize;
                     break;
@@ -398,7 +398,7 @@ class Foreground {
             if (clockCandidates.length > 0) {
                 const idx = Math.floor(Math.random() * clockCandidates.length);
                 clockCandidates[idx].hasClock = true;
-                clockCandidates[idx].hits = 2;
+                clockCandidates[idx].hits = 1;
                 clockCandidates.splice(idx, 1);
             }
         }
@@ -416,7 +416,7 @@ class Foreground {
             if (zoneCandidates.length > 0) {
                 const idx = Math.floor(Math.random() * zoneCandidates.length);
                 zoneCandidates[idx].isCoinClusterCandidate = true;
-                zoneCandidates[idx].hits = 2;
+                zoneCandidates[idx].hits = 1;
             }
         });
 
@@ -847,51 +847,7 @@ class Foreground {
         ctx.fillRect(x + 1, y + 15, 15, 1);
         ctx.fillRect(x + 15, y + 1, 1, 15);
 
-        // 3. MULTI-STAGE CRACK DRAWING
-        if (!isSecret) {
-            // We change isCheckpointCandidate to isCoinClusterCandidate
-            const isSpecialBrick = hasClock || isCoinClusterCandidate;
-            let crackType = 'none';
 
-            if (platformObj.hits === 1) {
-                // Use the new local variable isSpecialBrick here
-                crackType = isSpecialBrick ? 'heavy' : 'light';
-            }
-
-            if (crackType !== 'none') {
-                ctx.strokeStyle = crackType === 'heavy' ? 'rgba(0, 0, 0, 0.8)' : 'rgba(0, 0, 0, 0.6)';
-                ctx.lineWidth = crackType === 'heavy' ? 1.5 : 1;
-                ctx.beginPath();
-
-                // --- LIGHT CRACK PATTERN ---
-                ctx.moveTo(x + 3, y + 2); ctx.lineTo(x + 6, y + 5);
-                ctx.lineTo(x + 5, y + 9); ctx.lineTo(x + 8, y + 11);
-                ctx.moveTo(x + 6, y + 5); ctx.lineTo(x + 10, y + 4);
-                ctx.lineTo(x + 13, y + 6);
-                ctx.moveTo(x + 14, y + 14); ctx.lineTo(x + 11, y + 11);
-                ctx.lineTo(x + 12, y + 7);
-                ctx.moveTo(x + 11, y + 11); ctx.lineTo(x + 7, y + 13);
-                ctx.lineTo(x + 3, y + 14);
-
-                // --- HEAVY CRACK ADDITIONS (75% Cracked) ---
-                if (crackType === 'heavy') {
-                    // Add more jagged horizontal and vertical branches
-                    ctx.moveTo(x + 2, y + 8); ctx.lineTo(x + 4, y + 7);
-                    ctx.lineTo(x + 6, y + 10);
-                    ctx.moveTo(x + 10, y + 15); ctx.lineTo(x + 13, y + 12);
-                    ctx.lineTo(x + 15, y + 14);
-                    ctx.stroke();
-
-                    // Add "shatter" chips/missing chunks
-                    ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-                    ctx.fillRect(x + 7, y + 10, 2, 2);
-                    ctx.fillRect(x + 3, y + 4, 1, 1);
-                    ctx.fillRect(x + 12, y + 3, 2, 1);
-                } else {
-                    ctx.stroke();
-                }
-            }
-        }
         ctx.restore();
     }
 
@@ -1802,14 +1758,17 @@ class Foreground {
                 b.vy += 0.2;
                 b.y += b.vy;
 
-                // Collision with ground
-                if (b.y + 8 >= this.groundY) {
-                    b.y = this.groundY - 8;
+                // Collision with ground (Adjusted to y+10 to match the 12px visual circle)
+                if (b.y + 10 >= this.groundY) {
+                    b.y = this.groundY - 10;
                     b.vy = 0;
                 }
-                // Proximity pickup
-                const dist = Math.sqrt(Math.pow(player.x - b.x, 2) + Math.pow(player.y - b.y, 2));
-                if (dist < 15 && !player.isSquatting) b.isPickedUp = true;
+                // Proximity pickup (Using Centers)
+                const pCX = player.x + 8; const pCY = player.y + 12;
+                const bCX = b.x + 4; const bCY = b.y + 4;
+                const dist = Math.sqrt(Math.pow(pCX - bCX, 2) + Math.pow(pCY - bCY, 2));
+
+                if (dist < 20 && !player.isSquatting) b.isPickedUp = true; // Increased buffer to 20 for centers
             }
 
             if (b.timer <= 0) {

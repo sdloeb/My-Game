@@ -631,12 +631,7 @@ function init() {
         if (plat.lastHitTime && now - plat.lastHitTime < 100) return;
         plat.lastHitTime = now;
 
-        // 3. CRACK LOGIC: If it has hits left, crack it and stop
-        if (!plat.isSecret && plat.hits > 1) {
-            plat.hits--;
-            createShatterEffect(plat.x + 8, plat.y + 8); // Dust puff
-            return;
-        }
+
 
         if (plat.isCoinClusterCandidate) {
             fg.activeCoinCluster = { x: plat.x, y: plat.y - 20, collected: false };
