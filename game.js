@@ -1416,6 +1416,7 @@ function handlePlayerDeath(deathType) {
     if (typeof playDeathSound === 'function') playDeathSound();
 
     // 1. STORE CURRENT RESOURCES
+    // The player keeps their current regular bullets as requested
     const currentBullets = player.bullets;
 
     // 2. RESET PHYSICAL & LEVEL STATES
@@ -1433,31 +1434,29 @@ function handlePlayerDeath(deathType) {
 
     // Clear Level 2/3 specific active entities to prevent "ghost" collisions
     projectiles = [];
-    activeBubbles = []; // NEW: Clean up bubbles on death
-    activeShockwaves = []; // NEW: Clean up sonar on death
+    activeBubbles = [];
+    activeShockwaves = [];
 
     player.hasBow = false;
-    if (fg) fg.hasKey = false;
+    if (fg) {
+        fg.hasKey = false;
+        fg.bombs = []; // Clear active bombs so they don't persist after restart
+    }
 
     if (fg && collectedStars[currentLevelNum]) {
         fg.hasStar = true;
         fg.star = null;
     }
 
-    const cp = globalCheckpoints[currentLevelNum];
-    let forceRestart = false;
-
-    if (deathType === 'timeout' || deathType === 'boss') {
-        collectedLevelWeapons[currentLevelNum] = false;
-        player.heavyAmmo = 0;
-        forceRestart = true;
-    }
-
-
+    // Lose heavy weapons and special projectiles as requested
+    collectedLevelWeapons[currentLevelNum] = false;
+    collectedLevelItems[currentLevelNum] = false; // Resets shooting ability unlock
+    player.heavyAmmo = 0;
 
     // 4. FULL LEVEL RESTART
-    player.heavyAmmo = 0;
+    // This resets the map and the timer back to 120 seconds
     loadLevel(currentLevelNum);
+
     player.bullets = currentBullets;
     player.updateUI();
 
