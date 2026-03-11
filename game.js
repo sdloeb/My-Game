@@ -624,7 +624,7 @@ function init() {
         const plat = e.detail.platform;
 
         // 2. SAFETY: Initialize hits if missing (default to 2)
-        if (plat.hits === undefined) plat.hits = 2;
+        if (plat.hits === undefined) plat.hits = 1;
 
         // 3. COLLISION COOLDOWN: Prevent the brick from taking 2 hits in one jump
         // REMOVED 'const' here because 'now' is already defined at the top of this function
@@ -648,6 +648,12 @@ function init() {
                 if (plat.hasClock) {
                     fg.clock = { x: plat.x, y: plat.y, collected: false };
                 }
+                if (plat.isCoinSecret) {
+                    fg.coins.push({ x: plat.x + 3, y: plat.y - 16 }); // Spawn grabable coin
+                }
+                if (plat.isBombSecret) {
+                    fg.bombs.push({ x: plat.x + 4, y: plat.y, vy: -2, timer: 10, isPickedUp: false }); // Spawn bomb
+                }
                 createShatterEffect(plat.x + 8, plat.y + 8);
                 fg.platforms.splice(index, 1);
             }
@@ -666,6 +672,39 @@ function init() {
             if (player && fg) requestAnimationFrame(gameLoop);
         }, 10);
     }
+    // --- ADD THIS AT THE BOTTOM OF init() IN game.js ---
+
+    window.addEventListener('bombExplode', (e) => {
+        const b = e.detail.bomb;
+        const radius = CANVAS_WIDTH * 0.6; // 60% of screen
+
+        // 1. Kill Player
+        const pDist = Math.sqrt(Math.pow(player.x - b.x, 2) + Math.pow(player.y - b.y, 2));
+        if (pDist < radius && !isGodMode) handlePlayerDeath('bomb');
+
+        // 2. Kill Enemies & Reveal Secrets
+        enemies.forEach((en, index) => {
+            const eDist = Math.sqrt(Math.pow(en.x - b.x, 2) + Math.pow(en.y - b.y, 2));
+            if (eDist < radius) {
+                createShatterEffect(en.x, en.y);
+                fg.dropAmmo(en.x, en.y, en.type === 'fireMonster');
+                enemies.splice(index, 1);
+            }
+        });
+
+        // 3. Reveal Secret Bricks on Screen
+        fg.platforms.forEach(p => {
+            const onScreen = p.x > cameraX && p.x < cameraX + CANVAS_WIDTH;
+            if (onScreen && (p.isSecret || p.hasClock || p.isBombSecret || p.isCoinSecret || p.isCoinClusterCandidate)) {
+                // Trigger the brickHit logic for all of them
+                window.dispatchEvent(new CustomEvent('brickHit', { detail: { platform: p } }));
+            }
+        });
+
+        // 4. Visual Flash
+        fadeOpacity = 0.5;
+        setTimeout(() => fadeOpacity = 0, 100);
+    });
 }
 
 // 3. MAIN GAME LOOP
@@ -979,7 +1018,7 @@ function update() {
                     if (!plat.isSecret && (!p.isEnemyBullet || p.isFireball)) {
                         const now = Date.now();
                         // Initialize hits if missing
-                        if (plat.hits === undefined) plat.hits = 2;
+                        if (plat.hits === undefined) plat.hits = 1;
 
                         // Check cooldown to prevent double-decrement from high-speed bullets
                         if (!plat.lastHitTime || now - plat.lastHitTime >= 100) {
@@ -1031,6 +1070,7 @@ function update() {
 
     updateParticles();
     fg.update(player);
+    fg.updateBombs(player);
 
     // REVISED Lethal Boss Check - Triggers if defenseless in the boss area
     // This now checks for the Bird (Lvl 1), Troll (Lvl 2), and Anaconda (Lvl 3)
@@ -1164,6 +1204,7 @@ function draw() {
     // 4. Draw the Foreground (Ground, platforms, and items)
     // Because this is drawn last, the ground will cover the snake's tail
     fg.draw(ctx, cameraX);
+    fg.drawBombs(ctx, cameraX);
 
     // 5. Draw standard enemies and particles on the very top
     enemies.filter(en => !en.isBoss).forEach(en => en.draw(ctx, cameraX));

@@ -560,7 +560,7 @@ class Player {
         }
 
         // UPDATED: Only squat if NOT triggering the sonar (holding Jump)
-        if (!this.hasBow && this.keys.down && !this.keys.up && this.onGround && !this.isSquatting) {
+        if (!this.hasBow && this.keys.down && !this.keys.up && this.onGround && !this.isSquatting && !fg.bombs.some(b => b.isPickedUp)) {
             this.isSquatting = true;
             this.squatTimer = 60;
             this.y += (this.normalHeight - this.squatHeight);

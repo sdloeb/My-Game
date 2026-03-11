@@ -15,6 +15,7 @@ class Foreground {
         this.elevators = [];
         this.coins = [];
         this.level = level;
+        this.bombs = []; // Tracks active bombs in the world
         this.activeCoinCluster = null;
         this.timeLeft = 120;
         this.timerStarted = false;
@@ -203,7 +204,7 @@ class Foreground {
                     const floatHeight = 60 + Math.floor(Math.random() * 60);
                     structureHeight = floatHeight;
                     for (let col = 0; col < floatWidth; col++) {
-                        this.platforms.push({ x: x + (col * 16), y: this.groundY - floatHeight, w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
+                        this.platforms.push({ x: x + (col * 16), y: this.groundY - floatHeight, w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 1 });
                     }
                     structureWidth = floatWidth * this.tileSize;
 
@@ -213,8 +214,8 @@ class Foreground {
                     structureHeight = steps * 16;
                     for (let i = 0; i < steps; i++) {
                         for (let j = 0; j <= i; j++) {
-                            this.platforms.push({ x: x + (i * this.tileSize), y: this.groundY - ((j + 1) * this.tileSize), w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
-                            this.platforms.push({ x: x + ((steps * 2 - i - 1) * this.tileSize), y: this.groundY - ((j + 1) * this.tileSize), w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
+                            this.platforms.push({ x: x + (i * this.tileSize), y: this.groundY - ((j + 1) * this.tileSize), w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 1 });
+                            this.platforms.push({ x: x + ((steps * 2 - i - 1) * this.tileSize), y: this.groundY - ((j + 1) * this.tileSize), w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 1 });
                         }
                     }
                     structureWidth = (steps * 2) * this.tileSize;
@@ -224,8 +225,8 @@ class Foreground {
                     const towerHeight = 3 + Math.floor(Math.random() * 5);
                     structureHeight = towerHeight * 16;
                     for (let row = 0; row < towerHeight; row++) {
-                        this.platforms.push({ x: x, y: this.groundY - ((row + 1) * this.tileSize), w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
-                        this.platforms.push({ x: x + 16, y: this.groundY - ((row + 1) * this.tileSize), w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
+                        this.platforms.push({ x: x, y: this.groundY - ((row + 1) * this.tileSize), w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 1 });
+                        this.platforms.push({ x: x + 16, y: this.groundY - ((row + 1) * this.tileSize), w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 1 });
                     }
                     structureWidth = 2 * this.tileSize;
                     groundOccupiedX.push({ start: x, end: x + structureWidth });
@@ -234,7 +235,7 @@ class Foreground {
                     const longWidth = 3 + Math.floor(Math.random() * 8);
                     structureHeight = 32;
                     for (let col = 0; col < longWidth; col++) {
-                        this.platforms.push({ x: x + (col * 16), y: this.groundY - (this.tileSize * 2), w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
+                        this.platforms.push({ x: x + (col * 16), y: this.groundY - (this.tileSize * 2), w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 1 });
                     }
                     structureWidth = longWidth * this.tileSize;
                     break;
@@ -243,7 +244,7 @@ class Foreground {
                     const longFloatHeight = 80 + Math.floor(Math.random() * 40); // 80-120 pixels high
                     structureHeight = longFloatHeight;
                     for (let col = 0; col < longFloatWidth; col++) {
-                        this.platforms.push({ x: x + (col * 16), y: this.groundY - longFloatHeight, w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
+                        this.platforms.push({ x: x + (col * 16), y: this.groundY - longFloatHeight, w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 1 });
                     }
                     structureWidth = longFloatWidth * this.tileSize;
                     break;
@@ -252,8 +253,8 @@ class Foreground {
                     structureHeight = 32;
                     for (let i = 0; i < smallSteps; i++) {
                         for (let j = 0; j <= i; j++) {
-                            this.platforms.push({ x: x + (i * this.tileSize), y: this.groundY - ((j + 1) * this.tileSize), w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
-                            this.platforms.push({ x: x + ((smallSteps * 2 - i - 1) * this.tileSize), y: this.groundY - ((j + 1) * this.tileSize), w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
+                            this.platforms.push({ x: x + (i * this.tileSize), y: this.groundY - ((j + 1) * this.tileSize), w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 1 });
+                            this.platforms.push({ x: x + ((smallSteps * 2 - i - 1) * this.tileSize), y: this.groundY - ((j + 1) * this.tileSize), w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 1 });
                         }
                     }
                     structureWidth = (smallSteps * 2) * this.tileSize;
@@ -264,7 +265,7 @@ class Foreground {
                     const smallFloatHeight = 80 + Math.floor(Math.random() * 40);
                     structureHeight = smallFloatHeight;
                     for (let col = 0; col < smallFloatWidth; col++) {
-                        this.platforms.push({ x: x + (col * 16), y: this.groundY - smallFloatHeight, w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
+                        this.platforms.push({ x: x + (col * 16), y: this.groundY - smallFloatHeight, w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 1});
                     }
                     structureWidth = smallFloatWidth * this.tileSize;
                     break;
@@ -305,7 +306,7 @@ class Foreground {
 
                                 y: this.groundY - p.y,
                                 w: 1, h: 1,
-                                hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2
+                                hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 1
                             });
                         }
                     });
@@ -321,8 +322,8 @@ class Foreground {
                         const floatX = x + (i * 32);
                         const floatY = this.groundY - (40 + (i * 32));
                         // Each float is 2 bricks wide
-                        this.platforms.push({ x: floatX, y: floatY, w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
-                        this.platforms.push({ x: floatX + 16, y: floatY, w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
+                        this.platforms.push({ x: floatX, y: floatY, w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 1 });
+                        this.platforms.push({ x: floatX + 16, y: floatY, w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 1 });
                     }
                     structureWidth = (numFloats * 32) + 16;
                     break;
@@ -353,21 +354,21 @@ class Foreground {
                     case 0: // Short High Float
                         const fWidth0 = Math.floor(Math.random() * 4);
                         for (let col = 0; col < fWidth0; col++) {
-                            this.platforms.push({ x: floatX + (col * 16), y: this.groundY - fHeight, w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
+                            this.platforms.push({ x: floatX + (col * 16), y: this.groundY - fHeight, w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 1 });
                         }
                         secondaryWidth = fWidth0 * this.tileSize;
                         break;
                     case 4: // Long High Float
                         const fWidth4 = 5 + Math.floor(Math.random() * 6);
                         for (let col = 0; col < fWidth4; col++) {
-                            this.platforms.push({ x: floatX + (col * 16), y: this.groundY - fHeight, w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
+                            this.platforms.push({ x: floatX + (col * 16), y: this.groundY - fHeight, w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 1 });
                         }
                         secondaryWidth = fWidth4 * this.tileSize;
                         break;
                     case 6: // Small High Float
                         const fWidth6 = 4 + Math.floor(Math.random() * 3);
                         for (let col = 0; col < fWidth6; col++) {
-                            this.platforms.push({ x: floatX + (col * 16), y: this.groundY - fHeight, w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 2 });
+                            this.platforms.push({ x: floatX + (col * 16), y: this.groundY - fHeight, w: 1, h: 1, hasClock: false, isSecret: false, isCheckpointCandidate: false, hits: 1 });
                         }
                         secondaryWidth = fWidth6 * this.tileSize;
                         break;
@@ -602,7 +603,40 @@ class Foreground {
                 });
             }
         }
+        // 12. Assign Random Coin and Bomb Secrets in Quadrants
+        const secretZones = [
+            { min: 400, max: 1500 },
+            { min: 1600, max: 2700 },
+            { min: 2800, max: 3900 },
+            { min: 4000, max: 4800 }
+        ];
 
+        secretZones.forEach(zone => {
+            // Only pick bricks with nothing on top
+            const candidates = this.platforms.filter(p =>
+                !p.hasClock && !p.isSecret && !p.isCoinClusterCandidate &&
+                p.x >= zone.min && p.x <= zone.max &&
+                !this.platforms.some(other => other.x === p.x && other.y < p.y)
+            );
+
+            // Add 3 Coin Secrets per zone
+            for (let i = 0; i < 3; i++) {
+                if (candidates.length > 0) {
+                    const idx = Math.floor(Math.random() * candidates.length);
+                    candidates[idx].isCoinSecret = true;
+                    candidates.splice(idx, 1);
+                }
+            }
+
+            // Add 2 Bomb Secrets per zone
+            for (let i = 0; i < 2; i++) {
+                if (candidates.length > 0) {
+                    const idx = Math.floor(Math.random() * candidates.length);
+                    candidates[idx].isBombSecret = true;
+                    candidates.splice(idx, 1);
+                }
+            }
+        });
     } // Function finally ends here
 
 
@@ -1746,4 +1780,75 @@ class Foreground {
         });
     }
 
+    // --- ADD THESE AT THE BOTTOM OF THE Foreground CLASS ---
+
+    updateBombs(player) {
+        for (let i = this.bombs.length - 1; i >= 0; i--) {
+            let b = this.bombs[i];
+            b.timer -= 1 / 60; // 60 FPS countdown
+
+            if (b.isPickedUp) {
+                // 1. Carry the bomb exactly above the player's head
+                b.x = player.x + (player.width / 2) - 4;
+                b.y = player.y - 14;
+
+                // 2. DROP LOGIC: If the player presses the Down key, release the bomb
+                if (player.keys.down) {
+                    b.isPickedUp = false;
+                    b.vy = -1; // Give it a tiny upward pop so it doesn't clip into the player
+                }
+            } else {
+                // Physics: Fall to ground or bricks
+                b.vy += 0.2;
+                b.y += b.vy;
+
+                // Collision with ground
+                if (b.y + 8 >= this.groundY) {
+                    b.y = this.groundY - 8;
+                    b.vy = 0;
+                }
+                // Proximity pickup
+                const dist = Math.sqrt(Math.pow(player.x - b.x, 2) + Math.pow(player.y - b.y, 2));
+                if (dist < 15 && !player.isSquatting) b.isPickedUp = true;
+            }
+
+            if (b.timer <= 0) {
+                window.dispatchEvent(new CustomEvent('bombExplode', { detail: { bomb: b } }));
+                this.bombs.splice(i, 1);
+            }
+        }
+    }
+
+    drawBombs(ctx, cameraX) {
+        this.bombs.forEach(b => {
+            const bx = b.x - cameraX;
+            // 1. Black Circle Body
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.arc(bx + 4, b.y + 4, 6, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 2. The Fuse (Sparking wire)
+            ctx.strokeStyle = '#78350f';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(bx + 4, b.y - 2);
+            ctx.lineTo(bx + 6, b.y - 6);
+            ctx.stroke();
+
+            // 3. Sparking Firework Effect
+            if (Math.random() > 0.3) {
+                ctx.fillStyle = Math.random() > 0.5 ? '#fde047' : '#ef4444';
+                ctx.fillRect(bx + 5 + (Math.random() * 4 - 2), b.y - 8 + (Math.random() * 4 - 2), 2, 2);
+            }
+
+            // 4. Timer Text
+            ctx.fillStyle = '#fff';
+            ctx.font = '8px monospace';
+            ctx.fillText(Math.ceil(b.timer), bx + 2, b.y - 10);
+        });
+    }
+
+
 }
+
