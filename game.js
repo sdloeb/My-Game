@@ -579,7 +579,7 @@ function init() {
     player = new Player(CANVAS_HEIGHT);
 
     // Use loadLevel to ensure all global states are synced from start
-    loadLevel(1);
+    loadLevel(3);
 
     // Listen for oil events
     window.addEventListener('oilSplash', (e) => {
@@ -696,6 +696,9 @@ function init() {
             }
         });
 
+        // Add this line to create the burst at the bomb's center
+        createExplosionEffect(b.x + 4, b.y + 4);
+
         // 4. Visual Flash
         fadeOpacity = 0.5;
         setTimeout(() => fadeOpacity = 0, 100);
@@ -716,7 +719,7 @@ function update() {
     // Initialize Bird if player is near portal
     if (fg.level === 1 && !fg.bird && player.x > fg.portalX - 550) { // Bird spawns earlier
         fg.bird = {
-            x: fg.portalX,
+            x: fg.portalX + 20,
             y: fg.portal.y - 110,
             dir: -1,
             speed: 2,
@@ -733,8 +736,8 @@ function update() {
         fg.bird.y = (fg.portal.y - 110) + Math.sin(Date.now() / 200) * 25;
 
 
-        if (fg.bird.x < fg.portalX - 30) fg.bird.dir = 1;
-        if (fg.bird.x > fg.portalX + 15) fg.bird.dir = -1;
+        if (fg.bird.x < fg.portalX - 50) fg.bird.dir = 1;
+        if (fg.bird.x > fg.portalX + 30) fg.bird.dir = -1;
     }
 
 
@@ -1051,9 +1054,16 @@ function update() {
     }
 
     // Camera follow
+    // WITH THIS:
     let targetX = (player && typeof player.x !== 'undefined') ? player.x - (CANVAS_WIDTH / 2) : cameraX;
-    const maxX = fg.portalX - (CANVAS_WIDTH / 2);
-    cameraX = Math.max(0, Math.min(targetX, maxX));
+    const maxX = fg.portalX - (CANVAS_WIDTH - 40); // Indents portal 40px from right edge
+
+    // LOCK the camera to the end view if the player is near the boss gate
+    if (player.x > fg.portalX - (CANVAS_WIDTH * 1.0)) {
+        cameraX = maxX;
+    } else {
+        cameraX = Math.max(0, Math.min(targetX, maxX));
+    }
 
     // --- STABLE VERTICAL CAMERA ---
     // If the screen is the default 224 height, we keep cameraY at 0 while on ground
@@ -1380,6 +1390,20 @@ function createBubblePopEffect(x, y) {
 }
 
 
+function createExplosionEffect(x, y) {
+    for (let i = 0; i < 25; i++) {
+        const color = ['#ff0000', '#ff8800', '#ffff00'][Math.floor(Math.random() * 3)];
+        particles.push({
+            x: x,
+            y: y,
+            vx: (Math.random() - 0.5) * 12,
+            vy: (Math.random() - 0.5) * 12,
+            life: 20 + Math.random() * 20,
+            color: color
+        });
+    }
+}
+
 function createIcePuff(x, y) {
     // 2-3 small particles per puff to keep it subtle
     for (let i = 0; i < 3; i++) {
@@ -1471,7 +1495,7 @@ function loadLevel(num, keepTimer = false) {
 
     if (!keepTimer) fg.resetTimer();
 
-    player.x = 125;
+    player.x = 4700;  //start at 125 gate is at 4700
     player.y = 100;
     player.velocityX = 0;
     player.velocityY = 0;
@@ -1510,7 +1534,7 @@ function spawnEnemies() {
 
     // 1. Handle Boss Spawning
     if (currentLevelNum % 3 === 0) {
-        enemies.push(new Boss(fg.portalX - 180, fg.groundY - 140));
+        enemies.push(new Boss(fg.portalX - 80, fg.groundY - 140));
     }
 
     // 2. Get the specific counts for the current level

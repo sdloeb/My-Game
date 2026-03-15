@@ -23,8 +23,8 @@ class Foreground {
         this.key = { x: 0, y: 0, vx: 0, vy: 0, dropped: false, collected: false };
         this.hasKey = false;
         this.portalLocked = true;
-        this.bow = { x: this.portalX - 195, y: this.groundY - 20, collected: false }; //bow location
-        this.troll = { x: this.portalX + 40, y: this.groundY, width: 32, height: 40, health: 5, hit: false, flashTimer: 0, bubbleTimer: 0, bubblesPopped: 0 };
+        this.bow = { x: this.portalX - (CANVAS_WIDTH * 0.75) + 20, y: this.groundY - 20, collected: false }; //bow location
+        this.troll = { x: this.portalX + 15, y: this.groundY, width: 32, height: 40, health: 5, hit: false, flashTimer: 0, bubbleTimer: 0, bubblesPopped: 0 };
         this.electricGates = [];
 
         this.portal = {
@@ -677,7 +677,7 @@ class Foreground {
 
         // --- PROGRESS LOCK ---
         // If the key hasn't dropped yet, don't let the player pass the bow area
-        const limitX = this.bow.x;
+        const limitX = this.bow.x + 10;
         if (!this.key.dropped && player.x > limitX) {
             player.x = limitX;
             player.velocityX = 0;
