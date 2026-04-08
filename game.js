@@ -5,6 +5,7 @@ let CANVAS_HEIGHT = 224;
 let audioCtx;
 let activeJumpOsc = null;
 let collectedLevelWeapons = {}; // Stores { level: true } if the weapon is found
+let screenShakeTimer = 0;
 
 function playPlayerShootSound() {
     if (!audioCtx) return;
@@ -671,7 +672,21 @@ function init() {
 
     window.addEventListener('bombExplode', (e) => {
         const b = e.detail.bomb;
-        const radius = CANVAS_WIDTH * 0.6; // 60% of screen
+
+        // 1. TRIGGER VISUALS
+        createExplosionEffect(b.x + 4, b.y + 4);
+        screenShakeTimer = 30; // 0.5 seconds of intense shaking
+
+        // 2. ADD AN EXPLOSIVE SHOCKWAVE (Red)
+        if (typeof activeShockwaves !== 'undefined') {
+            const expWave = new Shockwave(b.x + 4, b.y + 4);
+            expWave.maxRadius = 120;
+            expWave.speed = 8; // Faster than sonar
+            // We can temporarily override the color in its draw logic or 
+            // just accept the cyan one for now—but let's trigger it.
+            activeShockwaves.push(expWave);
+        }
+        const radius = CANVAS_WIDTH * 0.7; // 70% of screen
 
         // 1. Kill Player
         const pDist = Math.sqrt(Math.pow(player.x - b.x, 2) + Math.pow(player.y - b.y, 2));
@@ -715,6 +730,8 @@ function gameLoop() {
 function update() {
 
     if (!player || !fg) return;
+
+    if (screenShakeTimer > 0) screenShakeTimer--;
 
     // Initialize Bird if player is near portal
     if (fg.level === 1 && !fg.bird && player.x > fg.portalX - 550) { // Bird spawns earlier
@@ -1073,6 +1090,9 @@ function update() {
     // We only let cameraY move if the player is high up or the screen is very small
     cameraY = Math.max(0, Math.min(targetY, maxY));
 
+    // [Add this near your other let variables like cameraX, particles, etc.]
+
+
     updateParticles();
     fg.update(player);
     fg.updateBombs(player);
@@ -1192,6 +1212,18 @@ function nextLevel() {
 }
 
 function draw() {
+
+    ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT); // Clear canvas
+
+    ctx.save();
+    // --- ADDED: APPLY SCREENSHAKE ---
+    if (screenShakeTimer > 0) {
+        const shakeAmount = screenShakeTimer * 0.5; // Intensity scales with timer
+        const offsetX = (Math.random() - 0.5) * shakeAmount;
+        const offsetY = (Math.random() - 0.5) * shakeAmount;
+        ctx.translate(offsetX, offsetY);
+    }
+
     ctx.fillStyle = '#5c94fc';
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
@@ -1361,6 +1393,7 @@ function draw() {
         pendingLevelChange = false;
         fadeTarget = 0; // Fade back in
     }
+    ctx.restore();
 } // <--- THIS BRACE CLOSES THE DRAW FUNCTION. DO NOT REMOVE.
 
 function createShatterEffect(x, y) {
@@ -1391,15 +1424,30 @@ function createBubblePopEffect(x, y) {
 
 
 function createExplosionEffect(x, y) {
-    for (let i = 0; i < 25; i++) {
-        const color = ['#ff0000', '#ff8800', '#ffff00'][Math.floor(Math.random() * 3)];
+    // 1. MAIN FIRE BURST (Increased to 60 particles)
+    for (let i = 0; i < 60; i++) {
+        const color = ['#ff0000', '#ff8800', '#ffff00', '#ffffff'][Math.floor(Math.random() * 4)];
         particles.push({
             x: x,
             y: y,
-            vx: (Math.random() - 0.5) * 12,
-            vy: (Math.random() - 0.5) * 12,
-            life: 20 + Math.random() * 20,
-            color: color
+            vx: (Math.random() - 0.5) * 15, // Faster spread
+            vy: (Math.random() - 0.5) * 15,
+            life: 15 + Math.random() * 25,
+            color: color,
+            size: 2 + Math.random() * 3 // Varied sizes
+        });
+    }
+
+    // 2. SMOKE CLOUD (Darker particles that linger longer)
+    for (let i = 0; i < 30; i++) {
+        particles.push({
+            x: x + (Math.random() - 0.5) * 20,
+            y: y + (Math.random() - 0.5) * 20,
+            vx: (Math.random() - 0.5) * 4,
+            vy: (Math.random() - 1.0) * 3, // Smoke rises
+            life: 40 + Math.random() * 40,
+            color: '#4b5563', // Slate grey smoke
+            size: 4 + Math.random() * 4
         });
     }
 }
